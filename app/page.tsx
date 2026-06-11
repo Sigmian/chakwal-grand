@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Star, MapPin, Phone, CheckCircle2, Wifi, Snowflake, Shield, Clock, ChevronRight } from "lucide-react";
-import { PublicNavbar } from "@/features/public/components/PublicNavbar";
-import { PublicFooter } from "@/features/public/components/PublicFooter";
-import { BookingWidget } from "@/features/public/components/BookingWidget";
-import { FAQSection }   from "@/features/public/components/FAQSection";
-import { ChatWidget }   from "@/features/public/components/ChatWidget";
+import { Star, MapPin, Phone, CheckCircle2, ChevronRight } from "lucide-react";
+import { PublicNavbar }   from "@/features/public/components/PublicNavbar";
+import { PublicFooter }   from "@/features/public/components/PublicFooter";
+import { VideoHero }      from "@/features/public/components/VideoHero";
+import { GallerySection } from "@/features/public/components/GallerySection";
+import { FAQSection }     from "@/features/public/components/FAQSection";
+import { ChatWidget }     from "@/features/public/components/ChatWidget";
 import { getPublicBranches, getPublicReviews, getPublicRooms } from "@/server/actions/public";
 import { formatPKR } from "@/utils";
 
@@ -85,78 +86,8 @@ export default async function HomePage() {
       <PublicNavbar />
 
       <main>
-        {/* ══════════════════════════════════════════════ HERO */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-          {/* Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] via-[#111827] to-[#0a0a0a]">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_60%_40%,rgba(201,168,76,0.12),transparent_60%)]" />
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
-          </div>
-
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 lg:py-20">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              {/* Left — copy */}
-              <div>
-                <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gold-400 bg-gold-500/10 border border-gold-500/20 px-4 py-2 rounded-full mb-6">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse" />
-                  Chakwal · Kallar Kahar · Sargodha
-                </div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-serif text-foreground leading-[1.1] mb-6">
-                  Your Home Away<br />
-                  <span className="text-transparent bg-clip-text bg-gold-gradient">From Home</span>
-                </h1>
-                <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
-                  Premium accommodation in Chakwal with clean rooms, fast WiFi, 24/7 service, and unbeatable value. Starting from just <strong className="text-gold-400">₨2,000 / night</strong>.
-                </p>
-                <div className="flex flex-wrap gap-3 mb-10">
-                  {[
-                    { icon: Wifi,      label: "Free WiFi" },
-                    { icon: Snowflake, label: "A/C Available" },
-                    { icon: Shield,    label: "Safe & Secure" },
-                    { icon: Clock,     label: "24/7 Service" },
-                  ].map(({ icon: Icon, label }) => (
-                    <div key={label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Icon className="w-3.5 h-3.5 text-gold-400" />
-                      {label}
-                    </div>
-                  ))}
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Link href="/book" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all hover:-translate-y-0.5 text-sm">
-                    Book Now — It's Free
-                    <ChevronRight className="w-4 h-4" />
-                  </Link>
-                  <Link href="/rooms" className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-border text-foreground font-semibold rounded-xl hover:bg-accent transition-colors text-sm">
-                    View All Rooms
-                  </Link>
-                </div>
-              </div>
-
-              {/* Right — booking widget */}
-              <div className="lg:pl-8">
-                <div className="mb-4">
-                  <p className="text-sm font-semibold text-foreground mb-1">Check Availability</p>
-                  <p className="text-xs text-muted-foreground">Select your dates to see available rooms</p>
-                </div>
-                <BookingWidget branches={branches as { id: string; name: string; city: string }[]} />
-
-                {/* Trust signals */}
-                <div className="mt-4 grid grid-cols-3 gap-3">
-                  {[
-                    { value: "500+", label: "Happy Guests" },
-                    { value: "4.8★", label: "Avg Rating" },
-                    { value: "3",   label: "Locations" },
-                  ].map(({ value, label }) => (
-                    <div key={label} className="card-luxury rounded-xl p-3 text-center">
-                      <p className="text-lg font-bold font-serif text-gold-400">{value}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* ══════════════════════════════════════════════ HERO (VIDEO) */}
+        <VideoHero branches={branches as { id: string; name: string; city: string }[]} />
 
         {/* ══════════════════════════════════════════════ ROOMS */}
         <section className="py-20 bg-surface-elevated">
@@ -335,6 +266,9 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ══════════════════════════════════════════════ GALLERY */}
+        <GallerySection />
 
         {/* ══════════════════════════════════════════════ FAQ */}
         <FAQSection />
