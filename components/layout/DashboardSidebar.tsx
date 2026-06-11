@@ -14,9 +14,9 @@ import { signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Building2, BedDouble, CalendarCheck,
-  Sparkles, Users, Package, DollarSign, UserCog, Star,
+  Sparkles, Users, Package, DollarSign, UserCog, Star, Tag,
   Settings, ChevronDown, ChevronRight, LogOut, Menu, X,
-  Shield, Crown,
+  Shield, Crown, Tag,
 } from "lucide-react";
 import { cn, getInitials } from "@/utils";
 import { getNavForRole } from "@/config/navigation";
@@ -26,7 +26,7 @@ import { UserRole } from "@/types";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, BedDouble, CalendarCheck,
-  Sparkles, Users, Package, DollarSign, UserCog, Star,
+  Sparkles, Users, Package, DollarSign, UserCog, Star, Tag,
   Settings,
 };
 

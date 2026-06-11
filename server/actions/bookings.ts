@@ -115,35 +115,50 @@ export async function createBooking(rawInput: CreateBookingInput) {
       }
     }
 
-    // 6. Apply offer discount if provided
+    // 6. Apply offer discount (manual code OR auto weekly/monthly)
     let discountAmount = 0;
-    if (input.offerId) {
+    let appliedOfferId: string | null = input.offerId || null;
+
+    const nights = getNights(checkIn, checkOut);
+    const baseAmt = Number(room.pricePerNight) * nights;
+
+    // Auto-discount: monthly (30+ nights) takes priority over weekly (7+)
+    const autoCode = nights >= 30 ? "MONTHLY40" : nights >= 7 ? "WEEKLY14" : null;
+
+    const offerLookup = appliedOfferId
+      ? { id: appliedOfferId }
+      : autoCode
+      ? { code: autoCode }
+      : null;
+
+    if (offerLookup) {
       const offer = await prisma.offer.findFirst({
         where: {
-          id:      input.offerId,
-          isActive: true,
-          startsAt: { lte: new Date() },
+          ...offerLookup,
+          isActive:  true,
+          startsAt:  { lte: new Date() },
           expiresAt: { gte: new Date() },
         },
       });
       if (offer) {
-        const nights    = getNights(checkIn, checkOut);
-        const baseAmt   = Number(room.pricePerNight) * nights;
-        discountAmount  = offer.discountType === "PERCENTAGE"
-          ? (baseAmt * Number(offer.discountValue)) / 100
-          : Number(offer.discountValue);
+        const eligible = !offer.minNights || nights >= offer.minNights;
+        const hasCapacity = !offer.maxUses || offer.usedCount < offer.maxUses;
+        if (eligible && hasCapacity) {
+          discountAmount = offer.discountType === "PERCENTAGE"
+            ? (baseAmt * Number(offer.discountValue)) / 100
+            : Number(offer.discountValue);
+          appliedOfferId = offer.id;
 
-        // Increment offer usage
-        await prisma.offer.update({
-          where: { id: offer.id },
-          data:  { usedCount: { increment: 1 } },
-        });
+          await prisma.offer.update({
+            where: { id: offer.id },
+            data:  { usedCount: { increment: 1 } },
+          });
+        }
       }
     }
 
     // 7. Calculate totals
-    const nights     = getNights(checkIn, checkOut);
-    const baseAmount = Number(room.pricePerNight) * nights;
+    const baseAmount = baseAmt;
     const taxAmount  = 0; // Configurable in future
     const totalAmount = calculateBookingTotal({
       baseAmount, discountAmount, taxAmount, extraCharges: 0,
@@ -171,7 +186,7 @@ export async function createBooking(rawInput: CreateBookingInput) {
         status:       BookingStatus.PENDING,
         paymentStatus: PaymentStatus.UNPAID,
         source:       input.source ?? "website",
-        offerId:      input.offerId || null,
+        offerId:      appliedOfferId || null,
         specialRequests: input.specialRequests || null,
         internalNotes:   input.internalNotes || null,
       },

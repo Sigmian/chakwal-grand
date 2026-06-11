@@ -37,6 +37,7 @@ const PATH_LABELS: Record<string, string> = {
   staff:       "Staff",
   reviews:     "Reviews",
   settings:    "Settings",
+  offers:      "Promo Codes",
 };
 
 // Context-aware labels for "new" based on parent segment

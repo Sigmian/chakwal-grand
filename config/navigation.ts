@@ -115,6 +115,15 @@ export const DASHBOARD_NAV: NavItem[] = [
     ],
   },
   {
+    label: "Promo Codes",
+    href:  "/offers",
+    icon:  "Tag",
+    requiredRoles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.BRANCH_MANAGER,
+    ],
+  },
+  {
     label: "Settings",
     href:  "/settings",
     icon:  "Settings",

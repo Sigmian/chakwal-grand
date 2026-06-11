@@ -48,7 +48,7 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const [guest, setGuest] = useState({
-    name: "", phone: "", cnic: "", email: "", notes: "",
+    name: "", phone: "", cnic: "", email: "", notes: "", promoCode: "",
   });
 
   const [bookingRef, setBookingRef] = useState("");
@@ -91,17 +91,18 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
 
     start(async () => {
       const res = await createPublicBooking({
-        roomId:   selectedRoom.id,
-        branchId: dates.branchId,
-        checkIn:  dates.checkIn,
-        checkOut: dates.checkOut,
-        adults:   dates.adults,
-        children: dates.children,
-        name:     guest.name,
-        phone:    guest.phone,
-        cnic:     guest.cnic || undefined,
-        email:    guest.email || undefined,
-        notes:    guest.notes || undefined,
+        roomId:    selectedRoom.id,
+        branchId:  dates.branchId,
+        checkIn:   dates.checkIn,
+        checkOut:  dates.checkOut,
+        adults:    dates.adults,
+        children:  dates.children,
+        name:      guest.name,
+        phone:     guest.phone,
+        cnic:      guest.cnic || undefined,
+        email:     guest.email || undefined,
+        notes:     guest.notes || undefined,
+        promoCode: guest.promoCode.trim().toUpperCase() || undefined,
       });
       if (res.success && res.ref) {
         setBookingRef(res.ref);
@@ -373,6 +374,12 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                   <label className={labelCls}>Special Requests (Optional)</label>
                   <textarea value={guest.notes} onChange={setG("notes")} rows={3} placeholder="Any special requirements…"
                     className={inputCls + " resize-none"} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelCls}>Promo Code (Optional)</label>
+                  <input value={guest.promoCode} onChange={setG("promoCode")} placeholder="e.g. WELCOME10"
+                    className={inputCls + " font-mono tracking-widest uppercase"} />
+                  <p className="text-[10px] text-muted-foreground mt-1">Weekly stays (7+ nights) and monthly stays (30+ nights) get automatic discounts — no code needed.</p>
                 </div>
               </div>
             </div>

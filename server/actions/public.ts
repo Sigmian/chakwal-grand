@@ -86,17 +86,18 @@ function generateRef(): string {
 }
 
 export async function createPublicBooking(input: {
-  roomId:    string;
-  branchId:  string;
-  checkIn:   string;
-  checkOut:  string;
-  adults:    number;
-  children:  number;
-  name:      string;
-  phone:     string;
-  cnic?:     string;
-  email?:    string;
-  notes?:    string;
+  roomId:     string;
+  branchId:   string;
+  checkIn:    string;
+  checkOut:   string;
+  adults:     number;
+  children:   number;
+  name:       string;
+  phone:      string;
+  cnic?:      string;
+  email?:     string;
+  notes?:     string;
+  promoCode?: string;
 }) {
   const ci = new Date(input.checkIn);
   const co = new Date(input.checkOut);
@@ -114,6 +115,37 @@ export async function createPublicBooking(input: {
 
   const nights     = Math.ceil((co.getTime() - ci.getTime()) / 86_400_000);
   const baseAmount = Number(room.pricePerNight) * nights;
+
+  // Determine discount: manual promo code OR auto weekly/monthly
+  let discountAmount = 0;
+  let appliedOfferId: string | null = null;
+
+  const autoCode = nights >= 30 ? "MONTHLY40" : nights >= 7 ? "WEEKLY14" : null;
+  const codeToTry = input.promoCode || autoCode;
+
+  if (codeToTry) {
+    const offer = await prisma.offer.findFirst({
+      where: {
+        code:      codeToTry,
+        isActive:  true,
+        startsAt:  { lte: new Date() },
+        expiresAt: { gte: new Date() },
+      },
+    });
+    if (offer) {
+      const eligible   = !offer.minNights || nights >= offer.minNights;
+      const hasCapacity = !offer.maxUses || offer.usedCount < offer.maxUses;
+      if (eligible && hasCapacity) {
+        discountAmount = offer.discountType === "PERCENTAGE"
+          ? (baseAmount * Number(offer.discountValue)) / 100
+          : Number(offer.discountValue);
+        appliedOfferId = offer.id;
+        await prisma.offer.update({ where: { id: offer.id }, data: { usedCount: { increment: 1 } } });
+      }
+    }
+  }
+
+  const totalAmount = Math.max(0, baseAmount - discountAmount);
 
   let customer = await prisma.customer.findUnique({ where: { phone: input.phone } });
   if (!customer) {
@@ -149,14 +181,15 @@ export async function createPublicBooking(input: {
       status:          "PENDING",
       paymentStatus:   "UNPAID",
       baseAmount,
-      discountAmount:  0,
+      discountAmount,
       taxAmount:       0,
       extraCharges:    0,
-      totalAmount:     baseAmount,
+      totalAmount,
+      offerId:         appliedOfferId,
       source:          "website",
       specialRequests: input.notes || null,
     },
   });
 
-  return { success: true, bookingId: booking.id, ref };
+  return { success: true, bookingId: booking.id, ref, discountAmount };
 }
