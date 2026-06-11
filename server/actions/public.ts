@@ -193,3 +193,45 @@ export async function createPublicBooking(input: {
 
   return { success: true, bookingId: booking.id, ref, discountAmount };
 }
+
+export async function lookupBooking(ref: string) {
+  if (!ref?.trim()) return { success: false, error: "Please enter a booking reference." };
+
+  const booking = await prisma.booking.findUnique({
+    where:   { bookingRef: ref.trim().toUpperCase() },
+    include: {
+      room:     { select: { name: true, number: true, type: true, pricePerNight: true } },
+      branch:   { select: { name: true, phone: true, address: true } },
+      customer: { select: { name: true, phone: true } },
+    },
+  });
+
+  if (!booking) return { success: false, error: "No booking found with that reference. Please check and try again." };
+
+  return {
+    success: true,
+    booking: {
+      bookingRef:     booking.bookingRef,
+      status:         booking.status,
+      paymentStatus:  booking.paymentStatus,
+      guestName:      booking.customer.name,
+      guestPhone:     booking.customer.phone,
+      roomName:       booking.room.name,
+      roomNumber:     booking.room.number,
+      branchName:     booking.branch.name,
+      branchPhone:    booking.branch.phone,
+      branchAddress:  booking.branch.address,
+      checkIn:        booking.checkInDate.toISOString(),
+      checkOut:       booking.checkOutDate.toISOString(),
+      nights:         booking.nights,
+      adults:         booking.adultCount,
+      children:       booking.childCount,
+      totalAmount:    Number(booking.totalAmount),
+      discountAmount: Number(booking.discountAmount),
+      baseAmount:     Number(booking.baseAmount),
+      paidAmount:     Number(booking.paidAmount),
+      specialRequests: booking.specialRequests,
+      createdAt:      booking.createdAt.toISOString(),
+    },
+  };
+}
