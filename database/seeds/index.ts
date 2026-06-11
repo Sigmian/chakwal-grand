@@ -99,7 +99,7 @@ async function main() {
       create: {
         companyId:    company.id,
         email:        "owner@chakwalgrand.pk",
-        name:         "Malik Asif Khan",
+        name:         "Hassan Ali",
         passwordHash,
         role:         "SUPER_ADMIN",
         isActive:     true,
@@ -111,7 +111,7 @@ async function main() {
       create: {
         companyId:    company.id,
         email:        "manager@chakwalgrand.pk",
-        name:         "Muhammad Imran",
+        name:         "M. Bilal",
         passwordHash,
         role:         "BRANCH_MANAGER",
         isActive:     true,

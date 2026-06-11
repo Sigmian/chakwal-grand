@@ -11,6 +11,7 @@ import prisma from "@/lib/db/prisma";
 import { SectionHeader } from "@/components/shared";
 import { BookingActions } from "@/features/bookings/components/BookingActions";
 import { PaymentPanel } from "@/features/bookings/components/PaymentPanel";
+import { BookingInvoice } from "@/features/bookings/components/BookingInvoice";
 import {
   formatPKR, formatDate, formatDateTime,
   BOOKING_STATUS_CONFIG, PAYMENT_STATUS_CONFIG,
@@ -295,6 +296,28 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
             }}
             showCancel={searchParams.action === "cancel"}
           />
+
+          {/* Invoice — shown once booking is confirmed */}
+          {!["PENDING", "CANCELLED"].includes(booking.status) && (
+            <BookingInvoice
+              invoice={{
+                bookingRef:    booking.bookingRef,
+                customerName:  booking.customer.name,
+                customerPhone: booking.customer.phone,
+                roomName:      booking.room.name,
+                roomNumber:    booking.room.number,
+                roomType:      typeCfg.label,
+                branchName:    booking.branch.name,
+                branchAddress: booking.branch.address ?? undefined,
+                checkIn:       formatDate(booking.checkInDate),
+                checkOut:      formatDate(booking.checkOutDate),
+                nights:        booking.nights,
+                pricePerNight: Number(booking.baseAmount) / booking.nights,
+                totalAmount:   Number(booking.totalAmount),
+                confirmedAt:   formatDateTime(booking.updatedAt),
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
