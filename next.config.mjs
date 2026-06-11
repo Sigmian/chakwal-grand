@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Required for Hostinger / standalone Node.js deployment
-  output: "standalone",
 
   // ─── Image Optimization ───────────────────────
   images: {
