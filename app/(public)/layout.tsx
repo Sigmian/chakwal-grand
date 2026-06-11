@@ -4,9 +4,14 @@ import { PublicFooter } from "@/features/public/components/PublicFooter";
 import { ChatWidget }  from "@/features/public/components/ChatWidget";
 
 export const metadata: Metadata = {
-  title: { default: "Chakwal Grand Guest House", template: "%s | Chakwal Grand" },
-  description: "Premium guest house in Chakwal offering comfortable rooms from ₨2,000/night. Book online or call 0334-7742767.",
-  keywords: ["guest house", "Chakwal", "hotel", "accommodation", "rooms", "booking"],
+  title: { default: "Chakwal Grand Guest House | Best Stay in Chakwal Punjab", template: "%s | Chakwal Grand Guest House" },
+  description: "Stay at Chakwal Grand Guest House — the most trusted accommodation in Chakwal, Punjab. AC rooms, family suites & VIP rooms from PKR 2,000/night. Online booking available.",
+  keywords: [
+    "guest house Chakwal", "hotel Chakwal", "accommodation Chakwal", "room booking Chakwal",
+    "family rooms Chakwal", "AC rooms Chakwal", "cheap stay Chakwal", "Chakwal Grand",
+    "best hotel Chakwal Punjab", "overnight stay Chakwal", "CGH Chakwal",
+  ],
+  alternates: { canonical: "https://www.staychakwal.de" },
 };
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Star, MapPin, Phone, CheckCircle2, Wifi, Snowflake, Shield, Clock, ChevronRight } from "lucide-react";
 import { PublicNavbar } from "@/features/public/components/PublicNavbar";
@@ -7,6 +8,52 @@ import { FAQSection }   from "@/features/public/components/FAQSection";
 import { ChatWidget }   from "@/features/public/components/ChatWidget";
 import { getPublicBranches, getPublicReviews, getPublicRooms } from "@/server/actions/public";
 import { formatPKR } from "@/utils";
+
+export const metadata: Metadata = {
+  title: "Chakwal Grand Guest House | Best Accommodation in Chakwal Punjab",
+  description: "Welcome to Chakwal Grand Guest House — the premier destination for travelers in Chakwal, Punjab. AC rooms, family suites, free WiFi & 24/7 room service from PKR 2,000/night. Book online instantly.",
+  alternates: { canonical: "https://www.staychakwal.de" },
+  openGraph: {
+    title:       "Chakwal Grand Guest House | Best Accommodation in Chakwal Punjab",
+    description: "AC rooms, family suites & VIP rooms from PKR 2,000/night. Free WiFi, 24/7 service. Book your stay online at Chakwal Grand Guest House.",
+    url:         "https://www.staychakwal.de",
+    images:      [{ url: "/images/logo.png", width: 1200, height: 630, alt: "Chakwal Grand Guest House" }],
+  },
+};
+
+const LOCAL_BUSINESS_SCHEMA = {
+  "@context":    "https://schema.org",
+  "@type":       "LodgingBusiness",
+  "name":        "Chakwal Grand Guest House",
+  "description": "Premium guest house in Chakwal, Punjab offering AC rooms, family suites and VIP accommodation with free WiFi and 24/7 service.",
+  "url":         "https://www.staychakwal.de",
+  "telephone":   "+92-334-7742767",
+  "priceRange":  "PKR 2,000 - PKR 5,000",
+  "image":       "https://www.staychakwal.de/images/logo.png",
+  "address": {
+    "@type":           "PostalAddress",
+    "addressLocality": "Chakwal",
+    "addressRegion":   "Punjab",
+    "addressCountry":  "PK",
+  },
+  "geo": {
+    "@type":     "GeoCoordinates",
+    "latitude":  "32.9318",
+    "longitude": "72.8560",
+  },
+  "amenityFeature": [
+    { "@type": "LocationFeatureSpecification", "name": "Free WiFi",        "value": true },
+    { "@type": "LocationFeatureSpecification", "name": "Air Conditioning", "value": true },
+    { "@type": "LocationFeatureSpecification", "name": "24/7 Room Service","value": true },
+    { "@type": "LocationFeatureSpecification", "name": "Family Rooms",     "value": true },
+    { "@type": "LocationFeatureSpecification", "name": "Online Booking",   "value": true },
+  ],
+  "checkinTime":  "12:00",
+  "checkoutTime": "11:00",
+  "currenciesAccepted": "PKR",
+  "paymentAccepted":    "Cash",
+  "sameAs": ["https://www.staychakwal.de"],
+};
 
 export const revalidate = 60;
 
@@ -31,6 +78,10 @@ export default async function HomePage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_SCHEMA) }}
+      />
       <PublicNavbar />
 
       <main>

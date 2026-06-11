@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, Phone } from "lucide-react";
 import { cn } from "@/utils";
@@ -37,9 +38,14 @@ export function PublicNavbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gold-gradient flex items-center justify-center shadow-gold-sm group-hover:shadow-gold-md transition-shadow">
-              <span className="text-background font-bold font-serif text-lg">CG</span>
-            </div>
+            <Image
+              src="/images/logo.png"
+              alt="Chakwal Grand Guest House"
+              width={48}
+              height={48}
+              className="rounded-xl shadow-gold-sm group-hover:shadow-gold-md transition-shadow"
+              priority
+            />
             <div>
               <p className="font-bold font-serif text-foreground leading-tight text-base">Chakwal Grand</p>
               <p className="text-[10px] text-muted-foreground tracking-widest uppercase">Guest House</p>

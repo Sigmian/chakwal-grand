@@ -5,8 +5,15 @@ import { getPublicRooms, getPublicBranches } from "@/server/actions/public";
 import { formatPKR } from "@/utils";
 
 export const metadata: Metadata = {
-  title: "Our Rooms",
-  description: "Browse all available room types at Chakwal Grand Guest House. From classic rooms at ₨2,000 to luxury apartments at ₨4,500/night.",
+  title: "Rooms & Suites | Chakwal Grand Guest House",
+  description: "Explore AC rooms, family suites and VIP rooms at Chakwal Grand Guest House in Chakwal, Punjab. Rates from PKR 2,000/night. View availability and book online.",
+  keywords: ["rooms in Chakwal", "AC room Chakwal", "family suite Chakwal", "VIP room Chakwal", "cheap hotel room Chakwal", "Chakwal Grand rooms"],
+  alternates: { canonical: "https://www.staychakwal.de/rooms" },
+  openGraph: {
+    title:       "Rooms & Suites | Chakwal Grand Guest House",
+    description: "AC rooms, family suites & VIP rooms from PKR 2,000/night in Chakwal, Punjab.",
+    url:         "https://www.staychakwal.de/rooms",
+  },
 };
 
 export const revalidate = 60;

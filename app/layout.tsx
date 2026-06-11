@@ -18,33 +18,62 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.staychakwal.de"),
   title: {
     template: "%s | Chakwal Grand Guest House",
-    default:  "Chakwal Grand — Premium Guest House Chain",
+    default:  "Chakwal Grand Guest House — Premium Stay in Chakwal, Punjab",
   },
   description:
-    "Pakistan's most distinguished guest house chain — luxury hospitality in Chakwal, Kallar Kahar & Sargodha.",
+    "Chakwal Grand Guest House offers premium, affordable accommodation in Chakwal with AC rooms, free WiFi, and 24/7 service. Book your stay today from PKR 2,000/night.",
   keywords: [
-    "guest house chakwal",
-    "hotel chakwal",
-    "room booking chakwal",
-    "best guest house chakwal",
-    "family rooms chakwal",
-    "chakwal grand",
+    "guest house in Chakwal",
+    "hotel in Chakwal",
+    "best guest house Chakwal",
+    "cheap hotel Chakwal",
+    "Chakwal accommodation",
+    "family room Chakwal",
+    "AC room Chakwal",
+    "room booking Chakwal",
+    "stay in Chakwal Punjab",
+    "Chakwal Grand",
+    "CGH Chakwal",
+    "guest house near Kalar Kahar",
+    "Punjab guest house booking",
+    "overnight stay Chakwal",
   ],
+  authors: [{ name: "Chakwal Grand Guest House", url: "https://www.staychakwal.de" }],
+  creator: "Chakwal Grand Guest House",
+  publisher: "Chakwal Grand Guest House",
+  alternates: {
+    canonical: "https://www.staychakwal.de",
+  },
   openGraph: {
     type:        "website",
     locale:      "en_PK",
-    url:         "https://chakwalgrand.pk",
+    url:         "https://www.staychakwal.de",
     siteName:    "Chakwal Grand Guest House",
-    title:       "Chakwal Grand — Premium Guest House Chain",
-    description: "Experience comfort and luxury in the heart of Punjab.",
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
+    title:       "Chakwal Grand Guest House — Premium Stay in Chakwal, Punjab",
+    description: "Premium, affordable guest house in Chakwal with AC rooms, free WiFi & 24/7 service. Book from PKR 2,000/night.",
+    images: [{ url: "/images/logo.png", width: 1200, height: 630, alt: "Chakwal Grand Guest House" }],
+  },
+  twitter: {
+    card:        "summary_large_image",
+    title:       "Chakwal Grand Guest House — Premium Stay in Chakwal",
+    description: "Book AC rooms from PKR 2,000/night. Free WiFi, 24/7 service, Chakwal Punjab.",
+    images:      ["/images/logo.png"],
   },
   robots: {
     index:  true,
     follow: true,
-    googleBot: { index: true, follow: true },
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  icons: {
+    icon:             "/images/logo.png",
+    apple:            "/images/logo.png",
+    shortcut:         "/images/logo.png",
+  },
+  verification: {
+    google: "",
   },
 };
 

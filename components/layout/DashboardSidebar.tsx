@@ -7,6 +7,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -73,9 +74,13 @@ export function DashboardSidebar({ user }: Props) {
         "flex items-center gap-3 px-4 py-5 border-b border-border/50",
         collapsed && "justify-center px-2"
       )}>
-        <div className="w-9 h-9 rounded-xl bg-gold-gradient flex items-center justify-center flex-shrink-0 shadow-gold-sm">
-          <span className="text-background font-bold text-sm font-serif">CG</span>
-        </div>
+        <Image
+          src="/images/logo.png"
+          alt="Chakwal Grand Guest House"
+          width={36}
+          height={36}
+          className="rounded-xl flex-shrink-0 shadow-gold-sm"
+        />
         {!collapsed && (
           <div className="min-w-0">
             <p className="font-bold text-sm text-foreground font-serif leading-tight truncate">
