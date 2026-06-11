@@ -1,0 +1,789 @@
+// ============================================================
+// CHAKWAL GRAND — Prisma Database Schema
+// Multi-Branch Hospitality Management Platform
+// ============================================================
+// Engine: PostgreSQL
+// ORM: Prisma 5.x
+// Pattern: Normalized relational model with soft deletes
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  SUPER_ADMIN    // Company owner — full access across all branches
+  BRANCH_MANAGER // Manages one branch fully
+  RECEPTIONIST   // Check-in/out, bookings for their branch
+  HOUSEKEEPING   // Room status updates only
+  INVENTORY_STAFF // Product and stock management
+}
+
+enum RoomType {
+  STANDARD
+  DELUXE
+  FAMILY
+  VIP
+  SUITE
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  BLOCKED
+  CLEANING
+}
+
+enum BookingStatus {
+  PENDING        // Awaiting confirmation
+  CONFIRMED      // Confirmed by staff
+  CHECKED_IN     // Guest has arrived
+  CHECKED_OUT    // Stay completed
+  CANCELLED      // Booking cancelled
+  NO_SHOW        // Guest didn't arrive
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  EASYPAISA
+  JAZZCASH
+  ONLINE_CARD
+}
+
+enum SaleType {
+  ROOM_ATTACHED  // Added to a guest's room bill
+  WALK_IN        // Direct sale to a non-staying customer
+}
+
+enum ExpenseCategory {
+  ELECTRICITY
+  GAS
+  INTERNET
+  WATER
+  STAFF_SALARY
+  MAINTENANCE
+  CLEANING_SUPPLIES
+  INVENTORY_PURCHASE
+  MARKETING
+  RENT
+  TAXES
+  FURNITURE
+  EQUIPMENT
+  MISCELLANEOUS
+}
+
+enum LoyaltyTier {
+  BRONZE  // 1-3 stays
+  SILVER  // 4-9 stays
+  GOLD    // 10-24 stays
+  VIP     // 25+ stays
+}
+
+enum StockTransferStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────────
+// CORE: COMPANY & BRANCHES
+// ─────────────────────────────────────────────
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String   // "Chakwal Grand Guest House"
+  tagline     String?
+  logo        String?  // S3/Cloudinary URL
+  website     String?
+  email       String?
+  phone       String?
+  whatsapp    String?
+  address     String?
+  city        String?
+  country     String   @default("Pakistan")
+  currency    String   @default("PKR")
+  timezone    String   @default("Asia/Karachi")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  branches    Branch[]
+  users       User[]
+}
+
+model Branch {
+  id            String   @id @default(cuid())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id])
+
+  name          String   // "Chakwal Branch"
+  slug          String   @unique // "chakwal" → website.com/chakwal
+  city          String
+  address       String
+  phone         String?
+  email         String?
+  whatsapp      String?
+  latitude      Float?
+  longitude     Float?
+  googleMapsUrl String?
+  coverImage    String?
+  images        String[] // Array of image URLs
+  facilities    String[] // ["WiFi", "Parking", "Generator"]
+  description   String?
+  isActive      Boolean  @default(true)
+  openedAt      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime? // Soft delete
+
+  // Relations
+  rooms         Room[]
+  staff         StaffMember[]
+  bookings      Booking[]
+  expenses      Expense[]
+  offers        Offer[]
+  inventoryItems InventoryItem[]
+  stockTransfersFrom StockTransfer[] @relation("TransferFrom")
+  stockTransfersTo   StockTransfer[] @relation("TransferTo")
+  branchAnalytics    BranchAnalyticsSnapshot[]
+
+  @@index([companyId])
+  @@index([slug])
+}
+
+// ─────────────────────────────────────────────
+// AUTH & USERS
+// ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  companyId     String
+  company       Company   @relation(fields: [companyId], references: [id])
+
+  email         String    @unique
+  name          String
+  image         String?
+  passwordHash  String
+  role          UserRole
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // If role is not SUPER_ADMIN, they belong to a specific branch
+  staffMember   StaffMember?
+
+  // Auth sessions (NextAuth)
+  sessions      Session[]
+  accounts      Account[]
+
+  // Audit trail
+  activityLogs  ActivityLog[]
+
+  @@index([email])
+  @@index([companyId])
+}
+
+// NextAuth required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────
+// STAFF
+// ─────────────────────────────────────────────
+
+model StaffMember {
+  id          String      @id @default(cuid())
+  userId      String      @unique
+  user        User        @relation(fields: [userId], references: [id])
+  branchId    String
+  branch      Branch      @relation(fields: [branchId], references: [id])
+
+  phone       String?
+  cnic        String?     // National ID — encrypted
+  designation String?
+  salary      Decimal?    @db.Decimal(10, 2)
+  joinedAt    DateTime    @default(now())
+  notes       String?
+
+  // Shift info
+  shiftStart  String?     // "09:00"
+  shiftEnd    String?     // "18:00"
+  workingDays String[]    // ["MON","TUE","WED"]
+
+  activityLogs ActivityLog[]
+
+  @@index([branchId])
+  @@index([userId])
+}
+
+model ActivityLog {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  staffId     String?
+  staff       StaffMember? @relation(fields: [staffId], references: [id])
+
+  action      String      // "BOOKING_CREATED", "ROOM_CLEANED", etc.
+  entity      String      // "Booking", "Room", "Payment"
+  entityId    String?
+  description String
+  metadata    Json?       // Extra data
+  ipAddress   String?
+  createdAt   DateTime    @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// ROOMS
+// ─────────────────────────────────────────────
+
+model Room {
+  id              String      @id @default(cuid())
+  branchId        String
+  branch          Branch      @relation(fields: [branchId], references: [id])
+
+  number          String      // "101", "VIP-01"
+  name            String      // "Deluxe Sanctuary"
+  type            RoomType
+  status          RoomStatus  @default(AVAILABLE)
+  floor           Int?
+  description     String?
+
+  // Pricing
+  pricePerNight   Decimal     @db.Decimal(10, 2)
+  weekendPrice    Decimal?    @db.Decimal(10, 2)  // Auto-applied on Fri/Sat
+  seasonalPrice   Decimal?    @db.Decimal(10, 2)
+
+  // Capacity
+  maxAdults       Int         @default(2)
+  maxChildren     Int         @default(0)
+  bedCount        Int         @default(1)
+  bedType         String?     // "King", "Twin", "Double"
+
+  // Amenities stored as array for flexibility
+  amenities       String[]    // ["AC", "WiFi", "TV", "Hot Water"]
+  size            Float?      // Square feet
+  hasBalcony      Boolean     @default(false)
+  hasKitchenette  Boolean     @default(false)
+  hasJacuzzi      Boolean     @default(false)
+
+  // Media
+  images          RoomImage[]
+  tourImages360   String[]    // For future 360° viewer
+
+  isActive        Boolean     @default(true)
+  notes           String?
+  lastCleaned     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+
+  bookings        Booking[]
+  maintenanceLogs MaintenanceLog[]
+  cleaningLogs    CleaningLog[]
+
+  @@unique([branchId, number])
+  @@index([branchId])
+  @@index([status])
+}
+
+model RoomImage {
+  id        String   @id @default(cuid())
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  url       String
+  altText   String?
+  isCover   Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([roomId])
+}
+
+model MaintenanceLog {
+  id          String   @id @default(cuid())
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id])
+  title       String
+  description String?
+  cost        Decimal? @db.Decimal(10, 2)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([roomId])
+}
+
+model CleaningLog {
+  id          String   @id @default(cuid())
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id])
+  cleanedById String?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([roomId])
+}
+
+// ─────────────────────────────────────────────
+// CUSTOMERS
+// ─────────────────────────────────────────────
+
+model Customer {
+  id              String      @id @default(cuid())
+  companyId       String      // Customer belongs to the company, not one branch
+
+  // Identity
+  name            String
+  phone           String
+  email           String?
+  cnic            String?     // Encrypted
+  passportNumber  String?
+  nationality     String?     @default("Pakistani")
+  city            String?
+
+  // Loyalty
+  loyaltyTier     LoyaltyTier @default(BRONZE)
+  totalVisits     Int         @default(0)
+  totalSpending   Decimal     @default(0) @db.Decimal(12, 2)
+  lastVisitAt     DateTime?
+
+  // Preferences
+  preferredRoomType RoomType?
+  specialRequests   String?
+  notes             String?
+
+  // Flags
+  isVIP           Boolean     @default(false)
+  isBlacklisted   Boolean     @default(false)
+  blacklistReason String?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  bookings        Booking[]
+  reviews         Review[]
+
+  @@unique([phone])   // Phone is primary identifier in Pakistan
+  @@index([name])
+  @@index([loyaltyTier])
+}
+
+// ─────────────────────────────────────────────
+// BOOKINGS
+// ─────────────────────────────────────────────
+
+model Booking {
+  id              String        @id @default(cuid())
+  bookingRef      String        @unique  // Human-readable: "BK-2026-001234"
+  branchId        String
+  branch          Branch        @relation(fields: [branchId], references: [id])
+  roomId          String
+  room            Room          @relation(fields: [roomId], references: [id])
+  customerId      String
+  customer        Customer      @relation(fields: [customerId], references: [id])
+
+  // Dates
+  checkInDate     DateTime
+  checkOutDate    DateTime
+  actualCheckIn   DateTime?
+  actualCheckOut  DateTime?
+  nights          Int           // Computed and stored
+
+  // Guests
+  guestCount      Int           @default(1)
+  adultCount      Int           @default(1)
+  childCount      Int           @default(0)
+
+  // Pricing
+  baseAmount      Decimal       @db.Decimal(10, 2)  // Room charges
+  discountAmount  Decimal       @default(0) @db.Decimal(10, 2)
+  taxAmount       Decimal       @default(0) @db.Decimal(10, 2)
+  extraCharges    Decimal       @default(0) @db.Decimal(10, 2) // Mini-bar, etc.
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  paidAmount      Decimal       @default(0) @db.Decimal(10, 2)
+
+  // Status
+  status          BookingStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(UNPAID)
+
+  // Source
+  source          String?       // "website", "whatsapp", "walk_in", "phone"
+  offerId         String?
+  offer           Offer?        @relation(fields: [offerId], references: [id])
+
+  specialRequests String?
+  internalNotes   String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  cancelledAt     DateTime?
+  cancellationReason String?
+
+  payments        Payment[]
+  salesAttached   Sale[]        // Mini-bar / POS attached to this booking
+  invoice         Invoice?
+
+  @@index([branchId])
+  @@index([customerId])
+  @@index([roomId])
+  @@index([status])
+  @@index([checkInDate])
+  @@index([bookingRef])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  bookingId     String
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+
+  amount        Decimal       @db.Decimal(10, 2)
+  method        PaymentMethod
+  reference     String?       // Bank transfer ref, etc.
+  receivedById  String?       // Staff who received
+  notes         String?
+  createdAt     DateTime      @default(now())
+
+  @@index([bookingId])
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  bookingId   String   @unique
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  invoiceNumber String @unique
+  issuedAt    DateTime @default(now())
+  pdfUrl      String?
+
+  @@index([bookingId])
+}
+
+// ─────────────────────────────────────────────
+// OFFERS & PRICING
+// ─────────────────────────────────────────────
+
+model Offer {
+  id            String   @id @default(cuid())
+  branchId      String?  // null = applies to all branches
+  branch        Branch?  @relation(fields: [branchId], references: [id])
+
+  name          String   // "Winter Special"
+  description   String?
+  code          String?  @unique // Promo code
+  discountType  String   // "PERCENTAGE" | "FIXED_AMOUNT"
+  discountValue Decimal  @db.Decimal(10, 2)
+
+  // Targeting
+  roomTypes     RoomType[]  // Empty = all rooms
+  minNights     Int?
+  maxUses       Int?
+  usedCount     Int      @default(0)
+
+  // Validity
+  startsAt      DateTime
+  expiresAt     DateTime
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookings      Booking[]
+
+  @@index([branchId])
+  @@index([isActive])
+}
+
+// ─────────────────────────────────────────────
+// INVENTORY & MINI-BAR / POS
+// ─────────────────────────────────────────────
+
+model ProductCategory {
+  id        String    @id @default(cuid())
+  name      String    // "Drinks", "Snacks", "Toiletries"
+  icon      String?
+  sortOrder Int       @default(0)
+
+  products  Product[]
+}
+
+model Product {
+  id             String          @id @default(cuid())
+  categoryId     String
+  category       ProductCategory @relation(fields: [categoryId], references: [id])
+
+  name           String
+  brand          String?
+  sku            String?         @unique
+  unit           String          @default("piece") // "piece", "bottle", "sachet"
+  image          String?
+
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  inventoryItems InventoryItem[] // One product can be stocked in multiple branches
+
+  @@index([categoryId])
+}
+
+model InventoryItem {
+  id              String   @id @default(cuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id])
+  branchId        String
+  branch          Branch   @relation(fields: [branchId], references: [id])
+
+  purchasePrice   Decimal  @db.Decimal(10, 2)
+  sellingPrice    Decimal  @db.Decimal(10, 2)
+  currentStock    Int      @default(0)
+  minStockLevel   Int      @default(10)   // Alert threshold
+  expiresAt       DateTime?
+  supplierName    String?
+  supplierPhone   String?
+
+  lastRestockedAt DateTime?
+  updatedAt       DateTime @updatedAt
+
+  saleLineItems   SaleLineItem[]
+  stockMovements  StockMovement[]
+
+  @@unique([productId, branchId])
+  @@index([branchId])
+  @@index([currentStock]) // For fast low-stock queries
+}
+
+model StockMovement {
+  id              String        @id @default(cuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  type            String        // "RESTOCK", "SALE", "TRANSFER_OUT", "TRANSFER_IN", "ADJUSTMENT", "EXPIRY_WRITE_OFF"
+  quantity        Int           // Positive = in, Negative = out
+  previousStock   Int
+  newStock        Int
+  reference       String?       // Sale ID, Transfer ID, etc.
+  notes           String?
+  createdById     String?
+  createdAt       DateTime      @default(now())
+
+  @@index([inventoryItemId])
+  @@index([createdAt])
+}
+
+model StockTransfer {
+  id            String              @id @default(cuid())
+  fromBranchId  String
+  fromBranch    Branch              @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranchId    String
+  toBranch      Branch              @relation("TransferTo", fields: [toBranchId], references: [id])
+  status        StockTransferStatus @default(PENDING)
+  requestedById String?
+  approvedById  String?
+  notes         String?
+  transferredAt DateTime?
+  createdAt     DateTime            @default(now())
+
+  items         StockTransferItem[]
+
+  @@index([fromBranchId])
+  @@index([toBranchId])
+}
+
+model StockTransferItem {
+  id         String        @id @default(cuid())
+  transferId String
+  transfer   StockTransfer @relation(fields: [transferId], references: [id])
+  productId  String
+  quantity   Int
+
+  @@index([transferId])
+}
+
+model Sale {
+  id          String       @id @default(cuid())
+  branchId    String
+  bookingId   String?      // null = walk-in sale
+  booking     Booking?     @relation(fields: [bookingId], references: [id])
+  type        SaleType
+  soldById    String?
+
+  totalAmount Decimal      @db.Decimal(10, 2)
+  notes       String?
+  createdAt   DateTime     @default(now())
+
+  lineItems   SaleLineItem[]
+
+  @@index([branchId])
+  @@index([bookingId])
+  @@index([createdAt])
+}
+
+model SaleLineItem {
+  id              String        @id @default(cuid())
+  saleId          String
+  sale            Sale          @relation(fields: [saleId], references: [id])
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  quantity        Int
+  unitPrice       Decimal       @db.Decimal(10, 2)
+  totalPrice      Decimal       @db.Decimal(10, 2)
+
+  @@index([saleId])
+  @@index([inventoryItemId])
+}
+
+// ─────────────────────────────────────────────
+// FINANCE / EXPENSES
+// ─────────────────────────────────────────────
+
+model Expense {
+  id          String          @id @default(cuid())
+  branchId    String
+  branch      Branch          @relation(fields: [branchId], references: [id])
+
+  category    ExpenseCategory
+  title       String
+  amount      Decimal         @db.Decimal(10, 2)
+  description String?
+  receiptUrl  String?
+  paidById    String?
+  paidAt      DateTime        @default(now())
+  month       Int             // 1-12
+  year        Int
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([branchId])
+  @@index([month, year])
+  @@index([category])
+}
+
+// ─────────────────────────────────────────────
+// REVIEWS
+// ─────────────────────────────────────────────
+
+model Review {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  branchId    String
+  bookingId   String?
+
+  rating      Int      // 1-5
+  title       String?
+  body        String
+  isApproved  Boolean  @default(false)
+  isFeatured  Boolean  @default(false)
+  approvedById String?
+  approvedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([branchId])
+  @@index([customerId])
+  @@index([isApproved])
+}
+
+// ─────────────────────────────────────────────
+// CMS (Owner-Editable Content)
+// ─────────────────────────────────────────────
+
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique // "hero_headline", "about_text", etc.
+  value     String   @db.Text
+  type      String   @default("text") // "text", "image", "json"
+  updatedAt DateTime @updatedAt
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  isActive  Boolean  @default(true)
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// ANALYTICS SNAPSHOTS
+// Pre-computed for fast dashboard reads
+// ─────────────────────────────────────────────
+
+model BranchAnalyticsSnapshot {
+  id              String   @id @default(cuid())
+  branchId        String
+  branch          Branch   @relation(fields: [branchId], references: [id])
+
+  date            DateTime @db.Date
+  roomRevenue     Decimal  @default(0) @db.Decimal(12, 2)
+  productRevenue  Decimal  @default(0) @db.Decimal(12, 2)
+  totalRevenue    Decimal  @default(0) @db.Decimal(12, 2)
+  totalExpenses   Decimal  @default(0) @db.Decimal(12, 2)
+  netProfit       Decimal  @default(0) @db.Decimal(12, 2)
+  bookingsCount   Int      @default(0)
+  checkInsCount   Int      @default(0)
+  checkOutsCount  Int      @default(0)
+  occupancyRate   Float    @default(0) // 0.0 - 1.0
+  avgRoomRate     Decimal  @default(0) @db.Decimal(10, 2)
+
+  @@unique([branchId, date])
+  @@index([branchId, date])
+}

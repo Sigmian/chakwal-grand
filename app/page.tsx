@@ -1,0 +1,296 @@
+import Link from "next/link";
+import { Star, MapPin, Phone, CheckCircle2, Wifi, Snowflake, Shield, Clock, ChevronRight } from "lucide-react";
+import { PublicNavbar } from "@/features/public/components/PublicNavbar";
+import { PublicFooter } from "@/features/public/components/PublicFooter";
+import { BookingWidget } from "@/features/public/components/BookingWidget";
+import { FAQSection }   from "@/features/public/components/FAQSection";
+import { ChatWidget }   from "@/features/public/components/ChatWidget";
+import { getPublicBranches, getPublicReviews, getPublicRooms } from "@/server/actions/public";
+import { formatPKR } from "@/utils";
+
+export const revalidate = 60;
+
+const TYPE_ICON: Record<string, string> = {
+  STANDARD: "🛏️", DELUXE: "⭐", SUITE: "🏠", FAMILY: "👨‍👩‍👧", VIP: "👑",
+};
+const TYPE_LABEL: Record<string, string> = {
+  STANDARD: "Classic", DELUXE: "Executive", SUITE: "Suite / Apartment", FAMILY: "Family", VIP: "VIP",
+};
+
+export default async function HomePage() {
+  const [branches, reviews, rooms] = await Promise.all([
+    getPublicBranches(),
+    getPublicReviews(),
+    getPublicRooms(),
+  ]);
+
+  // Pick one representative room per type
+  const featured = ["STANDARD", "FAMILY", "DELUXE", "SUITE"]
+    .map(type => rooms.find(r => r.type === type))
+    .filter(Boolean);
+
+  return (
+    <>
+      <PublicNavbar />
+
+      <main>
+        {/* ══════════════════════════════════════════════ HERO */}
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+          {/* Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a] via-[#111827] to-[#0a0a0a]">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_60%_40%,rgba(201,168,76,0.12),transparent_60%)]" />
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
+          </div>
+
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 lg:py-20">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              {/* Left — copy */}
+              <div>
+                <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gold-400 bg-gold-500/10 border border-gold-500/20 px-4 py-2 rounded-full mb-6">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse" />
+                  Chakwal · Kallar Kahar · Sargodha
+                </div>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-serif text-foreground leading-[1.1] mb-6">
+                  Your Home Away<br />
+                  <span className="text-transparent bg-clip-text bg-gold-gradient">From Home</span>
+                </h1>
+                <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
+                  Premium accommodation in Chakwal with clean rooms, fast WiFi, 24/7 service, and unbeatable value. Starting from just <strong className="text-gold-400">₨2,000 / night</strong>.
+                </p>
+                <div className="flex flex-wrap gap-3 mb-10">
+                  {[
+                    { icon: Wifi,      label: "Free WiFi" },
+                    { icon: Snowflake, label: "A/C Available" },
+                    { icon: Shield,    label: "Safe & Secure" },
+                    { icon: Clock,     label: "24/7 Service" },
+                  ].map(({ icon: Icon, label }) => (
+                    <div key={label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Icon className="w-3.5 h-3.5 text-gold-400" />
+                      {label}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link href="/book" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all hover:-translate-y-0.5 text-sm">
+                    Book Now — It's Free
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                  <Link href="/rooms" className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-border text-foreground font-semibold rounded-xl hover:bg-accent transition-colors text-sm">
+                    View All Rooms
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right — booking widget */}
+              <div className="lg:pl-8">
+                <div className="mb-4">
+                  <p className="text-sm font-semibold text-foreground mb-1">Check Availability</p>
+                  <p className="text-xs text-muted-foreground">Select your dates to see available rooms</p>
+                </div>
+                <BookingWidget branches={branches as { id: string; name: string; city: string }[]} />
+
+                {/* Trust signals */}
+                <div className="mt-4 grid grid-cols-3 gap-3">
+                  {[
+                    { value: "500+", label: "Happy Guests" },
+                    { value: "4.8★", label: "Avg Rating" },
+                    { value: "3",   label: "Locations" },
+                  ].map(({ value, label }) => (
+                    <div key={label} className="card-luxury rounded-xl p-3 text-center">
+                      <p className="text-lg font-bold font-serif text-gold-400">{value}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════ ROOMS */}
+        <section className="py-20 bg-surface-elevated">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Accommodations</p>
+              <h2 className="text-3xl sm:text-4xl font-bold font-serif text-foreground mb-4">Room Categories</h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                Every room is equipped with WiFi, hot water, and attached bathroom — built for comfort at every budget.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {featured.map(room => room && (
+                <Link key={room.id} href="/rooms"
+                  className="card-luxury rounded-2xl p-6 border border-transparent hover:border-gold-500/30 hover:-translate-y-1 transition-all group">
+                  <div className="text-3xl mb-4">{TYPE_ICON[room.type]}</div>
+                  <h3 className="font-bold text-foreground mb-1 group-hover:text-gold-400 transition-colors">
+                    {room.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed line-clamp-2">{room.description}</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-lg font-bold text-gold-400 font-serif">{formatPKR(Number(room.pricePerNight))}</p>
+                      <p className="text-[10px] text-muted-foreground">/ night</p>
+                    </div>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-400 font-medium">
+                      {TYPE_LABEL[room.type]}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="text-center mt-8">
+              <Link href="/rooms" className="inline-flex items-center gap-2 px-6 py-3 border border-border text-sm font-semibold text-foreground rounded-xl hover:bg-accent transition-colors">
+                View All Rooms <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════ WHY US */}
+        <section className="py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Why Choose Us</p>
+              <h2 className="text-3xl sm:text-4xl font-bold font-serif text-foreground">
+                The Chakwal Grand Difference
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { icon: "🏆", title: "Best Value",         body: "Transparent pricing with no hidden charges. Rates from ₨2,000/night for fully-equipped rooms." },
+                { icon: "📶", title: "Fast WiFi",          body: "High-speed internet in all rooms — perfect for business travellers and long stays." },
+                { icon: "❄️",  title: "A/C Available",    body: "Air conditioning in select rooms, included in the room rate (12 hours daily)." },
+                { icon: "🚿", title: "Hot Water 24/7",     body: "Attached bathrooms with reliable hot water available around the clock." },
+                { icon: "🔒", title: "Safe & Secure",      body: "CCTV coverage, front-desk staffed 24/7, secure key access to all rooms." },
+                { icon: "📍", title: "Prime Locations",    body: "Centrally located in Chakwal, Kallar Kahar, and Sargodha — close to all amenities." },
+              ].map(({ icon, title, body }) => (
+                <div key={title} className="card-luxury rounded-2xl p-6 hover:-translate-y-1 transition-transform">
+                  <div className="text-3xl mb-4">{icon}</div>
+                  <h3 className="font-bold text-foreground mb-2">{title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════ BRANCHES */}
+        {branches.length > 0 && (
+          <section id="about" className="py-20 bg-surface-elevated">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-12">
+                <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Our Locations</p>
+                <h2 className="text-3xl sm:text-4xl font-bold font-serif text-foreground mb-4">Find Us Near You</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {branches.map(branch => (
+                  <div key={branch.id} className="card-luxury rounded-2xl p-6 border border-transparent hover:border-gold-500/20 transition-all">
+                    <div className="w-10 h-10 rounded-xl bg-gold-gradient flex items-center justify-center mb-4">
+                      <MapPin className="w-5 h-5 text-background" />
+                    </div>
+                    <h3 className="font-bold text-foreground mb-1">{branch.name}</h3>
+                    <p className="text-sm text-gold-400 font-medium mb-3">{branch.city}</p>
+                    {branch.address && (
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-4">{branch.address}</p>
+                    )}
+                    {branch.phone && (
+                      <a href={`tel:${branch.phone.replace(/\s/g, "")}`}
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gold-400 transition-colors">
+                        <Phone className="w-3.5 h-3.5" />
+                        {branch.phone}
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ══════════════════════════════════════════════ REVIEWS */}
+        {reviews.length > 0 && (
+          <section className="py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-12">
+                <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Guest Reviews</p>
+                <h2 className="text-3xl sm:text-4xl font-bold font-serif text-foreground mb-4">What Our Guests Say</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {reviews.map(review => (
+                  <div key={review.id} className={`card-luxury rounded-2xl p-6 ${review.isFeatured ? "border border-gold-500/20" : ""}`}>
+                    <div className="flex items-center gap-1 mb-3">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`w-4 h-4 ${i < review.rating ? "text-gold-400 fill-gold-400" : "text-border"}`} />
+                      ))}
+                    </div>
+                    <p className="text-sm text-foreground leading-relaxed mb-4 line-clamp-4">"{review.body}"</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gold-500/20 border border-gold-500/30 flex items-center justify-center text-xs font-bold text-gold-400">
+                        {review.customer?.name?.[0]?.toUpperCase() ?? "G"}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">{review.customer?.name ?? "Guest"}</p>
+                        {review.customer?.city && <p className="text-[10px] text-muted-foreground">{review.customer.city}</p>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ══════════════════════════════════════════════ CONTACT CTA */}
+        <section id="contact" className="py-20 bg-gradient-to-br from-gold-500/5 via-surface-elevated to-surface-elevated border-y border-gold-500/10">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Get In Touch</p>
+            <h2 className="text-3xl sm:text-4xl font-bold font-serif text-foreground mb-4">
+              Ready to Plan Your Stay?
+            </h2>
+            <p className="text-muted-foreground mb-10 max-w-2xl mx-auto">
+              Book online for instant confirmation, or call us directly — our team is available 24/7 to help you find the perfect room.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+              <Link href="/book"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all text-sm">
+                Book a Room Online
+              </Link>
+              <a href="https://wa.me/923347742767" target="_blank" rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] font-semibold rounded-xl hover:bg-[#25D366]/25 transition-colors text-sm">
+                Chat on WhatsApp
+              </a>
+              <a href="tel:+923347742767"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-border text-foreground font-semibold rounded-xl hover:bg-accent transition-colors text-sm">
+                <Phone className="w-4 h-4" />
+                0334-7742767
+              </a>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
+              {[
+                "No payment required online",
+                "Pay cash on arrival",
+                "Free cancellation",
+                "CNIC required at check-in",
+              ].map(item => (
+                <span key={item} className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════ FAQ */}
+        <FAQSection />
+      </main>
+
+      <PublicFooter />
+      <ChatWidget />
+    </>
+  );
+}
