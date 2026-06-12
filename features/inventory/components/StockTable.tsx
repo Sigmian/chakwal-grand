@@ -7,7 +7,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Plus, AlertTriangle, CheckCircle, Pencil, X } from "lucide-react";
+import { Plus, AlertTriangle, CheckCircle, Pencil, X, ShoppingBag } from "lucide-react";
 import { restockItem, updateInventoryItem } from "@/server/actions/inventory";
 import { cn, formatPKR } from "@/utils";
 import { Badge } from "@/components/shared";
@@ -21,9 +21,10 @@ interface InventoryItem {
   isLowStock?:   boolean;
   isExpired?:    boolean;
   product?: {
-    name:  string;
-    brand?:string | null;
-    unit:  string;
+    name:             string;
+    brand?:           string | null;
+    unit:             string;
+    isCanteenVisible?: boolean;
   } | null;
 }
 
@@ -41,6 +42,15 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
   const [editCost,     setEditCost]     = useState(String(item.purchasePrice));
   const [editSelling,  setEditSelling]  = useState(String(item.sellingPrice));
   const [editMinStock, setEditMinStock] = useState(String(item.minStockLevel));
+
+  const toggleCanteen = () => {
+    startTransition(async () => {
+      await updateInventoryItem({
+        inventoryItemId:  item.id,
+        isCanteenVisible: !(item.product?.isCanteenVisible ?? false),
+      });
+    });
+  };
 
   const handleEdit = () => {
     startTransition(async () => {
@@ -175,6 +185,20 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
               className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-blue-400 hover:bg-blue-500/10 border border-blue-500/20 transition-all"
             >
               <Pencil className="w-3 h-3" /> Edit
+            </button>
+            <button
+              onClick={toggleCanteen}
+              disabled={isPending}
+              title={item.product?.isCanteenVisible ? "Remove from canteen menu" : "Add to canteen menu"}
+              className={cn(
+                "opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-lg text-xs border transition-all",
+                item.product?.isCanteenVisible
+                  ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20"
+                  : "text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 border-border"
+              )}
+            >
+              <ShoppingBag className="w-3 h-3" />
+              {item.product?.isCanteenVisible ? "On Menu" : "Add to Menu"}
             </button>
           </div>
         </td>

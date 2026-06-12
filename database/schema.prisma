@@ -103,6 +103,13 @@ enum StockTransferStatus {
   CANCELLED
 }
 
+enum InRoomOrderStatus {
+  PENDING    // Just placed — waiting for staff to confirm
+  PREPARING  // Kitchen/staff is preparing
+  DELIVERED  // Delivered to room
+  CANCELLED  // Cancelled by guest or staff
+}
+
 // ─────────────────────────────────────────────
 // CORE: COMPANY & BRANCHES
 // ─────────────────────────────────────────────
@@ -484,6 +491,8 @@ model Booking {
   payments        Payment[]
   salesAttached   Sale[]        // Mini-bar / POS attached to this booking
   invoice         Invoice?
+  guestSession    GuestSession?
+  inRoomOrders    InRoomOrder[]
 
   @@index([branchId])
   @@index([customerId])
@@ -578,9 +587,10 @@ model Product {
   unit           String          @default("piece") // "piece", "bottle", "sachet"
   image          String?
 
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  isActive          Boolean         @default(true)
+  isCanteenVisible  Boolean         @default(false) // Show in guest-facing canteen/room-service menu
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   inventoryItems InventoryItem[] // One product can be stocked in multiple branches
 
@@ -605,8 +615,9 @@ model InventoryItem {
   lastRestockedAt DateTime?
   updatedAt       DateTime @updatedAt
 
-  saleLineItems   SaleLineItem[]
-  stockMovements  StockMovement[]
+  saleLineItems     SaleLineItem[]
+  stockMovements    StockMovement[]
+  inRoomOrderItems  InRoomOrderItem[]
 
   @@unique([productId, branchId])
   @@index([branchId])
@@ -794,6 +805,60 @@ model BranchAnalyticsSnapshot {
   @@index([branchId, date])
 }
 
+
+// ─────────────────────────────────────────────
+// GUEST PORTAL
+// ─────────────────────────────────────────────
+
+// One session per booking — token stored in httpOnly cookie on guest device
+model GuestSession {
+  id           String   @id @default(cuid())
+  bookingId    String   @unique
+  booking      Booking  @relation(fields: [bookingId], references: [id])
+  phone        String                         // Phone used to verify identity
+  token        String   @unique @default(cuid())
+  isActive     Boolean  @default(true)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastAccessAt DateTime @default(now())
+
+  @@index([token])
+}
+
+model InRoomOrder {
+  id          String            @id @default(cuid())
+  bookingId   String
+  booking     Booking           @relation(fields: [bookingId], references: [id])
+
+  status      InRoomOrderStatus @default(PENDING)
+  totalAmount Decimal           @db.Decimal(10, 2)
+  notes       String?
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  deliveredAt DateTime?
+
+  items       InRoomOrderItem[]
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model InRoomOrderItem {
+  id              String        @id @default(cuid())
+  orderId         String
+  order           InRoomOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  productName     String        // Name snapshot at time of order
+  quantity        Int
+  unitPrice       Decimal       @db.Decimal(10, 2)
+  totalPrice      Decimal       @db.Decimal(10, 2)
+
+  @@index([orderId])
+}
 
 // Push notification subscriptions — one per browser/device per user
 model PushSubscription {

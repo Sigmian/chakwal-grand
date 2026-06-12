@@ -83,6 +83,16 @@ export const DASHBOARD_NAV: NavItem[] = [
     ],
   },
   {
+    label: "Room Orders",
+    href:  "/dashboard/orders",
+    icon:  "ShoppingBag",
+    requiredRoles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.BRANCH_MANAGER,
+      UserRole.RECEPTIONIST,
+    ],
+  },
+  {
     label: "Finance",
     href:  "/finance",
     icon:  "DollarSign",

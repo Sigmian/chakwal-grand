@@ -221,11 +221,12 @@ export async function restockItem(rawInput: RestockInput) {
 
 // ─── UPDATE INVENTORY ITEM (name, prices, min stock) ─────────
 export async function updateInventoryItem(input: {
-  inventoryItemId: string;
-  productName?:    string;
-  purchasePrice?:  number;
-  sellingPrice?:   number;
-  minStockLevel?:  number;
+  inventoryItemId:  string;
+  productName?:     string;
+  purchasePrice?:   number;
+  sellingPrice?:    number;
+  minStockLevel?:   number;
+  isCanteenVisible?: boolean;
 }) {
   await requirePermission("inventory:update");
   try {
@@ -234,25 +235,29 @@ export async function updateInventoryItem(input: {
     if (input.sellingPrice  !== undefined) updates.sellingPrice  = input.sellingPrice;
     if (input.minStockLevel !== undefined) updates.minStockLevel = input.minStockLevel;
 
-    await prisma.inventoryItem.update({
-      where: { id: input.inventoryItemId },
-      data:  updates,
-    });
+    if (Object.keys(updates).length) {
+      await prisma.inventoryItem.update({
+        where: { id: input.inventoryItemId },
+        data:  updates,
+      });
+    }
 
-    if (input.productName !== undefined) {
+    // Product-level fields
+    if (input.productName !== undefined || input.isCanteenVisible !== undefined) {
       const item = await prisma.inventoryItem.findUnique({
         where:  { id: input.inventoryItemId },
         select: { productId: true },
       });
       if (item?.productId) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data:  { name: input.productName },
-        });
+        const productUpdates: Record<string, unknown> = {};
+        if (input.productName     !== undefined) productUpdates.name             = input.productName;
+        if (input.isCanteenVisible !== undefined) productUpdates.isCanteenVisible = input.isCanteenVisible;
+        await prisma.product.update({ where: { id: item.productId }, data: productUpdates });
       }
     }
 
     revalidatePath("/inventory/products");
+    revalidatePath("/inventory");
     return { success: true };
   } catch (error) {
     console.error("[updateInventoryItem]", error);
