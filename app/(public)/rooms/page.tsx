@@ -59,9 +59,15 @@ export default async function RoomsPage() {
         <h1 className="text-4xl sm:text-5xl font-bold font-serif text-foreground mb-4">
           Find Your Perfect Room
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
           From cozy classic rooms to spacious family suites — all with complimentary WiFi, hot water, and 24/7 service.
         </p>
+        <Link
+          href="/rooms/pick"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-md transition-all text-sm"
+        >
+          🏨 Choose Your Room by Floor →
+        </Link>
       </div>
 
       {/* Rooms by category */}

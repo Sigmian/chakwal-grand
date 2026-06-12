@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -31,7 +31,11 @@ const TYPE_ICON: Record<string, string> = {
 export function BookingForm({ branches }: { branches: Branch[] }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
-  const [step, setStep] = useState(1);
+
+  // If arriving from room picker, roomId is pre-set — skip to step 3 after room loads
+  const preselectedRoomId = searchParams.get("roomId");
+
+  const [step, setStep] = useState(preselectedRoomId ? 3 : 1);
   const [isPending, start] = useTransition();
   const [rooms, setRooms]   = useState<Room[]>([]);
   const [searching, setSearching] = useState(false);
@@ -46,6 +50,21 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
   });
 
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+
+  // Auto-load pre-selected room from picker
+  useEffect(() => {
+    if (!preselectedRoomId) return;
+    getAvailableRooms(
+      searchParams.get("branchId") || branches[0]?.id || "",
+      searchParams.get("checkIn")  || today,
+      searchParams.get("checkOut") || tomorrow,
+      Number(searchParams.get("adults")) || 2,
+    ).then((result) => {
+      const match = (result as Room[]).find((r) => r.id === preselectedRoomId);
+      if (match) setSelectedRoom(match);
+    }).catch(() => {/* ignore */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [guest, setGuest] = useState({
     name: "", phone: "", cnic: "", email: "", notes: "", promoCode: "",

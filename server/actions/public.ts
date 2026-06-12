@@ -99,6 +99,40 @@ export async function getAvailableRooms(
   });
 }
 
+// Returns ALL active rooms for a branch, each tagged with isAvailable for the given dates.
+// Used by the visual room picker.
+export async function getRoomsForPicker(
+  branchId: string,
+  checkIn:  string,
+  checkOut: string,
+) {
+  const ci = new Date(checkIn);
+  const co = new Date(checkOut);
+
+  const [rooms, conflicts] = await Promise.all([
+    prisma.room.findMany({
+      where:   { branchId, isActive: true, status: { not: "BLOCKED" } },
+      include: { images: { orderBy: { sortOrder: "asc" } } },
+      orderBy: [{ floor: "asc" }, { number: "asc" }],
+    }),
+    prisma.booking.findMany({
+      where: {
+        branchId,
+        status: { in: ["CONFIRMED", "CHECKED_IN", "PENDING"] },
+        AND: [{ checkInDate: { lt: co } }, { checkOutDate: { gt: ci } }],
+      },
+      select: { roomId: true },
+    }),
+  ]);
+
+  const takenIds = new Set(conflicts.map((b) => b.roomId));
+
+  return rooms.map((r) => ({
+    ...r,
+    isAvailable: r.status === "AVAILABLE" && !takenIds.has(r.id),
+  }));
+}
+
 function generateRef(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let ref = "";
