@@ -219,6 +219,47 @@ export async function restockItem(rawInput: RestockInput) {
   }
 }
 
+// ─── UPDATE INVENTORY ITEM (name, prices, min stock) ─────────
+export async function updateInventoryItem(input: {
+  inventoryItemId: string;
+  productName?:    string;
+  purchasePrice?:  number;
+  sellingPrice?:   number;
+  minStockLevel?:  number;
+}) {
+  await requirePermission("inventory:update");
+  try {
+    const updates: Record<string, unknown> = {};
+    if (input.purchasePrice !== undefined) updates.purchasePrice = input.purchasePrice;
+    if (input.sellingPrice  !== undefined) updates.sellingPrice  = input.sellingPrice;
+    if (input.minStockLevel !== undefined) updates.minStockLevel = input.minStockLevel;
+
+    await prisma.inventoryItem.update({
+      where: { id: input.inventoryItemId },
+      data:  updates,
+    });
+
+    if (input.productName !== undefined) {
+      const item = await prisma.inventoryItem.findUnique({
+        where:  { id: input.inventoryItemId },
+        select: { productId: true },
+      });
+      if (item?.productId) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data:  { name: input.productName },
+        });
+      }
+    }
+
+    revalidatePath("/inventory/products");
+    return { success: true };
+  } catch (error) {
+    console.error("[updateInventoryItem]", error);
+    return { success: false, error: "Failed to update item" };
+  }
+}
+
 // ─── CREATE SALE (POS) ───────────────────────────────────────
 export async function createSale(rawInput: CreateSaleInput) {
   const user = await requirePermission("inventory:pos_sell");

@@ -7,8 +7,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Plus, AlertTriangle, CheckCircle } from "lucide-react";
-import { restockItem } from "@/server/actions/inventory";
+import { Plus, AlertTriangle, CheckCircle, Pencil, X } from "lucide-react";
+import { restockItem, updateInventoryItem } from "@/server/actions/inventory";
 import { cn, formatPKR } from "@/utils";
 import { Badge } from "@/components/shared";
 
@@ -36,6 +36,29 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
   const [isPending, startTransition] = useTransition();
   const [restockQty, setRestockQty]  = useState("");
   const [showRestock, setShowRestock] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editName,     setEditName]     = useState(item.product?.name ?? "");
+  const [editCost,     setEditCost]     = useState(String(item.purchasePrice));
+  const [editSelling,  setEditSelling]  = useState(String(item.sellingPrice));
+  const [editMinStock, setEditMinStock] = useState(String(item.minStockLevel));
+
+  const handleEdit = () => {
+    startTransition(async () => {
+      const res = await updateInventoryItem({
+        inventoryItemId: item.id,
+        productName:     editName.trim() || undefined,
+        purchasePrice:   Number(editCost),
+        sellingPrice:    Number(editSelling),
+        minStockLevel:   Number(editMinStock),
+      });
+      if (res.success) {
+        toast.success("Item updated");
+        setShowEdit(false);
+      } else {
+        toast.error(res.error ?? "Update failed");
+      }
+    });
+  };
 
   const handleRestock = () => {
     const qty = Number(restockQty);
@@ -56,7 +79,10 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
     ? Math.min(100, (item.currentStock / (item.minStockLevel * 3)) * 100)
     : 100;
 
+  const inputCls = "bg-surface-base border border-border rounded-lg px-2 py-1 text-xs text-foreground focus:outline-none focus:border-gold-500/50 w-full";
+
   return (
+    <>
     <tr className={cn("group", isPending && "opacity-60")}>
       <td>
         <div>
@@ -117,43 +143,83 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
       </td>
       {canEdit && (
         <td>
-          {showRestock ? (
-            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-              <input
-                type="number"
-                value={restockQty}
-                onChange={(e) => setRestockQty(e.target.value)}
-                placeholder="Qty"
-                className="w-16 bg-surface-base border border-border rounded-lg px-2 py-1 text-xs text-foreground focus:outline-none focus:border-gold-500/50"
-                autoFocus
-                onKeyDown={(e) => { if (e.key === "Enter") handleRestock(); if (e.key === "Escape") setShowRestock(false); }}
-              />
+          <div className="flex items-center gap-1.5">
+            {showRestock ? (
+              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="number"
+                  value={restockQty}
+                  onChange={(e) => setRestockQty(e.target.value)}
+                  placeholder="Qty"
+                  className="w-16 bg-surface-base border border-border rounded-lg px-2 py-1 text-xs text-foreground focus:outline-none focus:border-gold-500/50"
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") handleRestock(); if (e.key === "Escape") setShowRestock(false); }}
+                />
+                <button onClick={handleRestock} disabled={isPending} className="p-1.5 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowRestock(false)} className="text-xs text-muted-foreground hover:text-foreground">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={handleRestock}
-                disabled={isPending}
-                className="p-1.5 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+                onClick={() => { setShowRestock(true); setShowEdit(false); }}
+                className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gold-400 hover:bg-gold-500/10 border border-gold-500/20 transition-all"
               >
-                <CheckCircle className="w-3.5 h-3.5" />
+                <Plus className="w-3 h-3" /> Restock
               </button>
-              <button
-                onClick={() => setShowRestock(false)}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                ✕
-              </button>
-            </div>
-          ) : (
+            )}
             <button
-              onClick={() => setShowRestock(true)}
-              className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gold-400 hover:bg-gold-500/10 border border-gold-500/20 transition-all"
+              onClick={() => { setShowEdit(e => !e); setShowRestock(false); }}
+              className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-blue-400 hover:bg-blue-500/10 border border-blue-500/20 transition-all"
             >
-              <Plus className="w-3 h-3" />
-              Restock
+              <Pencil className="w-3 h-3" /> Edit
             </button>
-          )}
+          </div>
         </td>
       )}
     </tr>
+
+    {/* Inline edit form */}
+    {showEdit && canEdit && (
+      <tr className="bg-accent/30">
+        <td colSpan={8} className="px-4 py-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1 min-w-[140px]">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Product Name</label>
+              <input value={editName} onChange={e => setEditName(e.target.value)} className={inputCls} />
+            </div>
+            <div className="flex flex-col gap-1 w-28">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Cost Price (₨)</label>
+              <input type="number" value={editCost} onChange={e => setEditCost(e.target.value)} className={inputCls} />
+            </div>
+            <div className="flex flex-col gap-1 w-28">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Selling Price (₨)</label>
+              <input type="number" value={editSelling} onChange={e => setEditSelling(e.target.value)} className={inputCls} />
+            </div>
+            <div className="flex flex-col gap-1 w-24">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Min Stock</label>
+              <input type="number" value={editMinStock} onChange={e => setEditMinStock(e.target.value)} className={inputCls} />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleEdit}
+                disabled={isPending}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gold-gradient text-background text-xs font-bold rounded-lg"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                {isPending ? "Saving…" : "Save"}
+              </button>
+              <button onClick={() => setShowEdit(false)} className="px-3 py-1.5 border border-border rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </td>
+      </tr>
+    )}
+    </>
   );
 }
 
