@@ -10,7 +10,7 @@ import {
   AlertTriangle, ArrowRight, Clock, UserCheck, UserMinus,
   Building2, Package,
 } from "lucide-react";
-import { requirePermission } from "@/lib/auth/session";
+import { requireAuth } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
 import {
   getDashboardOverview,
@@ -41,27 +41,30 @@ function getGreeting() {
 }
 
 export default async function DashboardPage() {
-  const user   = await requirePermission("analytics:branch");
+  const user   = await requireAuth();
   const isSA   = user.role === UserRole.SUPER_ADMIN;
+  const canViewAnalytics = hasPermission(user.role, "analytics:branch");
+  const canViewBookings  = hasPermission(user.role, "bookings:read");
+  const canViewRooms     = hasPermission(user.role, "rooms:read");
 
-  // All data fetched in parallel
+  // Fetch data based on what the role can see
   const [overview, chartData, topRooms, activity, schedule] = await Promise.all([
-    getDashboardOverview(user.branchId),
-    getRevenueChartData(user.branchId),
-    getTopRooms(user.branchId, 5),
-    getRecentActivity(10),
-    getTodaySchedule(user.branchId),
+    canViewAnalytics ? getDashboardOverview(user.branchId)    : Promise.resolve(null),
+    canViewAnalytics ? getRevenueChartData(user.branchId)     : Promise.resolve([]),
+    canViewRooms     ? getTopRooms(user.branchId, 5)          : Promise.resolve([]),
+    canViewAnalytics ? getRecentActivity(10)                  : Promise.resolve([]),
+    canViewBookings  ? getTodaySchedule(user.branchId)        : Promise.resolve({ checkIns: [], checkOuts: [] }),
   ]);
 
   // Branch comparison only for super admin
   const branchPerf = isSA ? await getBranchPerformance() : [];
 
-  const roomStatusData = [
+  const roomStatusData = overview ? [
     { name: "Available",   value: overview.availableRooms,    color: "#4CAF8C" },
     { name: "Occupied",    value: overview.occupiedRooms,     color: "#E05252" },
     { name: "Cleaning",    value: overview.cleaningRooms,     color: "#818CF8" },
     { name: "Maintenance", value: overview.maintenanceRooms,  color: "#F59E0B" },
-  ].filter((d) => d.value > 0);
+  ].filter((d) => d.value > 0) : [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -78,7 +81,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Low stock alert */}
-        {overview.lowStockAlerts > 0 && (
+        {overview && overview.lowStockAlerts > 0 && (
           <Link
             href="/inventory/products"
             className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-sm text-amber-400 hover:bg-amber-500/20 transition-colors"
@@ -89,7 +92,8 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* ── KPI Cards ── */}
+      {/* ── KPI Cards (analytics roles only) ── */}
+      {canViewAnalytics && overview && (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Revenue This Month"
@@ -121,8 +125,10 @@ export default async function DashboardPage() {
           iconBg="bg-amber-500/15"
         />
       </div>
+      )}
 
-      {/* ── Charts row ── */}
+      {/* ── Charts row (analytics roles only) ── */}
+      {canViewAnalytics && overview && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Revenue area chart */}
         <div className="lg:col-span-2 card-luxury p-6">
@@ -134,7 +140,7 @@ export default async function DashboardPage() {
               </Link>
             }
           />
-          <RevenueAreaChart data={chartData} />
+          <RevenueAreaChart data={chartData as any[]} />
         </div>
 
         {/* Room status donut */}
@@ -162,6 +168,7 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ── Today's Schedule + Top Rooms ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -295,14 +302,15 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* ── Recent Activity ── */}
+      {/* ── Recent Activity (analytics roles only) ── */}
+      {canViewAnalytics && (
       <div className="card-luxury p-6">
         <SectionHeader title="Recent Activity" />
-        {activity.length === 0 ? (
+        {(activity as any[]).length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">No recent activity</p>
         ) : (
           <div className="space-y-1">
-            {activity.map((log: any) => (
+            {(activity as any[]).map((log) => (
               <div key={log.id} className="flex items-start gap-3 py-2.5 border-b border-border/30 last:border-0">
                 <div className="w-7 h-7 rounded-full bg-gold-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <div className="w-2 h-2 rounded-full bg-gold-400" />
@@ -318,6 +326,7 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
