@@ -181,35 +181,14 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Demo credentials hint */}
-            <div className="mt-7 pt-6 border-t border-border/50">
-              <p className="text-xs text-muted-foreground text-center mb-3">Demo Credentials</p>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: "Super Admin",   email: "owner@chakwalgrand.pk"     },
-                  { label: "Branch Mgr",    email: "manager@chakwalgrand.pk"   },
-                  { label: "Receptionist",  email: "reception@chakwalgrand.pk" },
-                  { label: "Housekeeping",  email: "cleaning@chakwalgrand.pk"  },
-                ].map(({ label, email }) => (
-                  <button
-                    key={email}
-                    type="button"
-                    onClick={async () => {
-                      setLoading(true);
-                      setError(null);
-                      const r = await signIn("credentials", { email, password: "Admin@1234", redirect: false });
-                      if (r?.error) setError("Demo login failed");
-                      else { router.push("/dashboard"); router.refresh(); }
-                      setLoading(false);
-                    }}
-                    className="p-2.5 text-left bg-surface-highlight border border-border rounded-xl hover:border-gold-500/30 hover:bg-accent transition-all group"
-                  >
-                    <p className="text-xs font-semibold text-foreground group-hover:text-gold-400 transition-colors">{label}</p>
-                    <p className="text-2xs text-muted-foreground mt-0.5 truncate">{email}</p>
-                  </button>
-                ))}
-              </div>
-              <p className="text-2xs text-center text-muted-foreground mt-3">All use password: Admin@1234</p>
+            {/* Security notice */}
+            <div className="mt-7 pt-6 border-t border-border/50 text-center space-y-1">
+              <p className="text-xs text-muted-foreground">
+                🔒 This portal is for authorised staff only.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Contact your manager if you have forgotten your login details.
+              </p>
             </div>
           </div>
         </div>

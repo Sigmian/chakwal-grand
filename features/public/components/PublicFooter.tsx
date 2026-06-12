@@ -71,7 +71,7 @@ export async function PublicFooter() {
                 { label: "Contact Us",  href: "/contact"    },
                 { label: "Our Location",href: "/location"   },
                 { label: "Travel Blog", href: "/blog"       },
-                { label: "Staff Login", href: "/login"      },
+
               ].map(({ label, href }) => (
                 <li key={href}>
                   <Link href={href} className="text-sm text-muted-foreground hover:text-gold-400 transition-colors">
