@@ -10,10 +10,10 @@ import { cn } from "@/utils";
 const NAV = [
   { label: "Home",       href: "/"          },
   { label: "Rooms",      href: "/rooms"     },
-  { label: "About",      href: "/#about"    },
-  { label: "FAQ",        href: "/#faq"      },
+  { label: "Blog",       href: "/blog"      },
+  { label: "About",      href: "/about"     },
+  { label: "Contact",    href: "/contact"   },
   { label: "My Booking", href: "/my-booking" },
-  { label: "Contact",    href: "/#contact"  },
 ];
 
 export function PublicNavbar() {

@@ -1,26 +1,25 @@
 import type { MetadataRoute } from "next";
 
 const BASE = "https://www.staychakwal.de";
+const NOW  = new Date();
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
-    {
-      url:              BASE,
-      lastModified:     new Date(),
-      changeFrequency:  "weekly",
-      priority:         1.0,
-    },
-    {
-      url:              `${BASE}/rooms`,
-      lastModified:     new Date(),
-      changeFrequency:  "weekly",
-      priority:         0.9,
-    },
-    {
-      url:              `${BASE}/book`,
-      lastModified:     new Date(),
-      changeFrequency:  "monthly",
-      priority:         0.8,
-    },
+    // Core pages
+    { url: BASE,                 lastModified: NOW, changeFrequency: "weekly",  priority: 1.0 },
+    { url: `${BASE}/rooms`,      lastModified: NOW, changeFrequency: "weekly",  priority: 0.9 },
+    { url: `${BASE}/book`,       lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/about`,      lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/contact`,    lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/location`,   lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/my-booking`, lastModified: NOW, changeFrequency: "monthly", priority: 0.5 },
+
+    // Blog
+    { url: `${BASE}/blog`,                                         lastModified: NOW, changeFrequency: "weekly",  priority: 0.8 },
+    { url: `${BASE}/blog/places-to-visit-chakwal`,                 lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/blog/best-family-guest-house-chakwal`,         lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/blog/chakwal-travel-guide`,                    lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/blog/katas-raj-temples-visitor-guide`,         lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/blog/where-to-stay-chakwal`,                   lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
   ];
 }

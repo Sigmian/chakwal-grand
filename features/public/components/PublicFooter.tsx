@@ -42,11 +42,13 @@ export function PublicFooter() {
               {[
                 { label: "Home",        href: "/"       },
                 { label: "Our Rooms",   href: "/rooms"  },
-                { label: "Book a Room",  href: "/book"        },
-                { label: "My Booking",  href: "/my-booking"  },
-                { label: "About Us",    href: "/#about"      },
-                { label: "Contact",     href: "/#contact"    },
-                { label: "Staff Login", href: "/login"       },
+                { label: "Book a Room",    href: "/book"       },
+                { label: "My Booking",    href: "/my-booking" },
+                { label: "About Us",      href: "/about"      },
+                { label: "Contact Us",    href: "/contact"    },
+                { label: "Our Location",  href: "/location"   },
+                { label: "Travel Blog",   href: "/blog"       },
+                { label: "Staff Login",   href: "/login"      },
               ].map(({ label, href }) => (
                 <li key={href}>
                   <Link href={href} className="text-sm text-muted-foreground hover:text-gold-400 transition-colors">

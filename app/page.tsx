@@ -49,11 +49,50 @@ const LOCAL_BUSINESS_SCHEMA = {
     { "@type": "LocationFeatureSpecification", "name": "Family Rooms",     "value": true },
     { "@type": "LocationFeatureSpecification", "name": "Online Booking",   "value": true },
   ],
-  "checkinTime":  "12:00",
-  "checkoutTime": "11:00",
+  "checkinTime":  "14:00",
+  "checkoutTime": "12:00",
   "currenciesAccepted": "PKR",
   "paymentAccepted":    "Cash",
+  "openingHours": "Mo-Su 00:00-23:59",
+  "hasMap": "https://maps.google.com/?q=Chakwal+Grand+Guest+House+Chakwal",
   "sameAs": ["https://www.staychakwal.de"],
+};
+
+const FAQ_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the best guest house in Chakwal?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Grand Guest House is the most popular and highly-rated guest house in Chakwal, Punjab. It offers AC rooms, family suites, free WiFi, and 24/7 service from PKR 2,000/night." }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does a room cost at Chakwal Grand Guest House?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Room rates start from PKR 2,000/night for a Classic room, going up to PKR 4,500/night for an AC Apartment. All rooms include free WiFi, hot water, and attached bathroom." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is there a family room available in Chakwal?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes, Chakwal Grand Guest House has spacious family rooms that can accommodate 4 adults and 2 children. Available from PKR 2,500/night." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I book a room at Chakwal Grand Guest House?",
+      "acceptedAnswer": { "@type": "Answer", "text": "You can book online instantly at staychakwal.de, or call/WhatsApp us at 0334-7742767. No advance payment required — pay cash on arrival." }
+    },
+    {
+      "@type": "Question",
+      "name": "Where is Chakwal Grand Guest House located?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Our main branch is located Near District Courts, Talagang Road, Chakwal, Punjab. We also have branches in Kallar Kahar and Sargodha." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the check-in and check-out time?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Check-in time is 2:00 PM and check-out time is 12:00 PM (noon). CNIC is required at check-in." }
+    },
+  ],
 };
 
 export const revalidate = 60;
@@ -79,10 +118,8 @@ export default async function HomePage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_SCHEMA) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_SCHEMA) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_SCHEMA) }} />
       <PublicNavbar />
 
       <main>
