@@ -179,38 +179,90 @@ async function main() {
   ]);
 
   // ─── 4. Rooms ─────────────────────────────────────────────
-  // Prices match the public website marketing exactly.
-  // STANDARD = Classic | FAMILY = Family | DELUXE = Executive | SUITE = Apartment | VIP = VIP
+  // Actual layout of Chakwal Grand Guest House:
+  //   Ground (floor 0): G01 — Apartment (AC optional, staff applies extra charge)
+  //   Floor 1 (floor 1): 101 — Executive Non-AC (left) | 102 — Executive AC (left) | 103 — Executive AC (right)
+  //   Floor 2 (floor 2): 201 — Family Room (left)     | 202 — Family (right)        | 203 — Classic (right)
+  //
+  // STANDARD=Classic | FAMILY=Family | DELUXE=Executive | SUITE=Apartment
+
+  // Delete stale rooms from old seed that no longer exist
+  await prisma.room.deleteMany({
+    where: {
+      branchId: branches[0].id,
+      number:   { in: ["301", "401"] },
+    },
+  });
+
   const roomDefs = [
+    // ── Ground floor ──────────────────────────────────────────────────────
     {
-      number: "101", name: "Classic Room",
-      type: "STANDARD", price: 2000, maxAdults: 2, maxChildren: 0, beds: 1,
-      description: "Comfortable classic room with all essentials. Hot water, WiFi, and attached bathroom.",
-      amenities: ["WiFi", "TV", "Hot Water", "Attached Bathroom"],
+      number: "G01", name: "Apartment",
+      floor: 0, type: "SUITE", price: 3200,
+      maxAdults: 4, maxChildren: 2, beds: 2, bedType: "Double + Single",
+      hasKitchenette: true,
+      description:
+        "Spacious self-contained apartment on the ground floor with a private living area, kitchenette, and attached bathroom. " +
+        "Rs. 3,200/night without AC · Rs. 4,500/night with AC — just tick 'AC Preference' when booking and our team will arrange it.",
+      amenities: ["WiFi", "Smart TV", "Hot Water", "Kitchenette", "Living Area", "Attached Bathroom"],
+    },
+
+    // ── First floor ───────────────────────────────────────────────────────
+    {
+      number: "101", name: "Executive Room (Non-AC)",
+      floor: 1, type: "DELUXE", price: 3000,
+      maxAdults: 2, maxChildren: 0, beds: 1, bedType: "Double",
+      description:
+        "Comfortable executive room on the first floor (left wing). Tastefully furnished with a double bed, " +
+        "work desk, and attached bathroom. No air conditioning — ideal for cooler seasons.",
+      amenities: ["WiFi", "TV", "Hot Water", "Work Desk", "Attached Bathroom"],
     },
     {
-      number: "102", name: "Classic Room (A/C)",
-      type: "STANDARD", price: 2500, maxAdults: 2, maxChildren: 0, beds: 1,
-      description: "Classic room with air conditioning — ideal for summer stays. All standard amenities included.",
+      number: "102", name: "Executive Room (AC)",
+      floor: 1, type: "DELUXE", price: 4000,
+      maxAdults: 2, maxChildren: 0, beds: 1, bedType: "Double",
+      description:
+        "Premium executive room on the first floor (left wing) with full air conditioning. " +
+        "Double bed, work desk, sofa chair, and attached bathroom. Perfect for summer stays.",
+      amenities: ["AC", "WiFi", "TV", "Hot Water", "Work Desk", "Sofa", "Attached Bathroom"],
+    },
+    {
+      number: "103", name: "Executive Room",
+      floor: 1, type: "DELUXE", price: 3000,
+      maxAdults: 2, maxChildren: 0, beds: 1, bedType: "Double",
+      description:
+        "Well-appointed executive room on the first floor (right wing). Features a double bed, " +
+        "TV, and attached bathroom with hot water. A great-value option for business or leisure.",
+      amenities: ["WiFi", "TV", "Hot Water", "Attached Bathroom"],
+    },
+
+    // ── Second floor ──────────────────────────────────────────────────────
+    {
+      number: "201", name: "Family Room",
+      floor: 2, type: "FAMILY", price: 2500,
+      maxAdults: 4, maxChildren: 2, beds: 2, bedType: "Double + Single",
+      description:
+        "Spacious family room on the second floor (left wing) with extra bedding, sitting area, " +
+        "and plenty of space for the whole family. Ideal for family trips to Chakwal.",
+      amenities: ["AC", "WiFi", "TV", "Hot Water", "Sitting Area", "Extra Bedding", "Attached Bathroom"],
+    },
+    {
+      number: "202", name: "Family Room",
+      floor: 2, type: "FAMILY", price: 2500,
+      maxAdults: 4, maxChildren: 1, beds: 2, bedType: "Double + Single",
+      description:
+        "Comfortable family room on the second floor (right wing). Two beds, TV, and attached " +
+        "bathroom — a practical choice for small families visiting Chakwal.",
       amenities: ["AC", "WiFi", "TV", "Hot Water", "Attached Bathroom"],
     },
     {
-      number: "201", name: "Family Room",
-      type: "FAMILY", price: 2500, maxAdults: 4, maxChildren: 2, beds: 2,
-      description: "Spacious family room with sitting area and extra bedding. Perfect for family visits to Chakwal.",
-      amenities: ["WiFi", "TV", "Hot Water", "Sitting Area", "Extra Bedding", "Attached Bathroom"],
-    },
-    {
-      number: "301", name: "Executive Room (A/C)",
-      type: "DELUXE", price: 4000, maxAdults: 2, maxChildren: 0, beds: 1,
-      description: "Premium executive room with AC, work desk, and sofa chair — ideal for business travelers.",
-      amenities: ["AC", "WiFi", "Smart TV", "Hot Water", "Work Desk", "Sofa", "Attached Bathroom"],
-    },
-    {
-      number: "401", name: "Apartment Suite (A/C)",
-      type: "SUITE", price: 4500, maxAdults: 4, maxChildren: 2, beds: 2,
-      description: "Self-contained apartment suite with kitchenette, living area, and AC. Best for extended family stays.",
-      amenities: ["AC", "WiFi", "Smart TV", "Hot Water", "Kitchenette", "Living Area", "Mini Fridge", "Attached Bathroom"],
+      number: "203", name: "Classic Room",
+      floor: 2, type: "STANDARD", price: 1999,
+      maxAdults: 2, maxChildren: 0, beds: 1, bedType: "Single",
+      description:
+        "Clean and cosy classic room on the second floor (right wing). Single bed, TV, and " +
+        "attached bathroom with hot water. Our most affordable option for solo travellers.",
+      amenities: ["WiFi", "TV", "Hot Water", "Attached Bathroom"],
     },
   ];
 
@@ -218,31 +270,38 @@ async function main() {
     await prisma.room.upsert({
       where:  { branchId_number: { branchId: branches[0].id, number: r.number } },
       update: {
-        name:          r.name,
-        type:          r.type as never,
-        pricePerNight: r.price,
-        maxAdults:     r.maxAdults,
-        maxChildren:   r.maxChildren,
-        bedCount:      r.beds,
-        amenities:     r.amenities,
-        description:   r.description,
+        name:           r.name,
+        type:           r.type as never,
+        floor:          r.floor,
+        pricePerNight:  r.price,
+        maxAdults:      r.maxAdults,
+        maxChildren:    r.maxChildren,
+        bedCount:       r.beds,
+        bedType:        r.bedType,
+        amenities:      r.amenities,
+        description:    r.description,
+        hasKitchenette: r.hasKitchenette ?? false,
       },
       create: {
-        branchId:      branches[0].id,
-        number:        r.number,
-        name:          r.name,
-        type:          r.type as never,
-        pricePerNight: r.price,
-        maxAdults:     r.maxAdults,
-        maxChildren:   r.maxChildren,
-        bedCount:      r.beds,
-        amenities:     r.amenities,
-        description:   r.description,
-        status:        "AVAILABLE",
+        branchId:       branches[0].id,
+        number:         r.number,
+        name:           r.name,
+        type:           r.type as never,
+        floor:          r.floor,
+        pricePerNight:  r.price,
+        maxAdults:      r.maxAdults,
+        maxChildren:    r.maxChildren,
+        bedCount:       r.beds,
+        bedType:        r.bedType,
+        amenities:      r.amenities,
+        description:    r.description,
+        hasKitchenette: r.hasKitchenette ?? false,
+        status:         "AVAILABLE",
+        isActive:       true,
       },
     });
   }
-  console.log(`✅ Rooms: ${roomDefs.length} rooms seeded for Chakwal branch`);
+  console.log(`✅ Rooms: ${roomDefs.length} rooms seeded for Chakwal branch (Ground + Floor 1 + Floor 2)`);
 
   // ─── 5. Product Categories & Products ────────────────────
   const categories = await Promise.all([
