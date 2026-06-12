@@ -244,7 +244,7 @@ async function main() {
       description:
         "Spacious family room on the second floor (left wing) with extra bedding, sitting area, " +
         "and plenty of space for the whole family. Ideal for family trips to Chakwal.",
-      amenities: ["AC", "WiFi", "TV", "Hot Water", "Sitting Area", "Extra Bedding", "Attached Bathroom"],
+      amenities: ["WiFi", "TV", "Hot Water", "Sitting Area", "Extra Bedding", "Attached Bathroom"],
     },
     {
       number: "202", name: "Family Room",
@@ -253,7 +253,7 @@ async function main() {
       description:
         "Comfortable family room on the second floor (right wing). Two beds, TV, and attached " +
         "bathroom — a practical choice for small families visiting Chakwal.",
-      amenities: ["AC", "WiFi", "TV", "Hot Water", "Attached Bathroom"],
+      amenities: ["WiFi", "TV", "Hot Water", "Attached Bathroom"],
     },
     {
       number: "203", name: "Classic Room",
