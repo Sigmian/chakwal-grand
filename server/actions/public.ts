@@ -6,8 +6,26 @@ import { sendPushToBranch } from "@/lib/push/send";
 export async function getPublicRooms() {
   return prisma.room.findMany({
     where: { status: { not: "BLOCKED" }, isActive: true },
-    include: { branch: { select: { id: true, name: true, city: true } } },
+    include: {
+      branch: { select: { id: true, name: true, city: true } },
+      images: { orderBy: { sortOrder: "asc" } },
+    },
     orderBy: [{ type: "asc" }, { pricePerNight: "asc" }],
+  });
+}
+
+export async function getBookingByRef(ref: string) {
+  return prisma.booking.findUnique({
+    where: { bookingRef: ref },
+    include: {
+      room: {
+        include: {
+          images: { orderBy: { sortOrder: "asc" } },
+        },
+      },
+      branch: { select: { id: true, name: true, city: true, address: true } },
+      customer: { select: { name: true, phone: true, email: true } },
+    },
   });
 }
 

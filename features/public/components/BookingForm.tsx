@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   CalendarDays, Users, Building2, BedDouble,
   User, Phone, CreditCard, ChevronRight, ChevronLeft,
-  CheckCircle2, Loader2, AlertCircle, Download,
+  Loader2, AlertCircle,
 } from "lucide-react";
 import { getAvailableRooms, createPublicBooking } from "@/server/actions/public";
 import { cn, formatPKR } from "@/utils";
@@ -51,10 +51,6 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
     name: "", phone: "", cnic: "", email: "", notes: "", promoCode: "",
   });
 
-  const [bookingRef, setBookingRef]         = useState("");
-  const [confirmedTotal, setConfirmedTotal] = useState(0);
-  const [confirmedDiscount, setConfirmedDiscount] = useState(0);
-  const [receiptLoading, setReceiptLoading] = useState(false);
 
   const nights = Math.max(1,
     Math.ceil((new Date(dates.checkOut).getTime() - new Date(dates.checkIn).getTime()) / 86_400_000)
@@ -108,12 +104,7 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
         promoCode: guest.promoCode.trim().toUpperCase() || undefined,
       });
       if (res.success && res.ref) {
-        setBookingRef(res.ref);
-        const base = Number(selectedRoom?.pricePerNight ?? 0) * nights;
-        const disc = res.discountAmount ?? 0;
-        setConfirmedDiscount(disc);
-        setConfirmedTotal(base - disc);
-        setStep(4);
+        router.push(`/booking-confirmation/${res.ref}`);
       } else {
         toast.error(res.error ?? "Booking failed. Please try again.");
       }
@@ -121,257 +112,6 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
   };
 
   const branch = branches.find(b => b.id === dates.branchId);
-
-  // ─── Receipt PDF generator ───────────────────────────────
-  const downloadReceipt = async () => {
-    setReceiptLoading(true);
-    try {
-      const { default: jsPDF }   = await import("jspdf");
-      const { default: autoTable } = await import("jspdf-autotable");
-
-      const doc  = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const gold = [201, 168, 76]  as [number, number, number];
-      const dark = [10,  22,  40]  as [number, number, number];
-      const gray = [100, 100, 100] as [number, number, number];
-      const W    = doc.internal.pageSize.getWidth();
-      let   y    = 20;
-
-      // Top gold stripe
-      doc.setFillColor(...gold);
-      doc.rect(0, 0, W, 2, "F");
-
-      // Hotel name
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.setTextColor(...dark);
-      doc.text("Chakwal Grand Guest House", 20, y);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...gray);
-      doc.text(`${branch?.name ?? "Chakwal"} · Tel: 0334-7742767 · www.staychakwal.de`, 20, y + 6);
-
-      // UNPAID badge (right side)
-      doc.setFillColor(239, 68, 68);
-      doc.roundedRect(W - 55, y - 8, 35, 9, 2, 2, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(255, 255, 255);
-      doc.text("UNPAID", W - 37.5, y - 1.5, { align: "center" });
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...gray);
-      doc.text("Pay on arrival · Cash only", W - 20, y + 5, { align: "right" });
-
-      y += 16;
-      doc.setDrawColor(...gold);
-      doc.setLineWidth(0.7);
-      doc.line(20, y, W - 20, y);
-      y += 8;
-
-      // Booking ref
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(...gold);
-      doc.text("BOOKING REFERENCE", 20, y);
-      y += 5;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.setTextColor(...dark);
-      doc.text(bookingRef, 20, y);
-      y += 4;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(...gray);
-      doc.text(`Issued: ${new Date().toLocaleDateString("en-PK", { day:"numeric", month:"long", year:"numeric" })}`, 20, y);
-      y += 12;
-
-      // Guest info section
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(...gold);
-      doc.text("GUEST INFORMATION", 20, y);
-      y += 5;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(...dark);
-      doc.text(guest.name, 20, y);
-      doc.setTextColor(...gray);
-      doc.text(`Phone: ${guest.phone}`, 20, y + 5);
-      y += 14;
-
-      // Stay details
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(...gold);
-      doc.text("BOOKING DETAILS", 20, y);
-      y += 5;
-
-      const checkInFmt  = new Date(dates.checkIn).toLocaleDateString("en-PK",  { weekday:"short", day:"numeric", month:"long", year:"numeric" });
-      const checkOutFmt = new Date(dates.checkOut).toLocaleDateString("en-PK", { weekday:"short", day:"numeric", month:"long", year:"numeric" });
-
-      const details = [
-        ["Room",      `${selectedRoom?.name ?? "—"} (${dates.branchId ? branch?.name : ""})`],
-        ["Check-In",  checkInFmt],
-        ["Check-Out", checkOutFmt],
-        ["Duration",  `${nights} night${nights > 1 ? "s" : ""}`],
-        ["Guests",    `${dates.adults} adult${dates.adults > 1 ? "s" : ""}${dates.children ? " + " + dates.children + " child" : ""}`],
-      ];
-      details.forEach(([label, val], i) => {
-        const col = i % 2 === 0 ? 20 : W / 2;
-        if (i % 2 === 0 && i > 0) y += 9;
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(...gray);
-        doc.text(label, col, y);
-        doc.setFontSize(10);
-        doc.setTextColor(...dark);
-        doc.text(val, col, y + 5);
-      });
-      y += 18;
-
-      // Charges table
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(...gold);
-      doc.text("CHARGES", 20, y);
-      y += 4;
-
-      const base = Number(selectedRoom?.pricePerNight ?? 0) * nights;
-      const tableBody: string[][] = [
-        [`${selectedRoom?.name} — ${nights} night${nights > 1 ? "s" : ""}`, `PKR ${Number(selectedRoom?.pricePerNight ?? 0).toLocaleString("en-PK")}`, String(nights), `PKR ${base.toLocaleString("en-PK")}`],
-      ];
-      if (confirmedDiscount > 0) {
-        tableBody.push(["Discount Applied", "", "", `- PKR ${confirmedDiscount.toLocaleString("en-PK")}`]);
-      }
-
-      autoTable(doc, {
-        startY: y,
-        head:   [["Description", "Rate/Night", "Nights", "Amount"]],
-        body:   tableBody,
-        foot:   [["", "", "Total Due", `PKR ${confirmedTotal.toLocaleString("en-PK")}`]],
-        headStyles: { fillColor: dark, textColor: [255,255,255], fontSize: 9, fontStyle: "bold" },
-        footStyles: { fillColor: [245,245,245], textColor: dark, fontSize: 11, fontStyle: "bold" },
-        bodyStyles: { fontSize: 10, textColor: dark },
-        columnStyles: { 0: { cellWidth: 70 }, 3: { halign: "right" }, 2: { halign: "center" }, 1: { halign: "right" } },
-        margin: { left: 20, right: 20 },
-        theme:  "grid",
-      });
-
-      const finalY = (doc as any).lastAutoTable.finalY + 8;
-
-      // Payment status box
-      doc.setFillColor(254, 242, 242);
-      doc.setDrawColor(239, 68, 68);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(20, finalY, W - 40, 16, 3, 3, "FD");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(239, 68, 68);
-      doc.text("⚠  PAYMENT PENDING — Please pay PKR " + confirmedTotal.toLocaleString("en-PK") + " in cash on arrival", W / 2, finalY + 10, { align: "center" });
-
-      // Footer bar
-      const pageH = doc.internal.pageSize.getHeight();
-      doc.setFillColor(...gold);
-      doc.rect(0, pageH - 20, W, 20, "F");
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(255, 255, 255);
-      doc.text("Check-in: 2:00 PM  ·  Check-out: 12:00 PM  ·  CNIC required at check-in", W / 2, pageH - 12, { align: "center" });
-      doc.text("Thank you for choosing Chakwal Grand Guest House  ·  www.staychakwal.de", W / 2, pageH - 6,  { align: "center" });
-
-      doc.save(`Receipt-${bookingRef}.pdf`);
-    } catch (err) {
-      console.error("Receipt error", err);
-      toast.error("Could not generate receipt. Please screenshot this page.");
-    } finally {
-      setReceiptLoading(false);
-    }
-  };
-
-  // ─── Step 4: Confirmation ────────────────────────────────
-  if (step === 4) {
-    return (
-      <div className="max-w-lg mx-auto text-center py-8 animate-fade-in">
-        <div className="w-20 h-20 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center mx-auto mb-6">
-          <CheckCircle2 className="w-10 h-10 text-green-400" />
-        </div>
-        <h2 className="text-2xl font-bold font-serif text-foreground mb-2">Booking Confirmed!</h2>
-        <p className="text-muted-foreground mb-8">Your booking request has been received. We'll confirm within 30 minutes via phone.</p>
-
-        <div className="card-luxury rounded-2xl p-6 text-left space-y-4 mb-8">
-          <div className="text-center pb-4 border-b border-border">
-            <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Booking Reference</p>
-            <p className="text-3xl font-bold font-serif text-gold-400">{bookingRef}</p>
-          </div>
-          {[
-            ["Guest",     guest.name],
-            ["Phone",     guest.phone],
-            ["Room",      selectedRoom?.name ?? "—"],
-            ["Branch",    branch?.name ?? "—"],
-            ["Check-in",  new Date(dates.checkIn).toLocaleDateString("en-PK",  { weekday: "short", day: "numeric", month: "long", year: "numeric" })],
-            ["Check-out", new Date(dates.checkOut).toLocaleDateString("en-PK", { weekday: "short", day: "numeric", month: "long", year: "numeric" })],
-            ["Nights",    `${nights} night${nights > 1 ? "s" : ""}`],
-          ].map(([k, v]) => (
-            <div key={k} className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{k}</span>
-              <span className="font-semibold text-foreground text-right max-w-[55%]">{v}</span>
-            </div>
-          ))}
-          {confirmedDiscount > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Discount</span>
-              <span className="font-semibold text-emerald-400">- {formatPKR(confirmedDiscount)}</span>
-            </div>
-          )}
-          <div className="border-t border-border/50 pt-3 flex justify-between text-sm">
-            <span className="font-bold text-foreground">Total Due</span>
-            <span className="font-bold text-gold-400 text-base">{formatPKR(confirmedTotal)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Payment</span>
-            <span className="font-semibold text-amber-400">Cash on arrival</span>
-          </div>
-          <div className="mt-1 p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
-            <span className="text-xs font-bold text-red-400 uppercase tracking-wider">⚠ UNPAID — Pay on Arrival</span>
-          </div>
-        </div>
-
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-400 text-left mb-6">
-          <p className="font-semibold mb-1">📌 Important Notes:</p>
-          <ul className="space-y-1 text-amber-400/80 text-xs">
-            <li>• Advance bookings are preferred — call to confirm early</li>
-            <li>• Check-in time: 2:00 PM · Check-out time: 12:00 PM</li>
-            <li>• A/C available 12 hours daily</li>
-            <li>• Bring your original CNIC on arrival</li>
-          </ul>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            onClick={downloadReceipt}
-            disabled={receiptLoading}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-lg transition-all disabled:opacity-60"
-          >
-            {receiptLoading
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <Download className="w-4 h-4" />}
-            {receiptLoading ? "Generating…" : "Download Receipt (PDF)"}
-          </button>
-          <a href={`https://wa.me/923347742767?text=Booking Reference: ${bookingRef} — Please confirm my booking.`}
-            target="_blank" rel="noreferrer"
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-sm font-semibold rounded-xl hover:bg-[#25D366]/25 transition-colors">
-            WhatsApp Confirmation
-          </a>
-          <button onClick={() => router.push("/")}
-            className="px-5 py-2.5 border border-border text-sm text-muted-foreground rounded-xl hover:bg-accent transition-colors">
-            Back to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto">
