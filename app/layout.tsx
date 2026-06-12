@@ -73,7 +73,7 @@ export const metadata: Metadata = {
     shortcut:         "/images/logo.png",
   },
   verification: {
-    google: "",
+    google: "bd67aeb73c94fb36",
   },
 };
 
