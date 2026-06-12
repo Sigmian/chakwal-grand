@@ -196,7 +196,10 @@ model User {
   accounts      Account[]
 
   // Audit trail
-  activityLogs  ActivityLog[]
+  activityLogs      ActivityLog[]
+
+  // Push notifications
+  pushSubscriptions PushSubscription[]
 
   @@index([email])
   @@index([companyId])
@@ -786,4 +789,18 @@ model BranchAnalyticsSnapshot {
 
   @@unique([branchId, date])
   @@index([branchId, date])
+}
+
+
+// Push notification subscriptions — one per browser/device per user
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

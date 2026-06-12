@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn, formatTime } from "@/utils";
 import type { SessionUser } from "@/types";
 import { UserRole } from "@/types";
+import { PushNotificationToggle } from "@/features/dashboard/components/PushNotificationToggle";
 
 interface Props {
   user: SessionUser;
@@ -126,6 +127,11 @@ export function DashboardHeader({ user }: Props) {
             <span>Your Branch</span>
           </div>
         )}
+
+        {/* Push notification toggle */}
+        <div className="hidden sm:block">
+          <PushNotificationToggle />
+        </div>
 
         {/* Clock */}
         <div className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground">

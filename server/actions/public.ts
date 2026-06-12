@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/db/prisma";
+import { sendPushToBranch } from "@/lib/push/send";
 
 export async function getPublicRooms() {
   return prisma.room.findMany({
@@ -190,6 +191,14 @@ export async function createPublicBooking(input: {
       specialRequests: input.notes || null,
     },
   });
+
+  // Fire push notification to all staff in this branch (non-blocking)
+  sendPushToBranch(input.branchId, {
+    title: "🔔 New Booking Received",
+    body:  `${input.name} booked Room ${room.number} · ${nights} night${nights !== 1 ? "s" : ""} · Ref: ${ref}`,
+    tag:   "new-booking",
+    data:  { url: "/dashboard/bookings" },
+  }).catch(() => {/* ignore push errors */});
 
   return { success: true, bookingId: booking.id, ref, discountAmount };
 }

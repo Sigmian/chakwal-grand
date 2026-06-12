@@ -8,6 +8,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
+import { sendPushToBranch } from "@/lib/push/send";
 import {
   requirePermission,
   getScopedBranchId,
@@ -254,6 +255,16 @@ export async function updateRoomStatus(
         metadata:    { previousStatus: room.status, newStatus: status, notes },
       },
     });
+
+    // Push alert when room is marked for cleaning
+    if (status === RoomStatus.CLEANING) {
+      sendPushToBranch(room.branchId, {
+        title: "🧹 Room Needs Cleaning",
+        body:  `Room ${room.number} has been checked out and is ready for housekeeping.`,
+        tag:   `cleaning-${roomId}`,
+        data:  { url: "/housekeeping" },
+      }).catch(() => {/* ignore push errors */});
+    }
 
     revalidatePath("/dashboard/rooms");
     revalidatePath("/housekeeping");
