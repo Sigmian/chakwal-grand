@@ -2,6 +2,8 @@
 
 import prisma from "@/lib/db/prisma";
 import { sendPushToBranch } from "@/lib/push/send";
+import { sendBookingWhatsApp } from "@/lib/whatsapp/send";
+import { siteConfig } from "@/config/site";
 
 export async function getPublicRooms() {
   return prisma.room.findMany({
@@ -129,7 +131,10 @@ export async function createPublicBooking(input: {
   if (!available)
     return { success: false, error: "This room is no longer available for the selected dates." };
 
-  const room = await prisma.room.findUnique({ where: { id: input.roomId } });
+  const room = await prisma.room.findUnique({
+    where: { id: input.roomId },
+    include: { branch: { select: { name: true, city: true } } },
+  });
   if (!room) return { success: false, error: "Room not found." };
 
   const nights     = Math.ceil((co.getTime() - ci.getTime()) / 86_400_000);
@@ -217,6 +222,27 @@ export async function createPublicBooking(input: {
     tag:   "new-booking",
     data:  { url: "/dashboard/bookings" },
   }).catch(() => {/* ignore push errors */});
+
+  // Send WhatsApp confirmation to guest (non-blocking — never fails the booking)
+  const branchCity = room.branch?.city ?? "";
+  const branchAddress =
+    siteConfig.branches.find((b) =>
+      b.city.toLowerCase() === branchCity.toLowerCase()
+    )?.address ?? siteConfig.branches[0].address;
+
+  sendBookingWhatsApp({
+    phone:           input.phone,
+    guestName:       input.name,
+    bookingRef:      ref,
+    roomName:        room.name,
+    branchName:      room.branch?.name ?? "Chakwal",
+    checkInDate:     ci,
+    checkOutDate:    co,
+    nights,
+    totalAmount,
+    branchAddress,
+    confirmationUrl: `https://www.chakwalgrand.pk/booking-confirmation/${ref}`,
+  }).catch((err) => console.error("[WhatsApp]", err));
 
   return { success: true, bookingId: booking.id, ref, discountAmount };
 }
