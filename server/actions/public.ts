@@ -16,6 +16,32 @@ export async function getPublicRooms() {
   });
 }
 
+export async function getPublicRoom(id: string) {
+  return prisma.room.findUnique({
+    where:   { id, isActive: true },
+    include: {
+      images: { orderBy: { sortOrder: "asc" } },
+      branch: { select: { id: true, name: true, city: true } },
+    },
+  });
+}
+
+// Returns booked date ranges for a room — used by the availability calendar
+export async function getRoomBookedDates(roomId: string): Promise<{ checkIn: string; checkOut: string }[]> {
+  const bookings = await prisma.booking.findMany({
+    where: {
+      roomId,
+      status:      { in: ["CONFIRMED", "CHECKED_IN", "PENDING"] },
+      checkOutDate: { gte: new Date() },
+    },
+    select: { checkInDate: true, checkOutDate: true },
+  });
+  return bookings.map((b) => ({
+    checkIn:  b.checkInDate.toISOString().split("T")[0],
+    checkOut: b.checkOutDate.toISOString().split("T")[0],
+  }));
+}
+
 export async function getBookingByRef(ref: string) {
   return prisma.booking.findUnique({
     where: { bookingRef: ref },
@@ -141,18 +167,20 @@ function generateRef(): string {
 }
 
 export async function createPublicBooking(input: {
-  roomId:     string;
-  branchId:   string;
-  checkIn:    string;
-  checkOut:   string;
-  adults:     number;
-  children:   number;
-  name:       string;
-  phone:      string;
-  cnic?:      string;
-  email?:     string;
-  notes?:     string;
-  promoCode?: string;
+  roomId:              string;
+  branchId:            string;
+  checkIn:             string;
+  checkOut:            string;
+  adults:              number;
+  children:            number;
+  name:                string;
+  phone:               string;
+  cnic?:               string;
+  email?:              string;
+  notes?:              string;
+  promoCode?:          string;
+  estimatedArrival?:   string;
+  structuredRequests?: Record<string, boolean | string>;
 }) {
   const ci = new Date(input.checkIn);
   const co = new Date(input.checkOut);
@@ -218,34 +246,38 @@ export async function createPublicBooking(input: {
     });
   }
 
-  // Generate unique booking ref
+  // Generate unique booking ref and share token
   let ref = generateRef();
   while (await prisma.booking.findUnique({ where: { bookingRef: ref } })) {
     ref = generateRef();
   }
+  const shareToken = crypto.randomUUID();
 
   const booking = await prisma.booking.create({
     data: {
-      bookingRef:      ref,
-      branchId:        input.branchId,
-      roomId:          input.roomId,
-      customerId:      customer.id,
-      checkInDate:     ci,
-      checkOutDate:    co,
+      bookingRef:         ref,
+      branchId:           input.branchId,
+      roomId:             input.roomId,
+      customerId:         customer.id,
+      checkInDate:        ci,
+      checkOutDate:       co,
       nights,
-      adultCount:      input.adults,
-      childCount:      input.children,
-      guestCount:      input.adults + input.children,
-      status:          "PENDING",
-      paymentStatus:   "UNPAID",
+      adultCount:         input.adults,
+      childCount:         input.children,
+      guestCount:         input.adults + input.children,
+      status:             "PENDING",
+      paymentStatus:      "UNPAID",
       baseAmount,
       discountAmount,
-      taxAmount:       0,
-      extraCharges:    0,
+      taxAmount:          0,
+      extraCharges:       0,
       totalAmount,
-      offerId:         appliedOfferId,
-      source:          "website",
-      specialRequests: input.notes || null,
+      offerId:            appliedOfferId,
+      source:             "website",
+      specialRequests:    input.notes || null,
+      estimatedArrival:   input.estimatedArrival || null,
+      structuredRequests: input.structuredRequests ?? undefined,
+      shareToken,
     },
   });
 
@@ -278,7 +310,16 @@ export async function createPublicBooking(input: {
     confirmationUrl: `https://www.chakwalgrand.pk/booking-confirmation/${ref}`,
   }).catch((err) => console.error("[WhatsApp]", err));
 
-  return { success: true, bookingId: booking.id, ref, discountAmount };
+  return { success: true, bookingId: booking.id, ref, shareToken, discountAmount };
+}
+
+export async function lookupGuestByPhone(phone: string) {
+  const customer = await prisma.customer.findUnique({
+    where: { phone: phone.trim() },
+    select: { name: true, phone: true, email: true, cnic: true },
+  });
+  if (!customer) return { found: false as const };
+  return { found: true as const, name: customer.name, phone: customer.phone, email: customer.email ?? "", cnic: customer.cnic ?? "" };
 }
 
 export async function lookupBooking(ref: string) {

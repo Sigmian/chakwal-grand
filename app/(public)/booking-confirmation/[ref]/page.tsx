@@ -7,9 +7,10 @@ import {
 } from "lucide-react";
 import { getBookingByRef } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
-import { BookingCountdown } from "@/features/public/components/BookingCountdown";
-import { ICSDownload }       from "@/features/public/components/ICSDownload";
-import { ReceiptDownload }   from "@/features/public/components/ReceiptDownload";
+import { BookingCountdown }    from "@/features/public/components/BookingCountdown";
+import { ICSDownload }          from "@/features/public/components/ICSDownload";
+import { ReceiptDownload }      from "@/features/public/components/ReceiptDownload";
+import { ShareBookingButton }   from "@/features/public/components/ShareBookingButton";
 import { formatPKR }         from "@/utils";
 import type { Metadata } from "next";
 
@@ -250,6 +251,9 @@ export default async function BookingConfirmationPage({ params }: Props) {
             <MessageSquare className="w-4 h-4" />
             WhatsApp Us
           </a>
+          {booking.shareToken && (
+            <ShareBookingButton bookingRef={booking.bookingRef} shareToken={booking.shareToken} />
+          )}
         </div>
 
         <div className="text-center">

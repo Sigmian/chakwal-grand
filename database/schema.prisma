@@ -470,8 +470,11 @@ model Booking {
   offerId         String?
   offer           Offer?        @relation(fields: [offerId], references: [id])
 
-  specialRequests String?
-  internalNotes   String?
+  specialRequests   String?
+  structuredRequests Json?    // { acPreference, extraBed, earlyCheckIn, lateCheckout, other }
+  estimatedArrival  String?   // e.g. "3:00 PM" — customer's expected arrival time
+  shareToken        String?   @unique  // random token for shareable booking link
+  internalNotes     String?
 
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

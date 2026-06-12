@@ -6,9 +6,9 @@ import { toast } from "sonner";
 import {
   CalendarDays, Users, Building2, BedDouble,
   User, Phone, CreditCard, ChevronRight, ChevronLeft,
-  Loader2, AlertCircle,
+  Loader2, AlertCircle, Search,
 } from "lucide-react";
-import { getAvailableRooms, createPublicBooking } from "@/server/actions/public";
+import { getAvailableRooms, createPublicBooking, lookupGuestByPhone } from "@/server/actions/public";
 import { cn, formatPKR } from "@/utils";
 
 interface Branch { id: string; name: string; city: string }
@@ -68,7 +68,38 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
 
   const [guest, setGuest] = useState({
     name: "", phone: "", cnic: "", email: "", notes: "", promoCode: "",
+    estimatedArrival: "",
   });
+
+  const [structuredReqs, setStructuredReqs] = useState({
+    acPreference:  false,
+    extraBed:      false,
+    earlyCheckIn:  false,
+    lateCheckout:  false,
+  });
+
+  const [returningPhone, setReturningPhone] = useState("");
+  const [lookingUp, setLookingUp] = useState(false);
+  const [lookupDone, setLookupDone] = useState(false);
+
+  const lookupGuest = async () => {
+    if (!returningPhone.trim()) return;
+    setLookingUp(true);
+    try {
+      const res = await lookupGuestByPhone(returningPhone.trim());
+      if (res.found) {
+        setGuest((g) => ({ ...g, name: res.name, phone: res.phone, email: res.email, cnic: res.cnic }));
+        setLookupDone(true);
+        toast.success(`Welcome back, ${res.name}! Details filled in.`);
+      } else {
+        toast.info("No previous booking found with that number. Please fill in your details.");
+      }
+    } catch {
+      toast.error("Lookup failed. Please fill in your details manually.");
+    } finally {
+      setLookingUp(false);
+    }
+  };
 
 
   const nights = Math.max(1,
@@ -78,7 +109,7 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
   const setD = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setDates(f => ({ ...f, [k]: k === "adults" || k === "children" ? Number(e.target.value) : e.target.value }));
 
-  const setG = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const setG = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setGuest(f => ({ ...f, [k]: e.target.value }));
 
   const searchRooms = async () => {
@@ -108,19 +139,22 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
     if (!selectedRoom)       { toast.error("Please select a room");    return; }
 
     start(async () => {
+      const hasStructured = Object.values(structuredReqs).some(Boolean);
       const res = await createPublicBooking({
-        roomId:    selectedRoom.id,
-        branchId:  dates.branchId,
-        checkIn:   dates.checkIn,
-        checkOut:  dates.checkOut,
-        adults:    dates.adults,
-        children:  dates.children,
-        name:      guest.name,
-        phone:     guest.phone,
-        cnic:      guest.cnic || undefined,
-        email:     guest.email || undefined,
-        notes:     guest.notes || undefined,
-        promoCode: guest.promoCode.trim().toUpperCase() || undefined,
+        roomId:              selectedRoom.id,
+        branchId:            dates.branchId,
+        checkIn:             dates.checkIn,
+        checkOut:            dates.checkOut,
+        adults:              dates.adults,
+        children:            dates.children,
+        name:                guest.name,
+        phone:               guest.phone,
+        cnic:                guest.cnic || undefined,
+        email:               guest.email || undefined,
+        notes:               guest.notes || undefined,
+        promoCode:           guest.promoCode.trim().toUpperCase() || undefined,
+        estimatedArrival:    guest.estimatedArrival || undefined,
+        structuredRequests:  hasStructured ? { ...structuredReqs, other: guest.notes || "" } : undefined,
       });
       if (res.success && res.ref) {
         router.push(`/booking-confirmation/${res.ref}`);
@@ -311,7 +345,35 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Form */}
-            <div className="lg:col-span-3 card-luxury rounded-2xl p-6 space-y-5">
+            <div className="lg:col-span-3 space-y-4">
+              {/* Returning guest shortcut */}
+              <div className="card-luxury rounded-2xl p-4 border border-border/50">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                  Returning Guest? Auto-fill your details
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    value={returningPhone}
+                    onChange={(e) => setReturningPhone(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && lookupGuest()}
+                    placeholder="Enter your phone number"
+                    className={inputCls + " flex-1"}
+                  />
+                  <button
+                    onClick={lookupGuest}
+                    disabled={lookingUp}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-accent border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-gold-500/30 transition-all disabled:opacity-60"
+                  >
+                    {lookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    {lookingUp ? "Looking up…" : "Find Me"}
+                  </button>
+                </div>
+                {lookupDone && (
+                  <p className="text-xs text-emerald-400 mt-2">✓ Details filled in — edit any field below</p>
+                )}
+              </div>
+
+              <div className="card-luxury rounded-2xl p-6 space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="sm:col-span-2">
                   <label className={labelCls}><User className="w-3 h-3 inline mr-1" />Full Name *</label>
@@ -330,8 +392,42 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                   <input type="email" value={guest.email} onChange={setG("email")} placeholder="you@email.com" className={inputCls} />
                 </div>
                 <div className="sm:col-span-2">
+                  <label className={labelCls}>Estimated Arrival Time (Optional)</label>
+                  <select value={guest.estimatedArrival} onChange={setG("estimatedArrival")} className={inputCls}>
+                    <option value="">Select arrival time…</option>
+                    {["12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM","9:00 PM","10:00 PM","11:00 PM","After midnight"].map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-muted-foreground mt-1">Standard check-in is 2:00 PM. Let us know so we can prepare your room on time.</p>
+                </div>
+
+                <div className="sm:col-span-2">
                   <label className={labelCls}>Special Requests (Optional)</label>
-                  <textarea value={guest.notes} onChange={setG("notes")} rows={3} placeholder="Any special requirements…"
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    {([
+                      ["acPreference", "❄️ AC Preference"],
+                      ["extraBed",     "🛏️ Extra Bed"],
+                      ["earlyCheckIn", "🌅 Early Check-in"],
+                      ["lateCheckout", "🌙 Late Check-out"],
+                    ] as [keyof typeof structuredReqs, string][]).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setStructuredReqs(r => ({ ...r, [key]: !r[key] }))}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm text-left transition-all",
+                          structuredReqs[key]
+                            ? "bg-gold-500/15 border-gold-500/50 text-gold-400"
+                            : "bg-surface-base border-border text-muted-foreground hover:border-border/80"
+                        )}
+                      >
+                        <span>{label}</span>
+                        {structuredReqs[key] && <span className="ml-auto text-gold-400 text-xs font-bold">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                  <textarea value={guest.notes} onChange={setG("notes")} rows={2} placeholder="Any other requests or notes…"
                     className={inputCls + " resize-none"} />
                 </div>
                 <div className="sm:col-span-2">
@@ -340,6 +436,7 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                     className={inputCls + " font-mono tracking-widest uppercase"} />
                   <p className="text-[10px] text-muted-foreground mt-1">Weekly stays (7+ nights) and monthly stays (30+ nights) get automatic discounts — no code needed.</p>
                 </div>
+              </div>
               </div>
             </div>
 
@@ -368,6 +465,20 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                       <span className="font-medium text-foreground">{v}</span>
                     </div>
                   ))}
+                  {guest.estimatedArrival && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Est. Arrival</span>
+                      <span className="font-medium text-foreground">{guest.estimatedArrival}</span>
+                    </div>
+                  )}
+                  {Object.values(structuredReqs).some(Boolean) && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {structuredReqs.acPreference && <span className="text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400">❄️ AC</span>}
+                      {structuredReqs.extraBed     && <span className="text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400">🛏️ Extra Bed</span>}
+                      {structuredReqs.earlyCheckIn && <span className="text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400">🌅 Early In</span>}
+                      {structuredReqs.lateCheckout && <span className="text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400">🌙 Late Out</span>}
+                    </div>
+                  )}
                   <div className="border-t border-border pt-3 mt-3">
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">{formatPKR(Number(selectedRoom?.pricePerNight))} × {nights} nights</span>
