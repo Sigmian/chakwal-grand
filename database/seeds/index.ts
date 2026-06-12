@@ -15,15 +15,19 @@ async function main() {
   // ─── 1. Company ───────────────────────────────────────────
   const company = await prisma.company.upsert({
     where:  { id: "company-001" },
-    update: {},
+    update: {
+      phone:    "0334-7742767",
+      whatsapp: "923347742767",
+      address:  "Near District Courts, Talagang Road, Chakwal",
+    },
     create: {
       id:       "company-001",
       name:     "Chakwal Grand Guest House",
       tagline:  "Experience Comfort & Peace in the Heart of Punjab",
       email:    "info@chakwalgrand.pk",
-      phone:    "+92-543-123456",
-      whatsapp: "923001234567",
-      address:  "Main Talagang Road, Chakwal",
+      phone:    "0334-7742767",
+      whatsapp: "923347742767",
+      address:  "Near District Courts, Talagang Road, Chakwal",
       city:     "Chakwal",
       country:  "Pakistan",
       currency: "PKR",
@@ -36,19 +40,23 @@ async function main() {
   const branches = await Promise.all([
     prisma.branch.upsert({
       where:  { slug: "chakwal" },
-      update: {},
+      update: {
+        address:  "Near District Courts, Talagang Road, Chakwal",
+        phone:    "0334-7742767",
+        whatsapp: "923347742767",
+      },
       create: {
         id:          "branch-chakwal",
         companyId:   company.id,
         name:        "Chakwal",
         slug:        "chakwal",
         city:        "Chakwal",
-        address:     "Main Talagang Road, Near Civil Hospital, Chakwal",
-        phone:       "+92-543-123456",
+        address:     "Near District Courts, Talagang Road, Chakwal",
+        phone:       "0334-7742767",
         email:       "chakwal@chakwalgrand.pk",
-        whatsapp:    "923001234567",
-        latitude:    32.9328,
-        longitude:   72.8537,
+        whatsapp:    "923347742767",
+        latitude:    32.9318,
+        longitude:   72.8560,
         facilities:  ["WiFi", "Generator", "Parking", "CCTV", "AC", "Hot Water", "Room Service"],
         description: "Our flagship branch in the heart of Chakwal city.",
         isActive:    true,
@@ -56,15 +64,18 @@ async function main() {
     }),
     prisma.branch.upsert({
       where:  { slug: "kallar-kahar" },
-      update: {},
+      update: {
+        phone:    "0334-7742767",
+        address:  "Lake View Road, Near Salt Mine, Kallar Kahar, Chakwal",
+      },
       create: {
         id:          "branch-kk",
         companyId:   company.id,
         name:        "Kallar Kahar",
         slug:        "kallar-kahar",
         city:        "Kallar Kahar",
-        address:     "Lake View Road, Kallar Kahar, Chakwal",
-        phone:       "+92-543-234567",
+        address:     "Lake View Road, Near Salt Mine, Kallar Kahar, Chakwal",
+        phone:       "0334-7742767",
         facilities:  ["WiFi", "Generator", "Parking", "Lake View", "AC", "Hot Water"],
         description: "Stunning lake view rooms at Kallar Kahar.",
         isActive:    true,
@@ -72,15 +83,18 @@ async function main() {
     }),
     prisma.branch.upsert({
       where:  { slug: "sargodha" },
-      update: {},
+      update: {
+        phone:   "0334-7742767",
+        address: "University Road, Near Peoples Colony, Sargodha",
+      },
       create: {
         id:          "branch-sgd",
         companyId:   company.id,
         name:        "Sargodha",
         slug:        "sargodha",
         city:        "Sargodha",
-        address:     "University Road, Sargodha",
-        phone:       "+92-48-3234567",
+        address:     "University Road, Near Peoples Colony, Sargodha",
+        phone:       "0334-7742767",
         facilities:  ["WiFi", "Generator", "Parking", "AC", "Hot Water", "Conference Room"],
         description: "Business-focused branch in Sargodha.",
         isActive:    true,
@@ -164,30 +178,67 @@ async function main() {
     }),
   ]);
 
-  // ─── 4. Rooms ────────────────────────────────────────────
+  // ─── 4. Rooms ─────────────────────────────────────────────
+  // Prices match the public website marketing exactly.
+  // STANDARD = Classic | FAMILY = Family | DELUXE = Executive | SUITE = Apartment | VIP = VIP
   const roomDefs = [
-    { number: "101", name: "Classic Retreat",       type: "STANDARD", price: 4500,  maxAdults: 2, beds: 1, amenities: ["AC", "WiFi", "TV", "Hot Water"] },
-    { number: "102", name: "Garden View Standard",  type: "STANDARD", price: 5000,  maxAdults: 2, beds: 1, amenities: ["AC", "WiFi", "TV", "Hot Water", "Balcony"] },
-    { number: "201", name: "Deluxe Sanctuary",      type: "DELUXE",   price: 7000,  maxAdults: 3, beds: 2, amenities: ["AC", "WiFi", "Smart TV", "Hot Water", "Fridge", "Balcony"] },
-    { number: "202", name: "Executive Deluxe",      type: "DELUXE",   price: 7500,  maxAdults: 3, beds: 2, amenities: ["AC", "WiFi", "Smart TV", "Hot Water", "Fridge", "Work Desk"] },
-    { number: "301", name: "Family Haven",          type: "FAMILY",   price: 10000, maxAdults: 5, beds: 3, amenities: ["AC", "WiFi", "TV", "Hot Water", "Kitchenette", "Sitting Area"] },
-    { number: "401", name: "VIP Presidential Suite",type: "VIP",      price: 15000, maxAdults: 4, beds: 2, amenities: ["AC", "WiFi", "Smart TV", "Jacuzzi", "Fridge", "Mini Bar", "Butler"] },
+    {
+      number: "101", name: "Classic Room",
+      type: "STANDARD", price: 2000, maxAdults: 2, maxChildren: 0, beds: 1,
+      description: "Comfortable classic room with all essentials. Hot water, WiFi, and attached bathroom.",
+      amenities: ["WiFi", "TV", "Hot Water", "Attached Bathroom"],
+    },
+    {
+      number: "102", name: "Classic Room (A/C)",
+      type: "STANDARD", price: 2500, maxAdults: 2, maxChildren: 0, beds: 1,
+      description: "Classic room with air conditioning — ideal for summer stays. All standard amenities included.",
+      amenities: ["AC", "WiFi", "TV", "Hot Water", "Attached Bathroom"],
+    },
+    {
+      number: "201", name: "Family Room",
+      type: "FAMILY", price: 2500, maxAdults: 4, maxChildren: 2, beds: 2,
+      description: "Spacious family room with sitting area and extra bedding. Perfect for family visits to Chakwal.",
+      amenities: ["WiFi", "TV", "Hot Water", "Sitting Area", "Extra Bedding", "Attached Bathroom"],
+    },
+    {
+      number: "301", name: "Executive Room (A/C)",
+      type: "DELUXE", price: 4000, maxAdults: 2, maxChildren: 0, beds: 1,
+      description: "Premium executive room with AC, work desk, and sofa chair — ideal for business travelers.",
+      amenities: ["AC", "WiFi", "Smart TV", "Hot Water", "Work Desk", "Sofa", "Attached Bathroom"],
+    },
+    {
+      number: "401", name: "Apartment Suite (A/C)",
+      type: "SUITE", price: 4500, maxAdults: 4, maxChildren: 2, beds: 2,
+      description: "Self-contained apartment suite with kitchenette, living area, and AC. Best for extended family stays.",
+      amenities: ["AC", "WiFi", "Smart TV", "Hot Water", "Kitchenette", "Living Area", "Mini Fridge", "Attached Bathroom"],
+    },
   ];
 
   for (const r of roomDefs) {
     await prisma.room.upsert({
       where:  { branchId_number: { branchId: branches[0].id, number: r.number } },
-      update: {},
-      create: {
-        branchId:     branches[0].id,
-        number:       r.number,
-        name:         r.name,
-        type:         r.type as never,
+      update: {
+        name:          r.name,
+        type:          r.type as never,
         pricePerNight: r.price,
-        maxAdults:    r.maxAdults,
-        bedCount:     r.beds,
-        amenities:    r.amenities,
-        status:       "AVAILABLE",
+        maxAdults:     r.maxAdults,
+        maxChildren:   r.maxChildren,
+        bedCount:      r.beds,
+        amenities:     r.amenities,
+        description:   r.description,
+      },
+      create: {
+        branchId:      branches[0].id,
+        number:        r.number,
+        name:          r.name,
+        type:          r.type as never,
+        pricePerNight: r.price,
+        maxAdults:     r.maxAdults,
+        maxChildren:   r.maxChildren,
+        bedCount:      r.beds,
+        amenities:     r.amenities,
+        description:   r.description,
+        status:        "AVAILABLE",
       },
     });
   }

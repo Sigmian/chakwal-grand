@@ -19,8 +19,8 @@ export const siteConfig = {
   },
 
   branches: [
-    { name: "Chakwal",      city: "Chakwal",     address: "Near Dist. Complex, Talagang Road, Chakwal" },
-    { name: "Kallar Kahar", city: "Kallar Kahar", address: "Lake View Road, Kallar Kahar, Chakwal" },
-    { name: "Sargodha",     city: "Sargodha",    address: "University Road, Sargodha" },
+    { name: "Chakwal",      city: "Chakwal",     address: "Near District Courts, Talagang Road, Chakwal" },
+    { name: "Kallar Kahar", city: "Kallar Kahar", address: "Lake View Road, Near Salt Mine, Kallar Kahar, Chakwal" },
+    { name: "Sargodha",     city: "Sargodha",    address: "University Road, Near Peoples Colony, Sargodha" },
   ],
 } as const;

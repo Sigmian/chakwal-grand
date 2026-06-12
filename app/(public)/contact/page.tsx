@@ -23,7 +23,7 @@ const CONTACT_SCHEMA = {
     "@type": "LodgingBusiness",
     "name": "Chakwal Grand Guest House",
     "telephone": "+92-334-7742767",
-    "email": "info@staychakwal.de",
+    "email": "info@chakwalgrand.pk",
     "url": "https://www.staychakwal.de",
     "address": {
       "@type": "PostalAddress",
