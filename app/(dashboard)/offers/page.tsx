@@ -6,7 +6,7 @@ import { OffersClient } from "@/features/offers/OffersClient";
 export const metadata = { title: "Promo Codes & Offers" };
 
 export default async function OffersPage() {
-  await requirePermission("settings:read");
+  await requirePermission("settings:company");
 
   const offers = await prisma.offer.findMany({
     orderBy: { createdAt: "desc" },

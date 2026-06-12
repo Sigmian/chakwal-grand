@@ -17,7 +17,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 
 const PAYMENT_COLOR: Record<string, string> = {
   UNPAID:         "text-red-400",
-  PARTIALLY_PAID: "text-amber-400",
+  PARTIAL: "text-amber-400",
   PAID:           "text-emerald-400",
   REFUNDED:       "text-blue-400",
 };
@@ -51,7 +51,7 @@ export function BookingLookup() {
 
       const isPaid = b.paymentStatus === "PAID";
       const badgeColor: [number, number, number] = isPaid ? [22, 163, 74] : [239, 68, 68];
-      const badgeLabel = isPaid ? "PAID" : b.paymentStatus === "PARTIALLY_PAID" ? "PARTIAL" : "UNPAID";
+      const badgeLabel = isPaid ? "PAID" : b.paymentStatus === "PARTIAL" ? "PARTIAL" : "UNPAID";
 
       // Top gold stripe
       doc.setFillColor(...gold);
@@ -241,10 +241,10 @@ export function BookingLookup() {
                 </div>
                 <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
                   b.paymentStatus === "PAID"           ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                  b.paymentStatus === "PARTIALLY_PAID" ? "bg-amber-500/10 border-amber-500/20 text-amber-400" :
+                  b.paymentStatus === "PARTIAL" ? "bg-amber-500/10 border-amber-500/20 text-amber-400" :
                                                          "bg-red-500/10 border-red-500/20 text-red-400"
                 }`}>
-                  {b.paymentStatus === "PAID" ? "Paid" : b.paymentStatus === "PARTIALLY_PAID" ? "Partial" : "Unpaid"}
+                  {b.paymentStatus === "PAID" ? "Paid" : b.paymentStatus === "PARTIAL" ? "Partial" : "Unpaid"}
                 </span>
               </div>
 

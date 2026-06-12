@@ -16,7 +16,7 @@ interface CreateOfferInput {
 }
 
 export async function createOffer(input: CreateOfferInput) {
-  await requirePermission("settings:write");
+  await requirePermission("settings:company");
 
   const code = input.code || Math.random().toString(36).slice(2, 10).toUpperCase();
 
@@ -39,7 +39,7 @@ export async function createOffer(input: CreateOfferInput) {
 }
 
 export async function toggleOffer(id: string) {
-  await requirePermission("settings:write");
+  await requirePermission("settings:company");
 
   const offer = await prisma.offer.findUnique({ where: { id } });
   if (!offer) return { success: false };
@@ -54,7 +54,7 @@ export async function toggleOffer(id: string) {
 }
 
 export async function deleteOffer(id: string) {
-  await requirePermission("settings:write");
+  await requirePermission("settings:company");
 
   // Don't delete auto-discount anchors
   const offer = await prisma.offer.findUnique({ where: { id } });

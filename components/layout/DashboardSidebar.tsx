@@ -16,7 +16,7 @@ import {
   LayoutDashboard, Building2, BedDouble, CalendarCheck,
   Sparkles, Users, Package, DollarSign, UserCog, Star, Tag,
   Settings, ChevronDown, ChevronRight, LogOut, Menu, X,
-  Shield, Crown, Tag,
+  Shield, Crown,
 } from "lucide-react";
 import { cn, getInitials } from "@/utils";
 import { getNavForRole } from "@/config/navigation";
