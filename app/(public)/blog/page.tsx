@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, ArrowRight } from "lucide-react";
-import { PublicNavbar } from "@/features/public/components/PublicNavbar";
-import { PublicFooter } from "@/features/public/components/PublicFooter";
-import { ChatWidget }   from "@/features/public/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "Travel Blog | Chakwal Grand Guest House — Chakwal Tourism & Travel Guide",
@@ -53,7 +50,6 @@ const BLOGS = [
 export default function BlogIndexPage() {
   return (
     <>
-      <PublicNavbar />
       <main>
         <section className="pt-28 pb-16 bg-surface-elevated border-b border-border">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -93,8 +89,6 @@ export default function BlogIndexPage() {
           </div>
         </section>
       </main>
-      <PublicFooter />
-      <ChatWidget />
     </>
   );
 }

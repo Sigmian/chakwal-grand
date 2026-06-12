@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight, Users, Shield, Wifi, Snowflake } from "lucide-react";
-import { PublicNavbar } from "@/features/public/components/PublicNavbar";
-import { PublicFooter } from "@/features/public/components/PublicFooter";
-import { ChatWidget }   from "@/features/public/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "Best Family Guest House in Chakwal — Chakwal Grand Guest House",
@@ -39,7 +36,6 @@ export default function FamilyGuestHousePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ARTICLE_SCHEMA) }} />
-      <PublicNavbar />
       <main>
         <section className="pt-28 pb-16 bg-surface-elevated border-b border-border">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -151,8 +147,6 @@ export default function FamilyGuestHousePage() {
           </div>
         </section>
       </main>
-      <PublicFooter />
-      <ChatWidget />
     </>
   );
 }

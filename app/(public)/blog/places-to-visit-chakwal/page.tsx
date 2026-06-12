@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MapPin, Clock, ArrowRight } from "lucide-react";
-import { PublicNavbar } from "@/features/public/components/PublicNavbar";
-import { PublicFooter } from "@/features/public/components/PublicFooter";
-import { ChatWidget }   from "@/features/public/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "Top 10 Places to Visit in Chakwal 2025 — Complete Tourist Guide",
@@ -44,7 +41,6 @@ export default function PlacesToVisitPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ARTICLE_SCHEMA) }} />
-      <PublicNavbar />
       <main>
         <section className="pt-28 pb-16 bg-surface-elevated border-b border-border">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -107,8 +103,6 @@ export default function PlacesToVisitPage() {
           </div>
         </section>
       </main>
-      <PublicFooter />
-      <ChatWidget />
     </>
   );
 }

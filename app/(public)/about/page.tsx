@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, MapPin, Phone, Star, Shield, Clock, Users } from "lucide-react";
-import { PublicNavbar } from "@/features/public/components/PublicNavbar";
-import { PublicFooter } from "@/features/public/components/PublicFooter";
-import { ChatWidget }   from "@/features/public/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "About Us | Chakwal Grand Guest House — Best Stay in Chakwal",
@@ -55,7 +52,6 @@ export default function AboutPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ABOUT_SCHEMA) }} />
-      <PublicNavbar />
       <main>
         {/* Hero */}
         <section className="pt-28 pb-16 bg-surface-elevated border-b border-border">
@@ -180,8 +176,6 @@ export default function AboutPage() {
           </div>
         </section>
       </main>
-      <PublicFooter />
-      <ChatWidget />
     </>
   );
 }

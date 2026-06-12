@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight, Star } from "lucide-react";
-import { PublicNavbar } from "@/features/public/components/PublicNavbar";
-import { PublicFooter } from "@/features/public/components/PublicFooter";
-import { ChatWidget }   from "@/features/public/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels in Chakwal",
@@ -39,7 +36,6 @@ export default function WhereToStayPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ARTICLE_SCHEMA) }} />
-      <PublicNavbar />
       <main>
         <section className="pt-28 pb-16 bg-surface-elevated border-b border-border">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -158,8 +154,6 @@ export default function WhereToStayPage() {
           </div>
         </section>
       </main>
-      <PublicFooter />
-      <ChatWidget />
     </>
   );
 }

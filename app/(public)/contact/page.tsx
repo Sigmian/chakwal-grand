@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Phone, MapPin, Clock, MessageCircle, Mail } from "lucide-react";
-import { PublicNavbar } from "@/features/public/components/PublicNavbar";
-import { PublicFooter } from "@/features/public/components/PublicFooter";
-import { ChatWidget }   from "@/features/public/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "Contact Us | Chakwal Grand Guest House — Call & WhatsApp 0334-7742767",
@@ -64,7 +61,6 @@ export default function ContactPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(CONTACT_SCHEMA) }} />
-      <PublicNavbar />
       <main>
         {/* Hero */}
         <section className="pt-28 pb-16 bg-surface-elevated border-b border-border">
@@ -186,8 +182,6 @@ export default function ContactPage() {
           </div>
         </section>
       </main>
-      <PublicFooter />
-      <ChatWidget />
     </>
   );
 }
