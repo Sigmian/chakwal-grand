@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     title: "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
     description: "Chakwal Grand Guest House — top-rated accommodation in Chakwal. AC rooms, family suites, free WiFi from PKR 2,000/night.",
     url: "https://www.staychakwal.de/blog/where-to-stay-chakwal",
-    images: [{ url: "https://images.unsplash.com/photo-1760067537723-17efcdb6cdd5?w=1200&q=80", width: 1200, height: 630, alt: "Best guest house room Chakwal Punjab" }],
+    images: [{ url: "https://www.chakwalgrand.pk/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg", width: 1200, height: 630, alt: "Best guest house room Chakwal Punjab" }],
   },
 };
 
@@ -26,7 +26,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
   "description": "Complete guide to the best accommodation options in Chakwal, Punjab, Pakistan.",
-  "image": "https://images.unsplash.com/photo-1760067537723-17efcdb6cdd5?w=1200&q=80",
+  "image": "https://www.chakwalgrand.pk/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg",
   "url": "https://www.staychakwal.de/blog/where-to-stay-chakwal",
   "datePublished": "2025-02-20",
   "dateModified": "2025-06-01",
@@ -74,7 +74,7 @@ export default function WhereToStayPage() {
 
       {/* Hero */}
       <div className="relative h-[50vh] min-h-[350px] w-full overflow-hidden">
-        <Image src="https://images.unsplash.com/photo-1760067537723-17efcdb6cdd5?w=1400&q=85&auto=format&fit=crop" alt="Clean comfortable guest house room Chakwal Punjab best accommodation" fill className="object-cover" priority />
+        <Image src="/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg" alt="Air conditioned guest house room Chakwal Grand Guest House Punjab Pakistan" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 max-w-4xl mx-auto">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -129,7 +129,7 @@ export default function WhereToStayPage() {
             <section id="what-to-look-for">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">What to Look for in Chakwal Accommodation</h2>
               <div className="relative h-48 rounded-2xl overflow-hidden mb-5">
-                <Image src="https://images.unsplash.com/photo-1761470371217-9cdf2dbb37ef?w=900&q=80&auto=format&fit=crop" alt="Modern clean hotel room attached bathroom Pakistan guest house standard" fill className="object-cover" />
+                <Image src="/images/rooms/classic-room-chakwal-grand-guest-house.jpg" alt="Classic standard room Chakwal Grand Guest House Pakistan clean comfortable" fill className="object-cover" />
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">Before choosing your accommodation in Chakwal, check these key factors:</p>
               <div className="space-y-3">
@@ -161,7 +161,7 @@ export default function WhereToStayPage() {
                 <span className="text-sm text-muted-foreground ml-2">5.0 Google Rating — 20 verified reviews</span>
               </div>
               <div className="relative h-56 rounded-2xl overflow-hidden mb-5">
-                <Image src="https://images.unsplash.com/photo-1775744244614-9b66f65d48c0?w=900&q=80&auto=format&fit=crop" alt="Chakwal Grand Guest House premium room interior modern design" fill className="object-cover" />
+                <Image src="/images/rooms/executive-room-chakwal-grand-guest-house.jpg" alt="Executive premium room Chakwal Grand Guest House modern interior design" fill className="object-cover" />
               </div>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>

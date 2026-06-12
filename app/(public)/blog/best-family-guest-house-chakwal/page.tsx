@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     title: "Best Family Guest House in Chakwal 2025 — Family Rooms & Rates",
     description: "Spacious family rooms, 24/7 service, free WiFi. Chakwal Grand Guest House — the top choice for families visiting Chakwal.",
     url: "https://www.staychakwal.de/blog/best-family-guest-house-chakwal",
-    images: [{ url: "https://images.unsplash.com/photo-1775744244614-9b66f65d48c0?w=1200&q=80", width: 1200, height: 630, alt: "Family guest house room Chakwal clean comfortable" }],
+    images: [{ url: "https://www.chakwalgrand.pk/images/rooms/suite-room-chakwal-grand-guest-house.jpg", width: 1200, height: 630, alt: "Family guest house room Chakwal clean comfortable" }],
   },
 };
 
@@ -26,7 +26,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Best Family Guest House in Chakwal 2025 — Family Rooms, Rates & Booking",
   "description": "Complete guide to family accommodation in Chakwal, Punjab — room options, features, rates, and booking tips.",
-  "image": "https://images.unsplash.com/photo-1775744244614-9b66f65d48c0?w=1200&q=80",
+  "image": "https://www.chakwalgrand.pk/images/rooms/suite-room-chakwal-grand-guest-house.jpg",
   "url": "https://www.staychakwal.de/blog/best-family-guest-house-chakwal",
   "datePublished": "2025-03-01",
   "dateModified": "2025-06-01",
@@ -50,22 +50,22 @@ const ROOM_TYPES = [
   {
     name: "Family Room (Non-AC)", price: "PKR 2,500/night",
     capacity: "4 Adults + 2 Children", best: "Budget family trips",
-    image: "https://images.unsplash.com/photo-1760067537723-17efcdb6cdd5?w=700&q=80&auto=format&fit=crop",
-    imageAlt: "Clean family room guest house Pakistan non-AC comfortable",
+    image: "/images/rooms/classic-room-chakwal-grand-guest-house.jpg",
+    imageAlt: "Family room non-AC Chakwal Grand Guest House Pakistan clean comfortable",
     features: ["Spacious layout", "Sitting area with chairs", "Hot water 24/7", "TV cable", "Extra bedding on request", "Attached bathroom"],
   },
   {
     name: "Family Room (AC)", price: "PKR 3,500/night",
     capacity: "4 Adults + 2 Children", best: "Summer/hot weather visits",
-    image: "https://images.unsplash.com/photo-1761470371217-9cdf2dbb37ef?w=700&q=80&auto=format&fit=crop",
-    imageAlt: "Family room with air conditioning Pakistan guest house bed clean",
+    image: "/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg",
+    imageAlt: "Family room air conditioned Chakwal Grand Guest House Pakistan clean",
     features: ["Air conditioning 12 hrs/day", "Spacious layout", "Hot water 24/7", "TV cable", "Free WiFi", "Attached bathroom"],
   },
   {
     name: "Apartment Suite (AC)", price: "PKR 4,500/night",
     capacity: "4–6 Adults", best: "Extended stays, large families",
-    image: "https://images.unsplash.com/photo-1775744244614-9b66f65d48c0?w=700&q=80&auto=format&fit=crop",
-    imageAlt: "Apartment suite guest house Pakistan kitchenette living area family stay",
+    image: "/images/rooms/premium-room-chakwal-grand-guest-house.jpg",
+    imageAlt: "Apartment suite Chakwal Grand Guest House kitchenette living area family stay",
     features: ["Kitchenette (basic cooking)", "Separate living room", "Air conditioning", "Mini fridge", "Free WiFi", "Premium linen"],
   },
 ];
@@ -94,7 +94,7 @@ export default function BestFamilyGuestHousePage() {
 
       {/* Hero */}
       <div className="relative h-[50vh] min-h-[350px] w-full overflow-hidden">
-        <Image src="https://images.unsplash.com/photo-1775744244614-9b66f65d48c0?w=1400&q=85&auto=format&fit=crop" alt="Best family guest house room Chakwal Punjab clean spacious comfortable" fill className="object-cover" priority />
+        <Image src="/images/rooms/suite-room-chakwal-grand-guest-house.jpg" alt="Best family guest house suite room Chakwal Grand Guest House Punjab Pakistan" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 max-w-4xl mx-auto">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -281,7 +281,7 @@ export default function BestFamilyGuestHousePage() {
             <section id="attractions">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Best Chakwal Attractions for Families</h2>
               <div className="relative h-48 rounded-2xl overflow-hidden mb-5">
-                <Image src="https://images.unsplash.com/photo-1569173112611-52a7cd38bea9?w=900&q=80&auto=format&fit=crop" alt="Kallar Kahar Lake Chakwal family boat ride children scenic" fill className="object-cover" />
+                <Image src="/images/blogs/sacred-pond-katas-raj-chakwal.jpg" alt="Kallar Kahar Lake Chakwal family scenic tourist destination Punjab Pakistan" fill className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-4">
                   <p className="text-xs text-muted-foreground italic">Kallar Kahar Lake — boat rides are a favourite with children</p>
                 </div>

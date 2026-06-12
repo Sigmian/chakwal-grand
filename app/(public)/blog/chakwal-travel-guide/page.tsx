@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     title: "Complete Chakwal Travel Guide 2025 — How to Get There, Stay & Explore",
     description: "Everything you need to know for a perfect trip to Chakwal — transport, accommodation, attractions, food, and insider tips.",
     url: "https://www.staychakwal.de/blog/chakwal-travel-guide",
-    images: [{ url: "https://images.unsplash.com/photo-1722082933604-2f3e07c58c10?w=1200&q=80", width: 1200, height: 630, alt: "Chakwal Punjab Pakistan landscape travel guide" }],
+    images: [{ url: "https://www.chakwalgrand.pk/images/blogs/chakwal-travel-mountains-punjab.jpg", width: 1200, height: 630, alt: "Chakwal Punjab Pakistan landscape travel guide" }],
   },
 };
 
@@ -26,7 +26,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Complete Chakwal Travel Guide 2025 — How to Get There, Stay & Explore",
   "description": "The complete travel guide to Chakwal, Punjab, Pakistan — transport, accommodation, attractions, food, and travel tips.",
-  "image": "https://images.unsplash.com/photo-1722082933604-2f3e07c58c10?w=1200&q=80",
+  "image": "https://www.chakwalgrand.pk/images/blogs/chakwal-travel-mountains-punjab.jpg",
   "url": "https://www.staychakwal.de/blog/chakwal-travel-guide",
   "datePublished": "2025-02-01",
   "dateModified": "2025-06-01",
@@ -87,7 +87,7 @@ export default function ChakwalTravelGuidePage() {
 
       {/* Hero */}
       <div className="relative h-[50vh] min-h-[350px] w-full overflow-hidden">
-        <Image src="https://images.unsplash.com/photo-1722082933604-2f3e07c58c10?w=1400&q=85&auto=format&fit=crop" alt="Chakwal Punjab Pakistan landscape mountains hills travel destination" fill className="object-cover" priority />
+        <Image src="/images/blogs/chakwal-travel-mountains-punjab.jpg" alt="Chakwal Punjab Pakistan landscape mountains hills travel destination" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 max-w-4xl mx-auto">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -132,7 +132,7 @@ export default function ChakwalTravelGuidePage() {
             <section id="intro">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-4">Why Visit Chakwal, Punjab?</h2>
               <div className="relative h-52 rounded-2xl overflow-hidden mb-5">
-                <Image src="https://images.unsplash.com/photo-1631654337728-0096fd65864e?w=900&q=80&auto=format&fit=crop" alt="Katas Raj ancient temples Chakwal Punjab Pakistan heritage site" fill className="object-cover" />
+                <Image src="/images/blogs/katas-raj-temples-chakwal-pakistan.jpg" alt="Katas Raj ancient temples Chakwal Punjab Pakistan heritage site" fill className="object-cover" />
               </div>
               <div className="space-y-3 text-muted-foreground leading-relaxed">
                 <p>Chakwal is one of Punjab&apos;s most underrated tourist destinations — a district packed with historical wonders, natural beauty, and cultural richness that few tourists ever discover. Located in the heart of the Potohar Plateau, Chakwal offers something for every kind of traveler.</p>
@@ -206,7 +206,7 @@ export default function ChakwalTravelGuidePage() {
             <section id="stay">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Where to Stay in Chakwal</h2>
               <div className="relative h-48 rounded-2xl overflow-hidden mb-5">
-                <Image src="https://images.unsplash.com/photo-1759828536741-ba79f6ef37c1?w=900&q=80&auto=format&fit=crop" alt="Clean comfortable guest house room Chakwal Grand Punjab Pakistan" fill className="object-cover" />
+                <Image src="/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg" alt="Clean comfortable AC room Chakwal Grand Guest House Punjab Pakistan" fill className="object-cover" />
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
                 For accommodation in Chakwal, <strong className="text-foreground">Chakwal Grand Guest House</strong> is the most popular and trusted option — rated 5.0 stars on Google with 20+ verified reviews. It has 3 branches across the district: Chakwal city, Kallar Kahar, and Sargodha.
