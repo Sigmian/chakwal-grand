@@ -16,7 +16,7 @@ import {
   LayoutDashboard, Building2, BedDouble, CalendarCheck,
   Sparkles, Users, Package, DollarSign, UserCog, Star, Tag,
   Settings, ChevronDown, ChevronRight, LogOut, Menu, X,
-  Shield, Crown,
+  Shield, Crown, ShoppingBag,
 } from "lucide-react";
 import { cn, getInitials } from "@/utils";
 import { getNavForRole } from "@/config/navigation";
@@ -27,7 +27,7 @@ import { UserRole } from "@/types";
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Building2, BedDouble, CalendarCheck,
   Sparkles, Users, Package, DollarSign, UserCog, Star, Tag,
-  Settings,
+  Settings, ShoppingBag,
 };
 
 interface Props {

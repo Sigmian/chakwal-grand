@@ -34,7 +34,6 @@ const STATUS_CONFIG = {
 
 export function GuestOrderCard({ order }: { order: Order }) {
   const router = useRouter();
-  const [open, setOpen] = useTransition();
   const [isPending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState(false);
 

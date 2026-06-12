@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import prisma from "@/lib/db/prisma";
 import { sendPushToBranch } from "@/lib/push/send";
@@ -20,7 +21,7 @@ function setGuestCookie(token: string) {
   });
 }
 
-export function clearGuestCookie() {
+export async function clearGuestCookie() {
   cookies().set(COOKIE_NAME, "", { maxAge: 0, path: "/" });
 }
 
@@ -96,11 +97,11 @@ export async function guestLogin(bookingRef: string, phone: string) {
   // Upsert session — one session per booking
   const session = await prisma.guestSession.upsert({
     where:  { bookingId: booking.id },
-    update: { token: require("crypto").randomUUID(), isActive: true, expiresAt, lastAccessAt: new Date() },
+    update: { token: randomUUID(), isActive: true, expiresAt, lastAccessAt: new Date() },
     create: {
       bookingId: booking.id,
       phone:     ph,
-      token:     require("crypto").randomUUID(),
+      token:     randomUUID(),
       isActive:  true,
       expiresAt,
     },
@@ -134,8 +135,11 @@ export async function getGuestDashboard() {
   const canteenTotal  = orders
     .filter((o) => o.status !== "CANCELLED")
     .reduce((s, o) => s + Number(o.totalAmount), 0);
-  const extraCharges  = Number(booking.extraCharges) - canteenTotal; // Other extras (POS, etc.)
-  const totalPayable  = Number(booking.totalAmount) + canteenTotal;
+  // extraCharges includes both room-orders AND POS sales; strip canteen to get other extras
+  const extraCharges  = Math.max(0, Number(booking.extraCharges) - canteenTotal);
+  // totalPayable = room + canteen + other extras (booking.totalAmount already has room-orders baked in
+  // so we derive cleanly from components to avoid double-counting)
+  const totalPayable  = roomCharges + canteenTotal + extraCharges;
 
   return {
     authenticated: true as const,
@@ -380,6 +384,7 @@ export async function getGuestOrders() {
 
   return {
     authenticated: true as const,
+    guestName:     session.booking.customer.name,
     roomNumber:    session.booking.room.number,
     orders: orders.map((o) => ({
       id:          o.id,

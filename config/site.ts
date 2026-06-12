@@ -6,7 +6,7 @@ export const siteConfig = {
   phone:       "0334-7742767",
   phoneE164:   "+923347742767",
   whatsapp:    "923347742767",
-  email:       "info@chakwalgrand.pk",
+  email:       "chakwalguesthouse@gmail.com",
   currency:    "PKR",
   currencySymbol: "₨",
 

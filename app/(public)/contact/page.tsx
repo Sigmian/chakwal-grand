@@ -137,13 +137,17 @@ export default function ContactPage() {
                       </a>
                     </div>
                   </div>
-                  <div className="h-64 bg-surface-base flex items-center justify-center text-muted-foreground text-sm">
-                    <a href={b.mapUrl} target="_blank" rel="noreferrer"
-                      className="flex flex-col items-center gap-3 hover:text-gold-400 transition-colors">
-                      <MapPin className="w-10 h-10 opacity-30" />
-                      <span>Click to open in Google Maps</span>
-                      <span className="text-xs opacity-70">{b.address}</span>
-                    </a>
+                  <div className="h-52 bg-surface-base border-t border-border flex flex-col items-center justify-center gap-4 px-6 text-center">
+                    <div className="w-12 h-12 rounded-full bg-gold-500/10 flex items-center justify-center">
+                      <MapPin className="w-6 h-6 text-gold-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-foreground font-medium mb-1">{b.address}</p>
+                      <a href={b.mapUrl} target="_blank" rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-gold-400 hover:text-gold-300 font-semibold transition-colors underline underline-offset-2">
+                        Open in Google Maps →
+                      </a>
+                    </div>
                   </div>
                 </div>
               ))}

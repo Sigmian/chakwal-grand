@@ -31,7 +31,11 @@ const nextConfig = {
   // ─── Experimental Features ────────────────────
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost:3000", "chakwalgrand.pk", "www.chakwalgrand.pk"],
+      allowedOrigins: [
+        "localhost:3000",
+        "chakwalgrand.pk", "www.chakwalgrand.pk",
+        "staychakwal.de",  "www.staychakwal.de",
+      ],
     },
     ppr: false,
   },

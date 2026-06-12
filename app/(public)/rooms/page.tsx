@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   title: "Rooms & Suites | Chakwal Grand Guest House",
   description: "Explore AC rooms, family suites and VIP rooms at Chakwal Grand Guest House in Chakwal, Punjab. Rates from PKR 2,000/night. View availability and book online.",
   keywords: ["rooms in Chakwal", "AC room Chakwal", "family suite Chakwal", "VIP room Chakwal", "cheap hotel room Chakwal", "Chakwal Grand rooms"],
-  alternates: { canonical: "https://www.chakwalgrand.pk/rooms" },
+  alternates: { canonical: "https://www.staychakwal.de/rooms" },
   openGraph: {
     title:       "Rooms & Suites | Chakwal Grand Guest House",
     description: "AC rooms, family suites & VIP rooms from PKR 2,000/night in Chakwal, Punjab.",
-    url:         "https://www.chakwalgrand.pk/rooms",
+    url:         "https://www.staychakwal.de/rooms",
   },
 };
 

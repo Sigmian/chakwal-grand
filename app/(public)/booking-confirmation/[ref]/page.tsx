@@ -256,6 +256,20 @@ export default async function BookingConfirmationPage({ params }: Props) {
           )}
         </div>
 
+        {/* ── Guest Portal ── */}
+        <div className="bg-surface-elevated border border-gold-500/20 rounded-2xl p-5 mb-5 text-center">
+          <p className="text-sm font-bold text-foreground mb-1">Track Orders & Your Stay</p>
+          <p className="text-xs text-muted-foreground mb-4">
+            After check-in, use our Guest Portal to order food & drinks to your room and view your bill live.
+          </p>
+          <Link
+            href="/guest/login"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-md transition-all"
+          >
+            Open Guest Portal
+          </Link>
+        </div>
+
         <div className="text-center">
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             ← Back to home

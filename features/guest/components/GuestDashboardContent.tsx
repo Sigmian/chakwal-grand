@@ -14,15 +14,12 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const ORDER_STATUS_LABEL: Record<string, string> = {
-  PENDING:   "Preparing",
-  PREPARING: "On the way",
+  PENDING:   "Received",
+  PREPARING: "Preparing",
   DELIVERED: "Delivered",
   CANCELLED: "Cancelled",
 };
 
-function fmt(iso: string) {
-  return new Date(iso).toLocaleDateString("en-PK", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-}
 
 export function GuestDashboardContent({ data }: { data: DashData }) {
   const { guest, booking, room, branch, billing, orders } = data;

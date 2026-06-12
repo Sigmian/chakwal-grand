@@ -49,7 +49,7 @@ export function GuestNav({ guestName, roomNumber }: { guestName: string; roomNum
       </header>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface-elevated/95 backdrop-blur-sm safe-area-pb">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface-elevated/95 backdrop-blur-sm pb-safe">
         <div className="max-w-2xl mx-auto flex">
           {links.map(({ href, icon: Icon, label }) => {
             const active = pathname === href;

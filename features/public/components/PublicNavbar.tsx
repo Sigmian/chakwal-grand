@@ -8,12 +8,13 @@ import { Menu, X, Phone } from "lucide-react";
 import { cn } from "@/utils";
 
 const NAV = [
-  { label: "Home",       href: "/"          },
-  { label: "Rooms",      href: "/rooms"     },
-  { label: "Blog",       href: "/blog"      },
-  { label: "About",      href: "/about"     },
-  { label: "Contact",    href: "/contact"   },
-  { label: "My Booking", href: "/my-booking" },
+  { label: "Home",         href: "/"           },
+  { label: "Rooms",        href: "/rooms"      },
+  { label: "Blog",         href: "/blog"       },
+  { label: "About",        href: "/about"      },
+  { label: "Contact",      href: "/contact"    },
+  { label: "My Booking",   href: "/my-booking" },
+  { label: "Guest Portal", href: "/guest/login"},
 ];
 
 export function PublicNavbar() {

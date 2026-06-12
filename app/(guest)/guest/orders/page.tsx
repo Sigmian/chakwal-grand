@@ -13,7 +13,7 @@ export default async function GuestOrdersPage() {
 
   return (
     <div className="min-h-screen bg-surface-base pb-20">
-      <GuestNav guestName="" roomNumber={data.roomNumber} />
+      <GuestNav guestName={data.guestName} roomNumber={data.roomNumber} />
       <div className="max-w-2xl mx-auto px-4 pt-6">
         <h1 className="text-xl font-bold text-foreground mb-1">My Orders</h1>
         <p className="text-sm text-muted-foreground mb-6">Room {data.roomNumber}</p>
