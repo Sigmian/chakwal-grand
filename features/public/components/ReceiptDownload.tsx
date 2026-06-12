@@ -169,13 +169,16 @@ export function ReceiptDownload(props: Props) {
       doc.setFillColor(254, 242, 242);
       doc.setDrawColor(239, 68, 68);
       doc.setLineWidth(0.5);
-      doc.roundedRect(20, finalY, W - 40, 16, 3, 3, "FD");
+      doc.roundedRect(20, finalY, W - 40, 20, 3, 3, "FD");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(239, 68, 68);
+      doc.text("PAYMENT PENDING", W / 2, finalY + 7, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
       doc.text(
-        "⚠  PAYMENT PENDING — Please pay PKR " + props.totalAmount.toLocaleString("en-PK") + " in cash on arrival",
-        W / 2, finalY + 10, { align: "center" }
+        "Please pay PKR " + props.totalAmount.toLocaleString("en-PK") + " in cash on arrival · CNIC required",
+        W / 2, finalY + 14, { align: "center" }
       );
 
       const pageH = doc.internal.pageSize.getHeight();
