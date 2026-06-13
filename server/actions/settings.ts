@@ -38,6 +38,67 @@ export async function updateCompanyAction(id: string, data: {
   }
 }
 
+// ── Announcements ──────────────────────────────────────────────
+
+export async function getAnnouncements() {
+  await requirePermission("settings:branch");
+  return prisma.announcement.findMany({ orderBy: { createdAt: "desc" } });
+}
+
+export async function createAnnouncement(data: {
+  title: string;
+  body: string;
+  isActive: boolean;
+  expiresAt?: string | null;
+}) {
+  await requirePermission("settings:company");
+  if (!data.title.trim() || !data.body.trim()) {
+    return { success: false, error: "Title and message are required." };
+  }
+  try {
+    await prisma.announcement.create({
+      data: {
+        title:     data.title.trim(),
+        body:      data.body.trim(),
+        isActive:  data.isActive,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      },
+    });
+    revalidatePath("/announcements");
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    console.error("[createAnnouncement]", err);
+    return { success: false, error: "Failed to create announcement." };
+  }
+}
+
+export async function toggleAnnouncement(id: string, isActive: boolean) {
+  await requirePermission("settings:company");
+  try {
+    await prisma.announcement.update({ where: { id }, data: { isActive: !isActive } });
+    revalidatePath("/announcements");
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    console.error("[toggleAnnouncement]", err);
+    return { success: false, error: "Failed to update announcement." };
+  }
+}
+
+export async function deleteAnnouncement(id: string) {
+  await requirePermission("settings:company");
+  try {
+    await prisma.announcement.delete({ where: { id } });
+    revalidatePath("/announcements");
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    console.error("[deleteAnnouncement]", err);
+    return { success: false, error: "Failed to delete announcement." };
+  }
+}
+
 export async function resetUserPassword(userId: string, newPassword: string) {
   await requirePermission("settings:company");
   if (!newPassword || newPassword.length < 8) {

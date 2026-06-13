@@ -143,6 +143,15 @@ export const DASHBOARD_NAV: NavItem[] = [
     ],
   },
   {
+    label: "Announcements",
+    href:  "/announcements",
+    icon:  "Megaphone",
+    requiredRoles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.BRANCH_MANAGER,
+    ],
+  },
+  {
     label: "Settings",
     href:  "/settings",
     icon:  "Settings",
