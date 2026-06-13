@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     title: "Best Family Guest House in Chakwal 2025 — Family Rooms & Rates",
     description: "Spacious family rooms, 24/7 service, free WiFi. Chakwal Grand Guest House — the top choice for families visiting Chakwal.",
     url: "https://www.staychakwal.de/blog/best-family-guest-house-chakwal",
-    images: [{ url: "https://www.chakwalgrand.pk/images/rooms/suite-room-chakwal-grand-guest-house.jpg", width: 1200, height: 630, alt: "Family guest house room Chakwal clean comfortable" }],
+    images: [{ url: "https://www.staychakwal.de/images/rooms/suite-room-chakwal-grand-guest-house.jpg", width: 1200, height: 630, alt: "Family guest house room Chakwal clean comfortable" }],
   },
 };
 
@@ -26,7 +26,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Best Family Guest House in Chakwal 2025 — Family Rooms, Rates & Booking",
   "description": "Complete guide to family accommodation in Chakwal, Punjab — room options, features, rates, and booking tips.",
-  "image": "https://www.chakwalgrand.pk/images/rooms/suite-room-chakwal-grand-guest-house.jpg",
+  "image": "https://www.staychakwal.de/images/rooms/suite-room-chakwal-grand-guest-house.jpg",
   "url": "https://www.staychakwal.de/blog/best-family-guest-house-chakwal",
   "datePublished": "2025-03-01",
   "dateModified": "2025-06-01",

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Terms of Use | Chakwal Grand Guest House",
+  title: `Terms of Use | ${siteConfig.name}`,
   description: "Terms and conditions for staying at Chakwal Grand Guest House in Chakwal, Punjab, Pakistan.",
-  alternates: { canonical: "https://www.staychakwal.de/terms" },
+  alternates: { canonical: `${siteConfig.url}/terms` },
 };
 
 export default function TermsPage() {
@@ -48,7 +49,7 @@ export default function TermsPage() {
             <ul className="list-disc pl-5 space-y-1 text-sm">
               <li>Free cancellation up to 24 hours before your check-in date.</li>
               <li>Late cancellations or no-shows may be subject to a one-night charge at management&apos;s discretion.</li>
-              <li>To cancel, call or WhatsApp us at 0334-7742767.</li>
+              <li>To cancel, call or WhatsApp us at {siteConfig.phone}.</li>
             </ul>
           </section>
 
@@ -71,7 +72,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-bold text-foreground mb-3">7. Contact</h2>
             <p className="text-sm">For queries about these terms, contact us at{" "}
               <a href="mailto:chakwalguesthouse@gmail.com" className="text-gold-400 hover:underline">chakwalguesthouse@gmail.com</a>{" "}
-              or call <a href="tel:+923347742767" className="text-gold-400 hover:underline">0334-7742767</a>.
+              or call <a href={`tel:${siteConfig.phoneE164}`} className="text-gold-400 hover:underline">{siteConfig.phone}</a>.
             </p>
           </section>
         </div>

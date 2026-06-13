@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     title: "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
     description: "Chakwal Grand Guest House — top-rated accommodation in Chakwal. AC rooms, family suites, free WiFi from PKR 2,000/night.",
     url: "https://www.staychakwal.de/blog/where-to-stay-chakwal",
-    images: [{ url: "https://www.chakwalgrand.pk/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg", width: 1200, height: 630, alt: "Best guest house room Chakwal Punjab" }],
+    images: [{ url: "https://www.staychakwal.de/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg", width: 1200, height: 630, alt: "Best guest house room Chakwal Punjab" }],
   },
 };
 
@@ -26,7 +26,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
   "description": "Complete guide to the best accommodation options in Chakwal, Punjab, Pakistan.",
-  "image": "https://www.chakwalgrand.pk/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg",
+  "image": "https://www.staychakwal.de/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg",
   "url": "https://www.staychakwal.de/blog/where-to-stay-chakwal",
   "datePublished": "2025-02-20",
   "dateModified": "2025-06-01",

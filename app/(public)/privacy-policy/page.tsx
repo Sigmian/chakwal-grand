@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Chakwal Grand Guest House",
+  title: `Privacy Policy | ${siteConfig.name}`,
   description: "Privacy policy for Chakwal Grand Guest House. Learn how we collect and protect your personal information.",
-  alternates: { canonical: "https://www.staychakwal.de/privacy-policy" },
+  alternates: { canonical: `${siteConfig.url}/privacy-policy` },
 };
 
 export default function PrivacyPolicyPage() {
@@ -58,7 +59,7 @@ export default function PrivacyPolicyPage() {
               <a href="mailto:chakwalguesthouse@gmail.com" className="text-gold-400 hover:underline">
                 chakwalguesthouse@gmail.com
               </a>{" "}or call{" "}
-              <a href="tel:+923347742767" className="text-gold-400 hover:underline">0334-7742767</a>.
+              <a href={`tel:${siteConfig.phoneE164}`} className="text-gold-400 hover:underline">{siteConfig.phone}</a>.
             </p>
           </section>
 

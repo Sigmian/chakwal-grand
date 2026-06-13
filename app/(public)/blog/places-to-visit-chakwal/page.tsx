@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     title: "Top 10 Places to Visit in Chakwal 2025 — Complete Tourist Guide",
     description: "From Katas Raj Temples to Kallar Kahar Lake — complete guide to tourist attractions in Chakwal, Punjab, Pakistan.",
     url: "https://www.staychakwal.de/blog/places-to-visit-chakwal",
-    images: [{ url: "https://www.chakwalgrand.pk/images/blogs/chakwal-landscape-punjab-pakistan.jpg", width: 1200, height: 630, alt: "Beautiful landscape Chakwal Punjab Pakistan tourist attraction" }],
+    images: [{ url: "https://www.staychakwal.de/images/blogs/chakwal-landscape-punjab-pakistan.jpg", width: 1200, height: 630, alt: "Beautiful landscape Chakwal Punjab Pakistan tourist attraction" }],
   },
 };
 
@@ -26,7 +26,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Top 10 Places to Visit in Chakwal — Complete Tourist Guide 2025",
   "description": "Discover the most beautiful and historic places in Chakwal district, Punjab Pakistan.",
-  "image": "https://www.chakwalgrand.pk/images/blogs/chakwal-landscape-punjab-pakistan.jpg",
+  "image": "https://www.staychakwal.de/images/blogs/chakwal-landscape-punjab-pakistan.jpg",
   "url": "https://www.staychakwal.de/blog/places-to-visit-chakwal",
   "datePublished": "2025-01-15",
   "dateModified": "2025-06-01",

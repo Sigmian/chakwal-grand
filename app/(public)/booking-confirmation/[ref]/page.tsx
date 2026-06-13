@@ -18,7 +18,11 @@ import type { Metadata } from "next";
 interface Props { params: { ref: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return { title: `Booking ${params.ref} — Chakwal Grand` };
+  return {
+    title: `Booking ${params.ref} — Chakwal Grand`,
+    robots: { index: false, follow: false },
+    alternates: { canonical: `${siteConfig.url}/booking-confirmation/${params.ref}` },
+  };
 }
 
 export default async function BookingConfirmationPage({ params }: Props) {

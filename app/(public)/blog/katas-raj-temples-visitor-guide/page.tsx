@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     title: "Katas Raj Temples — Complete Visitor Guide 2025 | Chakwal Punjab",
     description: "Everything you need to know before visiting Katas Raj Temples — one of Pakistan's most sacred and historic sites. History, timings, directions, and travel tips.",
     url: "https://www.staychakwal.de/blog/katas-raj-temples-visitor-guide",
-    images: [{ url: "https://www.chakwalgrand.pk/images/blogs/katas-raj-temples-chakwal-pakistan.jpg", width: 1200, height: 630, alt: "Katas Raj Temples Chakwal Pakistan" }],
+    images: [{ url: "https://www.staychakwal.de/images/blogs/katas-raj-temples-chakwal-pakistan.jpg", width: 1200, height: 630, alt: "Katas Raj Temples Chakwal Pakistan" }],
   },
 };
 
@@ -27,7 +27,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Katas Raj Temples Complete Visitor Guide 2025 — History, Timings, How to Reach",
   "description": "Complete visitor guide to Katas Raj Temples, Chakwal — history, architecture, how to visit, timings, and travel tips.",
-  "image": "https://www.chakwalgrand.pk/images/blogs/katas-raj-temples-chakwal-pakistan.jpg",
+  "image": "https://www.staychakwal.de/images/blogs/katas-raj-temples-chakwal-pakistan.jpg",
   "url": "https://www.staychakwal.de/blog/katas-raj-temples-visitor-guide",
   "datePublished": "2025-01-10",
   "dateModified": "2025-06-01",

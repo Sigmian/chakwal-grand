@@ -13,6 +13,7 @@ const NAV = [
   { label: "Gallery",      href: "/gallery"    },
   { label: "Blog",         href: "/blog"       },
   { label: "About",        href: "/about"      },
+  { label: "Location",     href: "/location"   },
   { label: "Contact",      href: "/contact"    },
   { label: "My Booking",   href: "/my-booking" },
   { label: "My Stay",      href: "/guest/login"},
