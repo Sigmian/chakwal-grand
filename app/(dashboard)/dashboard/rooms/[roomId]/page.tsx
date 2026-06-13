@@ -10,6 +10,7 @@ import { getSession } from "@/lib/auth/session";
 import { formatPKR } from "@/utils";
 import { RoomCalendar } from "@/features/rooms/components/RoomCalendar";
 import { MaintenancePanel } from "@/features/rooms/components/MaintenancePanel";
+import { RoomImageManager } from "@/features/rooms/components/RoomImageManager";
 
 const STATUS_STYLE: Record<string, string> = {
   AVAILABLE:   "bg-green-500/15 text-green-400 border-green-500/30",
@@ -165,6 +166,20 @@ export default async function RoomDetailPage({ params }: { params: { roomId: str
           </div>
         </div>
       </div>
+
+      {/* Room Images */}
+      {hasPermission(user.role, "rooms:upload_images") && (
+        <div className="card-luxury rounded-2xl p-5">
+          <h2 className="font-bold text-foreground mb-4 flex items-center gap-2">
+            <svg className="w-4 h-4 text-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            Room Photos
+            <span className="ml-auto text-xs text-muted-foreground font-normal">{room.images.length} photo{room.images.length !== 1 ? "s" : ""}</span>
+          </h2>
+          <RoomImageManager roomId={room.id} images={room.images} />
+        </div>
+      )}
     </div>
   );
 }

@@ -111,6 +111,14 @@ export async function createProduct(rawInput: CreateProductInput) {
   }
 }
 
+// ─── UPDATE PRODUCT IMAGE ─────────────────────────────────────
+export async function updateProductImage(productId: string, imageUrl: string | null) {
+  await requirePermission("inventory:update");
+  await prisma.product.update({ where: { id: productId }, data: { image: imageUrl } });
+  revalidatePath("/inventory/products");
+  return { success: true };
+}
+
 // ─── ADD INVENTORY ITEM (stock a product in a branch) ────────
 export async function addInventoryItem(rawInput: AddInventoryItemInput) {
   const user = await requirePermission("inventory:create");

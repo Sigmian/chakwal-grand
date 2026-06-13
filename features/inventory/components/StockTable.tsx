@@ -11,6 +11,7 @@ import { Plus, AlertTriangle, CheckCircle, Pencil, X, ShoppingBag, Trash2 } from
 import { restockItem, updateInventoryItem, deleteInventoryItem } from "@/server/actions/inventory";
 import { cn, formatPKR } from "@/utils";
 import { Badge } from "@/components/shared";
+import { ProductImagePicker } from "@/features/inventory/components/ProductImagePicker";
 
 interface InventoryItem {
   id:            string;
@@ -21,9 +22,11 @@ interface InventoryItem {
   isLowStock?:   boolean;
   isExpired?:    boolean;
   product?: {
+    id:               string;
     name:             string;
     brand?:           string | null;
     unit:             string;
+    image?:           string | null;
     isCanteenVisible?: boolean;
   } | null;
 }
@@ -104,11 +107,22 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
     <>
     <tr className={cn("group", isPending && "opacity-60")}>
       <td>
-        <div>
-          <p className="text-sm font-semibold text-foreground">{item.product?.name ?? "—"}</p>
-          {item.product?.brand && (
-            <p className="text-xs text-muted-foreground">{item.product.brand}</p>
-          )}
+        <div className="flex items-center gap-3">
+          {canEdit && item.product?.id ? (
+            <ProductImagePicker
+              productId={item.product.id}
+              productName={item.product.name}
+              currentImage={item.product.image ?? null}
+            />
+          ) : item.product?.image ? (
+            <img src={item.product.image} alt={item.product.name} className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
+          ) : null}
+          <div>
+            <p className="text-sm font-semibold text-foreground">{item.product?.name ?? "—"}</p>
+            {item.product?.brand && (
+              <p className="text-xs text-muted-foreground">{item.product.brand}</p>
+            )}
+          </div>
         </div>
       </td>
       <td>
