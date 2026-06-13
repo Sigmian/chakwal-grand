@@ -152,7 +152,7 @@ export async function createStaffMember(rawInput: CreateStaffInput) {
         role:         input.role,
         passwordHash: "$2b$12$placeholder", // force password reset on first login
         isActive:     true,
-        companyId:    "company-001", // TODO: get from session context in production
+        companyId:    user.companyId,
       },
     });
 
