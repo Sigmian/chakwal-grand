@@ -31,7 +31,6 @@ export function RoomImageManager({ roomId, images }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { uploading, pickFile, handleInputChange, inputRef } = useImageUpload({
-    folder: `rooms/${roomId}`,
     onUploaded: (url) => {
       saveImages([url]);
     },

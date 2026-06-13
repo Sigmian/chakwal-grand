@@ -3,64 +3,53 @@
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 
-interface UseImageUploadOptions {
-  folder?: string;
-  onUploaded?: (url: string) => void;
+const CLOUD_NAME    = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME    ?? "";
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "";
+
+function isCloudinaryConfigured() {
+  return CLOUD_NAME && UPLOAD_PRESET &&
+    CLOUD_NAME !== "your_cloud_name" &&
+    UPLOAD_PRESET !== "your_preset";
 }
 
-export function useImageUpload({ folder = "uploads", onUploaded }: UseImageUploadOptions = {}) {
-  const [uploading, setUploading]   = useState(false);
-  const [progress, setProgress]     = useState(0);
+interface Options { onUploaded?: (url: string) => void }
+
+export function useImageUpload({ onUploaded }: Options = {}) {
+  const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pickFile = () => inputRef.current?.click();
 
   const handleFile = async (file: File) => {
     if (!file) return;
+    if (!isCloudinaryConfigured()) {
+      toast.error("Image upload not set up yet — paste an image URL instead.");
+      return;
+    }
+
     setUploading(true);
-    setProgress(10);
-
     try {
-      // 1. Get presigned URL from our API
-      const presignRes = await fetch("/api/upload/presign", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ contentType: file.type, folder }),
+      const fd = new FormData();
+      fd.append("file",         file);
+      fd.append("upload_preset", UPLOAD_PRESET);
+      fd.append("folder",       "chakwal-grand");
+
+      const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body:   fd,
       });
+      const data = await res.json();
 
-      const presignData = await presignRes.json();
-
-      if (!presignRes.ok) {
-        if (presignData.notConfigured) {
-          toast.error("File upload not configured — please paste an image URL instead.");
-        } else {
-          toast.error(presignData.error ?? "Upload failed");
-        }
+      if (!res.ok || data.error) {
+        toast.error(data.error?.message ?? "Upload failed — check Cloudinary settings.");
         return;
       }
 
-      setProgress(30);
-
-      // 2. Upload directly to S3
-      const uploadRes = await fetch(presignData.uploadUrl, {
-        method:  "PUT",
-        body:    file,
-        headers: { "Content-Type": file.type },
-      });
-
-      if (!uploadRes.ok) {
-        toast.error("Failed to upload to storage. Please try again.");
-        return;
-      }
-
-      setProgress(90);
-      onUploaded?.(presignData.publicUrl);
-      setProgress(100);
+      onUploaded?.(data.secure_url as string);
     } catch {
-      toast.error("Upload failed. Check your connection.");
+      toast.error("Upload failed. Check your internet connection.");
     } finally {
       setUploading(false);
-      setProgress(0);
       if (inputRef.current) inputRef.current.value = "";
     }
   };
@@ -70,5 +59,5 @@ export function useImageUpload({ folder = "uploads", onUploaded }: UseImageUploa
     if (file) handleFile(file);
   };
 
-  return { uploading, progress, pickFile, handleInputChange, inputRef };
+  return { uploading, pickFile, handleInputChange, inputRef, isConfigured: isCloudinaryConfigured() };
 }

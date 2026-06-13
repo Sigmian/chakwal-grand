@@ -35,6 +35,15 @@ export const DASHBOARD_NAV: NavItem[] = [
     ],
   },
   {
+    label: "Gallery",
+    href:  "/dashboard/gallery",
+    icon:  "Images",
+    requiredRoles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.BRANCH_MANAGER,
+    ],
+  },
+  {
     label: "Bookings",
     href:  "/bookings",
     icon:  "CalendarCheck",

@@ -32,7 +32,6 @@ export function ProductImagePicker({ productId, productName, currentImage }: Pro
   };
 
   const { uploading, pickFile, handleInputChange, inputRef } = useImageUpload({
-    folder: "products",
     onUploaded: saveImage,
   });
 
