@@ -127,13 +127,13 @@ export function AvailabilityCalendar({ roomId, branchId, bookedDates }: Props) {
 
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-4">
-        <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+        <button onClick={prevMonth} aria-label="Previous month" className="p-1.5 rounded-lg hover:bg-accent transition-colors">
           <ChevronLeft className="w-4 h-4 text-muted-foreground" />
         </button>
         <span className="text-sm font-semibold text-foreground">
           {MONTHS[month]} {year}
         </span>
-        <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+        <button onClick={nextMonth} aria-label="Next month" className="p-1.5 rounded-lg hover:bg-accent transition-colors">
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>

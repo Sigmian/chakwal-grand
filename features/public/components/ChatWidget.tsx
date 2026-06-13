@@ -132,7 +132,7 @@ export function ChatWidget() {
                 title="Call us">
                 <Phone className="w-3.5 h-3.5" />
               </a>
-              <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-lg bg-background/15 flex items-center justify-center text-background hover:bg-background/25 transition-colors">
+              <button onClick={() => setOpen(false)} aria-label="Close chat" className="w-8 h-8 rounded-lg bg-background/15 flex items-center justify-center text-background hover:bg-background/25 transition-colors">
                 <ChevronDown className="w-4 h-4" />
               </button>
             </div>

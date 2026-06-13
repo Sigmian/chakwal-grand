@@ -4,8 +4,13 @@
 // All /dashboard/* routes render inside this layout
 // ============================================================
 
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 import { DASHBOARD_ROLES } from "@/lib/auth/permissions";
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
 import { DashboardHeader }  from "@/components/layout/DashboardHeader";
