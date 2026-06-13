@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, Phone } from "lucide-react";
 import { cn } from "@/utils";
+import { siteConfig } from "@/config/site";
 
 const NAV = [
   { label: "Home",         href: "/"           },
@@ -76,9 +77,9 @@ export function PublicNavbar() {
 
           {/* CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <a href="tel:+923347742767" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-gold-400 transition-colors">
+            <a href={`tel:${siteConfig.phoneE164}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-gold-400 transition-colors">
               <Phone className="w-3.5 h-3.5" />
-              <span className="font-mono">0334-7742767</span>
+              <span className="font-mono">{siteConfig.phone}</span>
             </a>
             <Link
               href="/book"
@@ -113,9 +114,9 @@ export function PublicNavbar() {
                 </Link>
               ))}
               <div className="pt-2 pb-1 border-t border-border mt-2">
-                <a href="tel:+923347742767" className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+                <a href={`tel:${siteConfig.phoneE164}`} className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
                   <Phone className="w-4 h-4" />
-                  0334-7742767
+                  {siteConfig.phone}
                 </a>
                 <Link
                   href="/book"

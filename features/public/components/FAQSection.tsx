@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/utils";
+import { siteConfig } from "@/config/site";
 
 const FAQS = [
   {
@@ -158,13 +159,13 @@ export function FAQSection() {
             </div>
           </div>
           <div className="flex gap-3 flex-wrap justify-center">
-            <a href="https://wa.me/923347742767" target="_blank" rel="noreferrer"
+            <a href={siteConfig.social.whatsappUrl} target="_blank" rel="noreferrer"
               className="flex items-center gap-2 px-4 py-2.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-xs font-semibold rounded-xl hover:bg-[#25D366]/25 transition-colors">
               WhatsApp Us
             </a>
-            <a href="tel:+923347742767"
+            <a href={`tel:${siteConfig.phoneE164}`}
               className="flex items-center gap-2 px-4 py-2.5 bg-gold-500/15 border border-gold-500/30 text-gold-400 text-xs font-semibold rounded-xl hover:bg-gold-500/25 transition-colors">
-              Call 0334-7742767
+              Call {siteConfig.phone}
             </a>
           </div>
         </div>

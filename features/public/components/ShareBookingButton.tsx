@@ -11,7 +11,7 @@ interface Props {
 export function ShareBookingButton({ bookingRef, shareToken }: Props) {
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://www.chakwalgrand.pk"}/booking-confirmation/${bookingRef}?t=${shareToken}`;
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://www.staychakwal.de"}/booking-confirmation/${bookingRef}?t=${shareToken}`;
 
   const handleShare = async () => {
     if (navigator.share) {

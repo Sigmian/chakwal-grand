@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Search, CheckCircle2, Clock, XCircle, Loader2, Download, MessageCircle, CalendarDays, BedDouble, MapPin, Phone, Users } from "lucide-react";
 import { lookupBooking } from "@/server/actions/public";
 import { formatPKR } from "@/utils";
+import { siteConfig } from "@/config/site";
 
 type BookingData = NonNullable<Awaited<ReturnType<typeof lookupBooking>>["booking"]>;
 
@@ -61,7 +62,7 @@ export function BookingLookup() {
       doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.setTextColor(...dark);
       doc.text("Chakwal Grand Guest House", 20, y);
       doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...gray);
-      doc.text(`${b.branchName}  ·  Tel: ${b.branchPhone ?? "0334-7742767"}  ·  www.staychakwal.de`, 20, y + 6);
+      doc.text(`${b.branchName}  ·  Tel: ${b.branchPhone ?? siteConfig.phone}  ·  ${siteConfig.url.replace("https://", "")}`, 20, y + 6);
 
       // Payment badge
       doc.setFillColor(...badgeColor);
@@ -340,7 +341,7 @@ export function BookingLookup() {
                 {receiptLoading ? "Generating…" : "Download Receipt"}
               </button>
               <a
-                href={`https://wa.me/923347742767?text=Hi, I need help with my booking: ${b.bookingRef}`}
+                href={`https://wa.me/${siteConfig.phoneE164.replace("+", "")}?text=Hi, I need help with my booking: ${b.bookingRef}`}
                 target="_blank" rel="noreferrer"
                 className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-sm font-semibold rounded-xl hover:bg-[#25D366]/25 transition-colors"
               >
@@ -351,7 +352,7 @@ export function BookingLookup() {
 
             <p className="text-xs text-center text-muted-foreground">
               Need to cancel or modify? Call us at{" "}
-              <a href="tel:+923347742767" className="text-gold-400 hover:underline">0334-7742767</a>
+              <a href={`tel:${siteConfig.phoneE164}`} className="text-gold-400 hover:underline">{siteConfig.phone}</a>
             </p>
           </div>
         )}

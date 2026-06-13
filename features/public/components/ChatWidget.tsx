@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from "react";
 import { MessageCircle, X, Send, Bot, Loader2, Phone, ChevronDown } from "lucide-react";
 import { cn } from "@/utils";
+import { siteConfig } from "@/config/site";
 
 interface Message {
   role: "user" | "assistant";
@@ -126,7 +127,7 @@ export function ChatWidget() {
               <p className="text-background/70 text-[10px]">Chakwal Grand · Typically replies instantly</p>
             </div>
             <div className="flex items-center gap-2">
-              <a href="tel:+923347742767"
+              <a href={`tel:${siteConfig.phoneE164}`}
                 className="w-8 h-8 rounded-lg bg-background/15 flex items-center justify-center text-background hover:bg-background/25 transition-colors"
                 title="Call us">
                 <Phone className="w-3.5 h-3.5" />

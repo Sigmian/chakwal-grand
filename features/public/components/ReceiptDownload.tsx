@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { siteConfig } from "@/config/site";
 
 interface Props {
   bookingRef:      string;
@@ -49,7 +50,7 @@ export function ReceiptDownload(props: Props) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(...gray);
-      doc.text(`${props.branchName} · Tel: 0334-7742767 · www.chakwalgrand.pk`, 20, y + 6);
+      doc.text(`${props.branchName} · Tel: ${siteConfig.phone} · ${siteConfig.url.replace("https://", "")}`, 20, y + 6);
 
       // UNPAID badge
       doc.setFillColor(239, 68, 68);
