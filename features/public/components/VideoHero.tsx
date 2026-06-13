@@ -7,9 +7,11 @@ import { Wifi, Snowflake, Shield, Clock, ChevronRight, Volume2, VolumeX, Play } 
 interface Props {
   branches:     { id: string; name: string; city: string }[];
   startingFrom?: number;
+  totalGuests?:  number;
+  avgRating?:    number;
 }
 
-export function VideoHero({ branches, startingFrom = 2000 }: Props) {
+export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRating }: Props) {
   const videoRef   = useRef<HTMLVideoElement>(null);
   const [muted, setMuted]     = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -124,9 +126,9 @@ export function VideoHero({ branches, startingFrom = 2000 }: Props) {
           {/* Stats */}
           <div className="flex flex-wrap gap-8">
             {[
-              { value: "500+", label: "Happy Guests"  },
-              { value: "4.8★", label: "Average Rating" },
-              { value: "3",    label: "Prime Locations" },
+              { value: totalGuests ? `${totalGuests}+` : "500+", label: "Happy Guests"  },
+              { value: avgRating ? `${avgRating.toFixed(1)}★` : "4.8★", label: "Average Rating" },
+              { value: String(branches.length || 3), label: "Prime Locations" },
               { value: "24/7", label: "Support"         },
             ].map(({ value, label }) => (
               <div key={label}>

@@ -105,11 +105,16 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default async function HomePage() {
-  const [branches, reviews, rooms] = await Promise.all([
+  const [branches, reviews, rooms, guestCount] = await Promise.all([
     getPublicBranches(),
     getPublicReviews(),
     getPublicRooms(),
+    import("@/lib/db/prisma").then(m => m.default.customer.count()),
   ]);
+
+  const avgRating = reviews.length > 0
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : undefined;
 
   // Pick one representative room per type
   const featured = ["STANDARD", "FAMILY", "DELUXE", "SUITE"]
@@ -127,6 +132,8 @@ export default async function HomePage() {
         <VideoHero
           branches={branches as { id: string; name: string; city: string }[]}
           startingFrom={rooms.length > 0 ? Math.min(...rooms.map(r => Number(r.pricePerNight))) : 2000}
+          totalGuests={guestCount > 0 ? guestCount : undefined}
+          avgRating={avgRating}
         />
 
         {/* ══════════════════════════════════════════════ ROOMS */}
