@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Send, MessageCircle } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 export function ContactForm() {
   const [form, setForm] = useState({ name: "", phone: "", subject: "", message: "" });
@@ -12,7 +13,7 @@ export function ContactForm() {
   const handleWhatsApp = (e: React.FormEvent) => {
     e.preventDefault();
     const text = `Hi, I'm ${form.name} (${form.phone}).%0A*Subject:* ${form.subject}%0A%0A${form.message}`;
-    window.open(`https://wa.me/923347742767?text=${text}`, "_blank", "noreferrer");
+    window.open(`${siteConfig.social.whatsappUrl}?text=${text}`, "_blank", "noreferrer");
   };
 
   const isValid = form.name.trim() && form.message.trim();
@@ -21,8 +22,9 @@ export function ContactForm() {
     <form onSubmit={handleWhatsApp} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Your Name *</label>
+          <label htmlFor="contact-name" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Your Name *</label>
           <input
+            id="contact-name"
             type="text"
             value={form.name}
             onChange={set("name")}
@@ -32,8 +34,9 @@ export function ContactForm() {
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Phone Number</label>
+          <label htmlFor="contact-phone" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Phone Number</label>
           <input
+            id="contact-phone"
             type="tel"
             value={form.phone}
             onChange={set("phone")}
@@ -44,8 +47,9 @@ export function ContactForm() {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Subject</label>
+        <label htmlFor="contact-subject" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Subject</label>
         <select
+          id="contact-subject"
           value={form.subject}
           onChange={set("subject")}
           className="w-full bg-surface-base border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-gold-500/50 transition-colors"
@@ -61,8 +65,9 @@ export function ContactForm() {
       </div>
 
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Message *</label>
+        <label htmlFor="contact-message" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Message *</label>
         <textarea
+          id="contact-message"
           value={form.message}
           onChange={set("message")}
           placeholder="How can we help you?"

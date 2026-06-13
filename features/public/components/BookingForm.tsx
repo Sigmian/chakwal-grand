@@ -202,32 +202,32 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
             <div className="sm:col-span-2">
-              <label className={labelCls}>Branch Location</label>
-              <select value={dates.branchId} onChange={setD("branchId")} className={inputCls}>
+              <label htmlFor="book-branch" className={labelCls}>Branch Location</label>
+              <select id="book-branch" value={dates.branchId} onChange={setD("branchId")} className={inputCls}>
                 {branches.map(b => <option key={b.id} value={b.id}>{b.name} — {b.city}</option>)}
               </select>
             </div>
 
             <div>
-              <label className={labelCls}>Check-In Date</label>
-              <input type="date" value={dates.checkIn} min={today} onChange={setD("checkIn")} className={inputCls} />
+              <label htmlFor="book-checkin" className={labelCls}>Check-In Date</label>
+              <input id="book-checkin" type="date" value={dates.checkIn} min={today} onChange={setD("checkIn")} className={inputCls} />
             </div>
 
             <div>
-              <label className={labelCls}>Check-Out Date</label>
-              <input type="date" value={dates.checkOut} min={dates.checkIn || today} onChange={setD("checkOut")} className={inputCls} />
+              <label htmlFor="book-checkout" className={labelCls}>Check-Out Date</label>
+              <input id="book-checkout" type="date" value={dates.checkOut} min={dates.checkIn || today} onChange={setD("checkOut")} className={inputCls} />
             </div>
 
             <div>
-              <label className={labelCls}>Adults</label>
-              <select value={dates.adults} onChange={setD("adults")} className={inputCls}>
+              <label htmlFor="book-adults" className={labelCls}>Adults</label>
+              <select id="book-adults" value={dates.adults} onChange={setD("adults")} className={inputCls}>
                 {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} Adult{n > 1 ? "s" : ""}</option>)}
               </select>
             </div>
 
             <div>
-              <label className={labelCls}>Children</label>
-              <select value={dates.children} onChange={setD("children")} className={inputCls}>
+              <label htmlFor="book-children" className={labelCls}>Children</label>
+              <select id="book-children" value={dates.children} onChange={setD("children")} className={inputCls}>
                 {[0,1,2,3,4].map(n => <option key={n} value={n}>{n} {n === 1 ? "Child" : "Children"}</option>)}
               </select>
             </div>
@@ -384,24 +384,24 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
               <div className="card-luxury rounded-2xl p-6 space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="sm:col-span-2">
-                  <label className={labelCls}><User className="w-3 h-3 inline mr-1" />Full Name *</label>
-                  <input value={guest.name} onChange={setG("name")} placeholder="Ahmed Ali Khan" className={inputCls} />
+                  <label htmlFor="guest-name" className={labelCls}><User className="w-3 h-3 inline mr-1" />Full Name *</label>
+                  <input id="guest-name" value={guest.name} onChange={setG("name")} placeholder="Ahmed Ali Khan" className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}><Phone className="w-3 h-3 inline mr-1" />Phone Number *</label>
-                  <input value={guest.phone} onChange={setG("phone")} placeholder="0300-1234567" className={inputCls} />
+                  <label htmlFor="guest-phone" className={labelCls}><Phone className="w-3 h-3 inline mr-1" />Phone Number *</label>
+                  <input id="guest-phone" value={guest.phone} onChange={setG("phone")} placeholder="0300-1234567" className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}><CreditCard className="w-3 h-3 inline mr-1" />CNIC (Optional)</label>
-                  <input value={guest.cnic} onChange={setG("cnic")} placeholder="35202-1234567-8" className={inputCls} />
+                  <label htmlFor="guest-cnic" className={labelCls}><CreditCard className="w-3 h-3 inline mr-1" />CNIC (Optional)</label>
+                  <input id="guest-cnic" value={guest.cnic} onChange={setG("cnic")} placeholder="35202-1234567-8" className={inputCls} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelCls}>Email (Optional)</label>
-                  <input type="email" value={guest.email} onChange={setG("email")} placeholder="you@email.com" className={inputCls} />
+                  <label htmlFor="guest-email" className={labelCls}>Email (Optional)</label>
+                  <input id="guest-email" type="email" value={guest.email} onChange={setG("email")} placeholder="you@email.com" className={inputCls} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelCls}>Estimated Arrival Time (Optional)</label>
-                  <select value={guest.estimatedArrival} onChange={setG("estimatedArrival")} className={inputCls}>
+                  <label htmlFor="guest-arrival" className={labelCls}>Estimated Arrival Time (Optional)</label>
+                  <select id="guest-arrival" value={guest.estimatedArrival} onChange={setG("estimatedArrival")} className={inputCls}>
                     <option value="">Select arrival time…</option>
                     {["12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM","9:00 PM","10:00 PM","11:00 PM","After midnight"].map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -439,8 +439,8 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                     className={inputCls + " resize-none"} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelCls}>Promo Code (Optional)</label>
-                  <input value={guest.promoCode} onChange={setG("promoCode")} placeholder="e.g. WELCOME10"
+                  <label htmlFor="guest-promo" className={labelCls}>Promo Code (Optional)</label>
+                  <input id="guest-promo" value={guest.promoCode} onChange={setG("promoCode")} placeholder="e.g. WELCOME10"
                     className={inputCls + " font-mono tracking-widest uppercase"} />
                   <p className="text-[10px] text-muted-foreground mt-1">Weekly stays (7+ nights) and monthly stays (30+ nights) get automatic discounts — no code needed.</p>
                 </div>
