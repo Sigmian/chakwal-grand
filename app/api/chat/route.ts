@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { siteConfig } from "@/config/site";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -20,7 +21,7 @@ const SYSTEM_PROMPT = `You are Zara, a friendly and knowledgeable booking assist
 - Sargodha — University Road, Sargodha
 
 **Contact:**
-- Phone / WhatsApp: 0334-7742767
+- Phone / WhatsApp: ${siteConfig.phone}
 
 **Check-in:** 2:00 PM | **Check-out:** 12:00 PM
 
@@ -58,8 +59,8 @@ const SYSTEM_PROMPT = `You are Zara, a friendly and knowledgeable booking assist
 ## How to Book
 
 1. **Online:** Visit /book on this website — free, instant reference number
-2. **WhatsApp:** Send message to 0334-7742767
-3. **Call:** Dial 0334-7742767
+2. **WhatsApp:** Send message to ${siteConfig.phone}
+3. **Call:** Dial ${siteConfig.phone}
 
 ---
 
@@ -69,7 +70,7 @@ const SYSTEM_PROMPT = `You are Zara, a friendly and knowledgeable booking assist
 - Help guests choose the right room based on their needs and budget
 - Explain pricing, policies, and amenities clearly
 - Encourage bookings via the website (/book) or WhatsApp
-- For anything you can't confirm, say "Please call us at 0334-7742767 to confirm"
+- For anything you can't confirm, say "Please call us at ${siteConfig.phone} to confirm"
 - Keep responses concise — 2-4 sentences max unless the question needs more detail
 - Never make up information not listed above
 - If asked in Urdu, reply in Urdu. If asked in English, reply in English.
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
 
     if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === "your-anthropic-api-key-here") {
       return NextResponse.json(
-        { error: "AI chat is not configured. Please call us at 0334-7742767." },
+        { error: `AI chat is not configured. Please call us at ${siteConfig.phone}.` },
         { status: 503 }
       );
     }
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[chat/route] error:", err);
     return NextResponse.json(
-      { error: "Something went wrong. Please try again or call 0334-7742767." },
+      { error: `Something went wrong. Please try again or call ${siteConfig.phone}.` },
       { status: 500 }
     );
   }

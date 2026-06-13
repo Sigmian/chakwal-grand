@@ -303,14 +303,14 @@ export default async function HomePage() {
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all text-sm">
                 Book a Room Online
               </Link>
-              <a href="https://wa.me/923347742767" target="_blank" rel="noreferrer"
+              <a href={siteConfig.social.whatsappUrl} target="_blank" rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] font-semibold rounded-xl hover:bg-[#25D366]/25 transition-colors text-sm">
                 Chat on WhatsApp
               </a>
-              <a href="tel:+923347742767"
+              <a href={`tel:${siteConfig.phoneE164}`}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-border text-foreground font-semibold rounded-xl hover:bg-accent transition-colors text-sm">
                 <Phone className="w-4 h-4" />
-                0334-7742767
+                {siteConfig.phone}
               </a>
             </div>
 

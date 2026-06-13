@@ -10,6 +10,7 @@ import { Playfair_Display } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import "./globals.css";
+import { siteConfig } from "@/config/site";
 
 const playfair = Playfair_Display({
   subsets:  ["latin"],
@@ -18,7 +19,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.staychakwal.de"),
+  metadataBase: new URL(siteConfig.url),
   title: {
     template: "%s | Chakwal Grand Guest House",
     default:  "Chakwal Grand Guest House — Premium Stay in Chakwal, Punjab",
@@ -41,16 +42,16 @@ export const metadata: Metadata = {
     "Punjab guest house booking",
     "overnight stay Chakwal",
   ],
-  authors: [{ name: "Chakwal Grand Guest House", url: "https://www.staychakwal.de" }],
+  authors: [{ name: "Chakwal Grand Guest House", url: siteConfig.url }],
   creator: "Chakwal Grand Guest House",
   publisher: "Chakwal Grand Guest House",
   alternates: {
-    canonical: "https://www.staychakwal.de",
+    canonical: siteConfig.url,
   },
   openGraph: {
     type:        "website",
     locale:      "en_PK",
-    url:         "https://www.staychakwal.de",
+    url:         siteConfig.url,
     siteName:    "Chakwal Grand Guest House",
     title:       "Chakwal Grand Guest House — Premium Stay in Chakwal, Punjab",
     description: "Premium, affordable guest house in Chakwal with AC rooms, free WiFi & 24/7 service. Book from PKR 2,000/night.",

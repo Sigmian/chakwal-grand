@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Share2, Copy, Check } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 interface Props {
   bookingRef: string;
@@ -11,7 +12,7 @@ interface Props {
 export function ShareBookingButton({ bookingRef, shareToken }: Props) {
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://www.staychakwal.de"}/booking-confirmation/${bookingRef}?t=${shareToken}`;
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : siteConfig.url}/booking-confirmation/${bookingRef}?t=${shareToken}`;
 
   const handleShare = async () => {
     if (navigator.share) {
