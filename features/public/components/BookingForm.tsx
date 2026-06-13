@@ -339,7 +339,16 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
       )}
 
       {/* ─── Step 3: Guest Details ───────────────────────────── */}
-      {step === 3 && (
+      {step === 3 && !selectedRoom && (
+        <div className="flex items-center justify-center py-16">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-gold-500/30 border-t-gold-500 rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground">Loading room details…</p>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && selectedRoom && (
         <div className="animate-fade-in">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -489,7 +498,7 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                   )}
                   <div className="border-t border-border pt-3 mt-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">{formatPKR(Number(selectedRoom?.pricePerNight))} × {nights} nights</span>
+                      <span className="text-muted-foreground">{formatPKR(Number(selectedRoom?.pricePerNight ?? 0))} × {nights} night{nights > 1 ? "s" : ""}</span>
                       <span className="font-bold text-gold-400 text-base font-serif">
                         {formatPKR(Number(selectedRoom?.pricePerNight ?? 0) * nights)}
                       </span>

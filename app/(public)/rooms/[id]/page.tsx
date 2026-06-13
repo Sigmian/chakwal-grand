@@ -50,6 +50,10 @@ export default async function RoomDetailPage({ params }: Props) {
 
   if (!room) notFound();
 
+  const today    = new Date().toISOString().slice(0, 10);
+  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  const bookUrl  = `/book?branchId=${room.branchId}&roomId=${room.id}&checkIn=${today}&checkOut=${tomorrow}`;
+
   const roomSchema = {
     "@context": "https://schema.org",
     "@type": "HotelRoom",
@@ -81,7 +85,7 @@ export default async function RoomDetailPage({ params }: Props) {
         <p className="text-sm font-bold text-gold-400">{formatPKR(Number(room.pricePerNight))} <span className="text-xs font-normal text-muted-foreground">/night</span></p>
       </div>
       <Link
-        href={`/book?branchId=${room.branchId}&roomId=${room.id}`}
+        href={bookUrl}
         className="px-6 py-2.5 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-md transition-all flex-shrink-0"
       >
         Book Now
@@ -173,7 +177,7 @@ export default async function RoomDetailPage({ params }: Props) {
             />
 
             <Link
-              href={`/book?branchId=${room.branchId}&roomId=${room.id}`}
+              href={bookUrl}
               className="block text-center py-3.5 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-lg transition-all"
             >
               Book This Room
