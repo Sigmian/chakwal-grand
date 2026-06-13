@@ -11,6 +11,7 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
 import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
+import { sendPushToBranch } from "@/lib/push/send";
 import {
   addInventoryItemSchema,
   restockSchema,
@@ -404,6 +405,23 @@ export async function createSale(rawInput: CreateSaleInput) {
     if (input.bookingId) {
       revalidatePath(`/bookings/${input.bookingId}`);
     }
+
+    // Fire low-stock push notifications (non-blocking)
+    Promise.all(
+      input.items.map(async (saleItem) => {
+        const inv = await prisma.inventoryItem.findUnique({
+          where: { id: saleItem.inventoryItemId },
+          include: { product: { select: { name: true, unit: true } } },
+        });
+        if (inv && inv.currentStock <= inv.minStockLevel && inv.minStockLevel > 0) {
+          sendPushToBranch(branchId!, {
+            title: "⚠️ Low Stock Alert",
+            body:  `${inv.product.name}: only ${inv.currentStock} ${inv.product.unit ?? "units"} remaining`,
+            tag:   `low-stock-${inv.id}`,
+          }).catch(() => {/* ignore push errors */});
+        }
+      })
+    ).catch(() => {/* ignore */});
 
     return { success: true, data: sale };
   } catch (error) {
