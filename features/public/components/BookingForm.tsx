@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import Image from "next/image";
 import {
   CalendarDays, Users, Building2, BedDouble,
   User, Phone, CreditCard, ChevronRight, ChevronLeft,
@@ -16,6 +17,7 @@ interface Room   {
   id: string; number: string; name: string; type: string;
   pricePerNight: any; maxAdults: number; amenities: string[];
   description?: string | null;
+  images?: { url: string; isCover: boolean }[];
 }
 
 const today    = new Date().toISOString().split("T")[0];
@@ -286,11 +288,17 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
-                      <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center text-2xl flex-shrink-0",
-                        isSelected ? "bg-gold-500/20" : "bg-accent"
-                      )}>
-                        {TYPE_ICON[room.type] ?? "🛏️"}
-                      </div>
+                      {room.images?.[0] ? (
+                        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 relative">
+                          <Image src={room.images[0].url} alt={room.name} fill className="object-cover" sizes="80px" />
+                        </div>
+                      ) : (
+                        <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center text-2xl flex-shrink-0",
+                          isSelected ? "bg-gold-500/20" : "bg-accent"
+                        )}>
+                          {TYPE_ICON[room.type] ?? "🛏️"}
+                        </div>
+                      )}
                       <div>
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <h3 className="font-bold text-foreground">{room.name}</h3>

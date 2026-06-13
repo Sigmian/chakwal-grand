@@ -121,6 +121,9 @@ export async function getAvailableRooms(
       maxAdults: { gte: adults },
       id: { notIn: takenIds },
     },
+    include: {
+      images: { where: { isCover: true }, take: 1, orderBy: { sortOrder: "asc" } },
+    },
     orderBy: { pricePerNight: "asc" },
   });
 }

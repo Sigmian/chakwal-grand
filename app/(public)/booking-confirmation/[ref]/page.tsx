@@ -8,6 +8,7 @@ import {
 import { getBookingByRef } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
 import { BookingCountdown }    from "@/features/public/components/BookingCountdown";
+import { BookingQRCode }       from "@/features/public/components/BookingQRCode";
 import { ICSDownload }          from "@/features/public/components/ICSDownload";
 import { ReceiptDownload }      from "@/features/public/components/ReceiptDownload";
 import { ShareBookingButton }   from "@/features/public/components/ShareBookingButton";
@@ -81,6 +82,9 @@ export default async function BookingConfirmationPage({ params }: Props) {
           <p className="text-xs text-muted-foreground mt-2">
             Save this number — you'll need it at check-in
           </p>
+          <div className="mt-4 flex justify-center">
+            <BookingQRCode value={`${siteConfig.url}/my-booking?ref=${booking.bookingRef}`} size={100} />
+          </div>
         </div>
 
         {/* ── Countdown ── */}
