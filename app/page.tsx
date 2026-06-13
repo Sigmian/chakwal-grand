@@ -9,16 +9,17 @@ import { FAQSection }     from "@/features/public/components/FAQSection";
 import { ChatWidget }     from "@/features/public/components/ChatWidget";
 import { getPublicBranches, getPublicReviews, getPublicRooms } from "@/server/actions/public";
 import { formatPKR } from "@/utils";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Chakwal Grand Guest House | Best Accommodation in Chakwal Punjab",
   description: "Welcome to Chakwal Grand Guest House — the premier destination for travelers in Chakwal, Punjab. AC rooms, family suites, free WiFi & 24/7 room service from PKR 2,000/night. Book online instantly.",
-  alternates: { canonical: "https://www.staychakwal.de" },
+  alternates: { canonical: siteConfig.url },
   openGraph: {
     title:       "Chakwal Grand Guest House | Best Accommodation in Chakwal Punjab",
     description: "AC rooms, family suites & VIP rooms from PKR 2,000/night. Free WiFi, 24/7 service. Book your stay online at Chakwal Grand Guest House.",
-    url:         "https://www.staychakwal.de",
-    images:      [{ url: "/images/logo.png", width: 1200, height: 630, alt: "Chakwal Grand Guest House" }],
+    url:         siteConfig.url,
+    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`, width: 1200, height: 630, alt: "Chakwal Grand Guest House — Premium Accommodation in Chakwal Punjab" }],
   },
 };
 
@@ -27,10 +28,10 @@ const LOCAL_BUSINESS_SCHEMA = {
   "@type":       "LodgingBusiness",
   "name":        "Chakwal Grand Guest House",
   "description": "Premium guest house in Chakwal, Punjab offering AC rooms, family suites and VIP accommodation with free WiFi and 24/7 service.",
-  "url":         "https://www.staychakwal.de",
-  "telephone":   "+92-334-7742767",
+  "url":         siteConfig.url,
+  "telephone":   siteConfig.phoneE164,
   "priceRange":  "PKR 2,000 - PKR 5,000",
-  "image":       "https://www.staychakwal.de/images/logo.png",
+  "image":       `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`,
   "address": {
     "@type":           "PostalAddress",
     "addressLocality": "Chakwal",
@@ -55,7 +56,7 @@ const LOCAL_BUSINESS_SCHEMA = {
   "paymentAccepted":    "Cash",
   "openingHours": "Mo-Su 00:00-23:59",
   "hasMap": "https://maps.google.com/?q=Chakwal+Grand+Guest+House+Chakwal",
-  "sameAs": ["https://www.staychakwal.de"],
+  "sameAs": [siteConfig.url],
 };
 
 const FAQ_SCHEMA = {
@@ -80,7 +81,7 @@ const FAQ_SCHEMA = {
     {
       "@type": "Question",
       "name": "How do I book a room at Chakwal Grand Guest House?",
-      "acceptedAnswer": { "@type": "Answer", "text": "You can book online instantly at staychakwal.de, or call/WhatsApp us at 0334-7742767. No advance payment required — pay cash on arrival." }
+      "acceptedAnswer": { "@type": "Answer", "text": `You can book online instantly at ${siteConfig.url.replace("https://", "")}, or call/WhatsApp us at ${siteConfig.phone}. No advance payment required — pay cash on arrival.` }
     },
     {
       "@type": "Question",
