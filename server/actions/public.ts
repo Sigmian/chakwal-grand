@@ -79,6 +79,17 @@ export async function getPublicReviews() {
   });
 }
 
+export async function getActiveAnnouncement() {
+  return prisma.announcement.findFirst({
+    where: {
+      isActive: true,
+      OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }],
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, title: true, body: true },
+  });
+}
+
 export async function checkRoomAvailability(
   roomId: string,
   checkIn: string,

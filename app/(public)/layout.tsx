@@ -3,6 +3,8 @@ import { PublicNavbar } from "@/features/public/components/PublicNavbar";
 import { PublicFooter } from "@/features/public/components/PublicFooter";
 import { ChatWidget }  from "@/features/public/components/ChatWidget";
 import { ScrollToTop } from "@/features/public/components/ScrollToTop";
+import { AnnouncementBanner } from "@/features/public/components/AnnouncementBanner";
+import { getActiveAnnouncement } from "@/server/actions/public";
 
 export const metadata: Metadata = {
   title: { default: "Chakwal Grand Guest House | Best Stay in Chakwal Punjab", template: "%s | Chakwal Grand Guest House" },
@@ -15,9 +17,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://www.staychakwal.de" },
 };
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const announcement = await getActiveAnnouncement();
+
   return (
     <>
+      {announcement && (
+        <AnnouncementBanner title={announcement.title} body={announcement.body} />
+      )}
       <PublicNavbar />
       <main className="min-h-screen">{children}</main>
       <PublicFooter />
