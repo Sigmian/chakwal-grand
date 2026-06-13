@@ -18,6 +18,14 @@ export async function getPublicRooms() {
   });
 }
 
+export async function getPublicRoomTypes() {
+  return prisma.room.findMany({
+    where: { status: { not: "BLOCKED" }, isActive: true },
+    select: { type: true, pricePerNight: true },
+    orderBy: { pricePerNight: "asc" },
+  });
+}
+
 export async function getPublicRoom(id: string) {
   return prisma.room.findUnique({
     where:   { id, isActive: true },

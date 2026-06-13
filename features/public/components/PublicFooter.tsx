@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Phone, MapPin, Clock, Mail } from "lucide-react";
 import { siteConfig } from "@/config/site";
-import { getPublicRooms } from "@/server/actions/public";
+import { getPublicRoomTypes } from "@/server/actions/public";
 
 const TYPE_ORDER = ["STANDARD", "FAMILY", "DELUXE", "SUITE", "VIP"] as const;
 const TYPE_LABEL: Record<string, string> = {
@@ -13,7 +13,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export async function PublicFooter() {
-  const rooms = await getPublicRooms();
+  const rooms = await getPublicRoomTypes();
 
   // Build one entry per room type: lowest price in that type
   const roomEntries = TYPE_ORDER
