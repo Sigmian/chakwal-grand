@@ -3,14 +3,15 @@
 // Inventory management — stock levels, low stock alerts
 // ============================================================
 
-import { requirePermission } from "@/lib/auth/session";
+import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
-import { getInventory, getLowStockAlerts } from "@/server/actions/inventory";
-import { getScopedBranchId } from "@/lib/auth/session";
+import { getInventory, getLowStockAlerts, getProductCategories } from "@/server/actions/inventory";
 import { PageHeader, SectionHeader, EmptyState, Badge } from "@/components/shared";
 import { StockTable } from "@/features/inventory/components/StockTable";
+import { AddProductDialog } from "@/features/inventory/components/AddProductDialog";
 import { Package, AlertTriangle, TrendingDown } from "lucide-react";
 import { cn, formatPKR } from "@/utils";
+import prisma from "@/lib/db/prisma";
 
 export const metadata = { title: "Inventory" };
 
@@ -18,10 +19,13 @@ export default async function InventoryProductsPage() {
   const user     = await requirePermission("inventory:read");
   const branchId = getScopedBranchId(user);
   const canEdit  = hasPermission(user.role, "inventory:update");
+  const canCreate = hasPermission(user.role, "inventory:create");
 
-  const [inventory, alerts] = await Promise.all([
+  const [inventory, alerts, categories, branches] = await Promise.all([
     getInventory(branchId),
     getLowStockAlerts(branchId),
+    getProductCategories(),
+    prisma.branch.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 
   // Group by category
@@ -37,10 +41,19 @@ export default async function InventoryProductsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader
-        title="Inventory"
-        subtitle={`${inventory.length} products tracked · Total value: ${formatPKR(totalValue)}`}
-      />
+      <div className="flex items-start justify-between gap-4">
+        <PageHeader
+          title="Inventory"
+          subtitle={`${inventory.length} products tracked · Total value: ${formatPKR(totalValue)}`}
+        />
+        {canCreate && (
+          <AddProductDialog
+            categories={categories}
+            branches={branches}
+            defaultBranchId={branchId ?? undefined}
+          />
+        )}
+      </div>
 
       {/* Alert banner */}
       {alerts.length > 0 && (
@@ -80,7 +93,7 @@ export default async function InventoryProductsPage() {
         <EmptyState
           icon={<Package className="w-8 h-8" />}
           title="No inventory yet"
-          body="Add products to start tracking your stock levels."
+          body="Click 'Add Product' to start tracking your stock levels."
         />
       ) : (
         Object.entries(byCategory).map(([category, items]) => (

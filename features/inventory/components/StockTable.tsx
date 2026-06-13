@@ -7,8 +7,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Plus, AlertTriangle, CheckCircle, Pencil, X, ShoppingBag } from "lucide-react";
-import { restockItem, updateInventoryItem } from "@/server/actions/inventory";
+import { Plus, AlertTriangle, CheckCircle, Pencil, X, ShoppingBag, Trash2 } from "lucide-react";
+import { restockItem, updateInventoryItem, deleteInventoryItem } from "@/server/actions/inventory";
 import { cn, formatPKR } from "@/utils";
 import { Badge } from "@/components/shared";
 
@@ -42,6 +42,15 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
   const [editCost,     setEditCost]     = useState(String(item.purchasePrice));
   const [editSelling,  setEditSelling]  = useState(String(item.sellingPrice));
   const [editMinStock, setEditMinStock] = useState(String(item.minStockLevel));
+
+  const handleDelete = () => {
+    if (!confirm(`Delete "${item.product?.name}" from inventory? This cannot be undone.`)) return;
+    startTransition(async () => {
+      const res = await deleteInventoryItem(item.id);
+      if (!res.success) toast.error(res.error ?? "Delete failed");
+      else toast.success("Item removed from inventory");
+    });
+  };
 
   const toggleCanteen = () => {
     startTransition(async () => {
@@ -199,6 +208,14 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
             >
               <ShoppingBag className="w-3 h-3" />
               {item.product?.isCanteenVisible ? "On Menu" : "Add to Menu"}
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isPending}
+              title="Delete from inventory"
+              className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-lg text-xs border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-all"
+            >
+              <Trash2 className="w-3 h-3" />
             </button>
           </div>
         </td>

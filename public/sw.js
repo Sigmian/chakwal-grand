@@ -13,12 +13,11 @@ self.addEventListener("push", (event) => {
     payload = { title: "Chakwal Grand", body: event.data.text() };
   }
 
-  const { title = "Chakwal Grand", body = "", icon, badge, tag, data } = payload;
+  const { title = "Chakwal Grand", body = "", icon, tag, data } = payload;
 
-  const options = {
+  const showNotification = self.registration.showNotification(title, {
     body,
-    icon: icon || "/icons/icon-192x192.png",
-    badge: badge || "/icons/badge-72x72.png",
+    icon: icon || "/images/logo.png",
     tag: tag || "cg-notification",
     renotify: true,
     requireInteraction: true,
@@ -27,9 +26,20 @@ self.addEventListener("push", (event) => {
       { action: "open",    title: "Open Dashboard" },
       { action: "dismiss", title: "Dismiss" },
     ],
-  };
+  });
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Also notify open dashboard tabs so they can play a sound
+  const notifyClients = clients
+    .matchAll({ type: "window" })
+    .then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes("/dashboard")) {
+          client.postMessage({ type: "PLAY_NOTIFICATION_SOUND" });
+        }
+      }
+    });
+
+  event.waitUntil(Promise.all([showNotification, notifyClients]));
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -48,19 +58,6 @@ self.addEventListener("notificationclick", (event) => {
         }
       }
       return clients.openWindow(url);
-    })
-  );
-});
-
-// Notify open dashboard tabs to play sound
-self.addEventListener("push", (event) => {
-  event.waitUntil(
-    clients.matchAll({ type: "window" }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes("/dashboard")) {
-          client.postMessage({ type: "PLAY_NOTIFICATION_SOUND" });
-        }
-      }
     })
   );
 });

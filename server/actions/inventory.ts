@@ -265,6 +265,30 @@ export async function updateInventoryItem(input: {
   }
 }
 
+// ─── GET PRODUCT CATEGORIES ──────────────────────────────────
+export async function getProductCategories() {
+  await requirePermission("inventory:read");
+  return prisma.productCategory.findMany({ orderBy: { sortOrder: "asc" } });
+}
+
+// ─── DELETE INVENTORY ITEM ────────────────────────────────────
+export async function deleteInventoryItem(inventoryItemId: string) {
+  await requirePermission("inventory:create");
+
+  try {
+    // Delete stock movements first (FK constraint)
+    await prisma.stockMovement.deleteMany({ where: { inventoryItemId } });
+    await prisma.inventoryItem.delete({ where: { id: inventoryItemId } });
+
+    revalidatePath("/inventory/products");
+    revalidatePath("/inventory");
+    return { success: true };
+  } catch (error) {
+    console.error("[deleteInventoryItem]", error);
+    return { success: false, error: "Failed to delete item" };
+  }
+}
+
 // ─── CREATE SALE (POS) ───────────────────────────────────────
 export async function createSale(rawInput: CreateSaleInput) {
   const user = await requirePermission("inventory:pos_sell");

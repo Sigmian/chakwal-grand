@@ -52,9 +52,16 @@ const nextConfig = {
         ],
       },
       {
-        source: "/(dashboard)/:path*",
+        source: "/dashboard/:path*",
         headers: [
           { key: "Cache-Control", value: "no-store, must-revalidate" },
+        ],
+      },
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Service-Worker-Allowed", value: "/" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
         ],
       },
     ];
