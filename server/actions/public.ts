@@ -354,6 +354,11 @@ export async function lookupGuestByPhone(phone: string) {
 export async function lookupBooking(ref: string) {
   if (!ref?.trim()) return { success: false, error: "Please enter a booking reference." };
 
+  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
+  if (!rateLimit(`booking-lookup:${ip}`, 10, 60_000)) {
+    return { success: false, error: "Too many lookup attempts. Please wait a minute." };
+  }
+
   const booking = await prisma.booking.findUnique({
     where:   { bookingRef: ref.trim().toUpperCase() },
     include: {
