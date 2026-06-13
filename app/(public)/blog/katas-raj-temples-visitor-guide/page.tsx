@@ -14,12 +14,12 @@ export const metadata: Metadata = {
     "Qila Katas", "Katas Raj pond sacred", "Katas Raj Mahabharata",
     "tourist attractions Chakwal Punjab", "Katas Raj 2025",
   ],
-  alternates: { canonical: "https://www.staychakwal.de/blog/katas-raj-temples-visitor-guide" },
+  alternates: { canonical: `${siteConfig.url}/blog/katas-raj-temples-visitor-guide` },
   openGraph: {
     title: "Katas Raj Temples — Complete Visitor Guide 2025 | Chakwal Punjab",
     description: "Everything you need to know before visiting Katas Raj Temples — one of Pakistan's most sacred and historic sites. History, timings, directions, and travel tips.",
-    url: "https://www.staychakwal.de/blog/katas-raj-temples-visitor-guide",
-    images: [{ url: "https://www.staychakwal.de/images/blogs/katas-raj-temples-chakwal-pakistan.jpg", width: 1200, height: 630, alt: "Katas Raj Temples Chakwal Pakistan" }],
+    url: `${siteConfig.url}/blog/katas-raj-temples-visitor-guide`,
+    images: [{ url: `${siteConfig.url}/images/blogs/katas-raj-temples-chakwal-pakistan.jpg`, width: 1200, height: 630, alt: "Katas Raj Temples Chakwal Pakistan" }],
   },
 };
 
@@ -28,13 +28,13 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Katas Raj Temples Complete Visitor Guide 2025 — History, Timings, How to Reach",
   "description": "Complete visitor guide to Katas Raj Temples, Chakwal — history, architecture, how to visit, timings, and travel tips.",
-  "image": "https://www.staychakwal.de/images/blogs/katas-raj-temples-chakwal-pakistan.jpg",
-  "url": "https://www.staychakwal.de/blog/katas-raj-temples-visitor-guide",
+  "image": `${siteConfig.url}/images/blogs/katas-raj-temples-chakwal-pakistan.jpg`,
+  "url": `${siteConfig.url}/blog/katas-raj-temples-visitor-guide`,
   "datePublished": "2025-01-10",
   "dateModified": "2025-06-01",
-  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": "https://www.staychakwal.de" },
-  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": "https://www.staychakwal.de", "logo": { "@type": "ImageObject", "url": "https://www.staychakwal.de/images/logo.png" } },
-  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.staychakwal.de/blog/katas-raj-temples-visitor-guide" },
+  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
+  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url, "logo": { "@type": "ImageObject", "url": `${siteConfig.url}/images/logo.png` } },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": `${siteConfig.url}/blog/katas-raj-temples-visitor-guide` },
 };
 
 const FAQ_SCHEMA = {

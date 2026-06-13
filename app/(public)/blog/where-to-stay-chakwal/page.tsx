@@ -13,12 +13,12 @@ export const metadata: Metadata = {
     "guest house near Katas Raj", "Chakwal Grand Guest House", "family guest house Chakwal",
     "budget hotel Chakwal", "Chakwal hotel price", "safe guest house Chakwal",
   ],
-  alternates: { canonical: "https://www.staychakwal.de/blog/where-to-stay-chakwal" },
+  alternates: { canonical: `${siteConfig.url}/blog/where-to-stay-chakwal` },
   openGraph: {
     title: "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
     description: "Chakwal Grand Guest House — top-rated accommodation in Chakwal. AC rooms, family suites, free WiFi from PKR 2,000/night.",
-    url: "https://www.staychakwal.de/blog/where-to-stay-chakwal",
-    images: [{ url: "https://www.staychakwal.de/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg", width: 1200, height: 630, alt: "Best guest house room Chakwal Punjab" }],
+    url: `${siteConfig.url}/blog/where-to-stay-chakwal`,
+    images: [{ url: `${siteConfig.url}/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg`, width: 1200, height: 630, alt: "Best guest house room Chakwal Punjab" }],
   },
 };
 
@@ -27,12 +27,12 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
   "description": "Complete guide to the best accommodation options in Chakwal, Punjab, Pakistan.",
-  "image": "https://www.staychakwal.de/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg",
-  "url": "https://www.staychakwal.de/blog/where-to-stay-chakwal",
+  "image": `${siteConfig.url}/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg`,
+  "url": `${siteConfig.url}/blog/where-to-stay-chakwal`,
   "datePublished": "2025-02-20",
   "dateModified": "2025-06-01",
-  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": "https://www.staychakwal.de" },
-  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": "https://www.staychakwal.de" },
+  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
+  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
 };
 
 const FAQ_SCHEMA = {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Clock, ArrowRight, ChevronRight, Camera, Star } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Top 10 Places to Visit in Chakwal 2025 — Complete Tourist Guide | Chakwal Grand",
@@ -12,12 +13,12 @@ export const metadata: Metadata = {
     "Salt Range Pakistan", "Choa Saidan Shah", "Pharwala Fort", "Tilla Jogian",
     "Chakwal attractions", "Chakwal sightseeing", "tourism Chakwal",
   ],
-  alternates: { canonical: "https://www.staychakwal.de/blog/places-to-visit-chakwal" },
+  alternates: { canonical: `${siteConfig.url}/blog/places-to-visit-chakwal` },
   openGraph: {
     title: "Top 10 Places to Visit in Chakwal 2025 — Complete Tourist Guide",
     description: "From Katas Raj Temples to Kallar Kahar Lake — complete guide to tourist attractions in Chakwal, Punjab, Pakistan.",
-    url: "https://www.staychakwal.de/blog/places-to-visit-chakwal",
-    images: [{ url: "https://www.staychakwal.de/images/blogs/chakwal-landscape-punjab-pakistan.jpg", width: 1200, height: 630, alt: "Beautiful landscape Chakwal Punjab Pakistan tourist attraction" }],
+    url: `${siteConfig.url}/blog/places-to-visit-chakwal`,
+    images: [{ url: `${siteConfig.url}/images/blogs/chakwal-landscape-punjab-pakistan.jpg`, width: 1200, height: 630, alt: "Beautiful landscape Chakwal Punjab Pakistan tourist attraction" }],
   },
 };
 
@@ -26,12 +27,12 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Top 10 Places to Visit in Chakwal — Complete Tourist Guide 2025",
   "description": "Discover the most beautiful and historic places in Chakwal district, Punjab Pakistan.",
-  "image": "https://www.staychakwal.de/images/blogs/chakwal-landscape-punjab-pakistan.jpg",
-  "url": "https://www.staychakwal.de/blog/places-to-visit-chakwal",
+  "image": `${siteConfig.url}/images/blogs/chakwal-landscape-punjab-pakistan.jpg`,
+  "url": `${siteConfig.url}/blog/places-to-visit-chakwal`,
   "datePublished": "2025-01-15",
   "dateModified": "2025-06-01",
-  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": "https://www.staychakwal.de" },
-  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": "https://www.staychakwal.de" },
+  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
+  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
 };
 
 const FAQ_SCHEMA = {

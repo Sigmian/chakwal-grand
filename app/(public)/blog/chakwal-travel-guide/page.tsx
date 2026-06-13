@@ -13,12 +13,12 @@ export const metadata: Metadata = {
     "best time to visit Chakwal", "Chakwal from Rawalpindi", "Chakwal from Lahore",
     "Chakwal transport", "Chakwal local food", "Chakwal district guide",
   ],
-  alternates: { canonical: "https://www.staychakwal.de/blog/chakwal-travel-guide" },
+  alternates: { canonical: `${siteConfig.url}/blog/chakwal-travel-guide` },
   openGraph: {
     title: "Complete Chakwal Travel Guide 2025 — How to Get There, Stay & Explore",
     description: "Everything you need to know for a perfect trip to Chakwal — transport, accommodation, attractions, food, and insider tips.",
-    url: "https://www.staychakwal.de/blog/chakwal-travel-guide",
-    images: [{ url: "https://www.staychakwal.de/images/blogs/chakwal-travel-mountains-punjab.jpg", width: 1200, height: 630, alt: "Chakwal Punjab Pakistan landscape travel guide" }],
+    url: `${siteConfig.url}/blog/chakwal-travel-guide`,
+    images: [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`, width: 1200, height: 630, alt: "Chakwal Punjab Pakistan landscape travel guide" }],
   },
 };
 
@@ -27,12 +27,12 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Complete Chakwal Travel Guide 2025 — How to Get There, Stay & Explore",
   "description": "The complete travel guide to Chakwal, Punjab, Pakistan — transport, accommodation, attractions, food, and travel tips.",
-  "image": "https://www.staychakwal.de/images/blogs/chakwal-travel-mountains-punjab.jpg",
-  "url": "https://www.staychakwal.de/blog/chakwal-travel-guide",
+  "image": `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`,
+  "url": `${siteConfig.url}/blog/chakwal-travel-guide`,
   "datePublished": "2025-02-01",
   "dateModified": "2025-06-01",
-  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": "https://www.staychakwal.de" },
-  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": "https://www.staychakwal.de" },
+  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
+  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
 };
 
 const FAQ_SCHEMA = {
