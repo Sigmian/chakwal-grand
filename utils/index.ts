@@ -48,7 +48,9 @@ export function formatAmount(
   amount: number | string | { toNumber: () => number } | null | undefined
 ): string {
   if (amount === null || amount === undefined) return "₨0";
-  const num = typeof amount === "object" ? amount.toNumber() : Number(amount);
+  const num = typeof amount === "object" && amount !== null && typeof (amount as any).toNumber === "function"
+    ? (amount as { toNumber: () => number }).toNumber()
+    : Number(amount);
   return formatPKR(num);
 }
 

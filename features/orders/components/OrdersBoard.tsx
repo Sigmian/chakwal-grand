@@ -11,7 +11,7 @@ type OrderItem = { productName: string; quantity: number; unitPrice: number; tot
 type Order = {
   id:          string;
   status:      string;
-  totalAmount: { toNumber(): number } | number;
+  totalAmount: { toNumber(): number } | number | string;
   notes:       string | null;
   createdAt:   Date;
   deliveredAt: Date | null;
@@ -41,7 +41,9 @@ function OrderRow({ order }: { order: Order }) {
   const [expanded, setExpanded]      = useState(false);
 
   const cfg    = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.PENDING;
-  const amount = typeof order.totalAmount === "number" ? order.totalAmount : order.totalAmount.toNumber();
+  const amount = typeof order.totalAmount === "object" && order.totalAmount !== null && typeof (order.totalAmount as any).toNumber === "function"
+    ? (order.totalAmount as { toNumber(): number }).toNumber()
+    : Number(order.totalAmount);
   const actions = NEXT_ACTIONS[order.status] ?? [];
 
   const doUpdate = (status: "PREPARING" | "DELIVERED" | "CANCELLED") => {

@@ -28,7 +28,12 @@ export default async function POSPage() {
       />
       <POSTerminal
         inventory={inventory as never}
-        activeBookings={activeBookings.data as never}
+        activeBookings={activeBookings.data.map(b => ({
+          id:          b.id,
+          bookingRef:  b.bookingRef,
+          customer:    { name: b.customer.name },
+          room:        { number: b.room.number },
+        }))}
       />
     </div>
   );
