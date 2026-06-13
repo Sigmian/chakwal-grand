@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getPublicRooms } from "@/server/actions/public";
 import { RoomsClient } from "@/features/public/components/RoomsClient";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Rooms & Suites | Chakwal Grand Guest House",
+  title: `Rooms & Suites | ${siteConfig.name}`,
   description: "Explore AC rooms, family suites and VIP rooms at Chakwal Grand Guest House in Chakwal, Punjab. Rates from PKR 2,000/night. View availability and book online.",
   keywords: ["rooms in Chakwal", "AC room Chakwal", "family suite Chakwal", "VIP room Chakwal", "cheap hotel room Chakwal", "Chakwal Grand rooms"],
-  alternates: { canonical: "https://www.staychakwal.de/rooms" },
+  alternates: { canonical: `${siteConfig.url}/rooms` },
   openGraph: {
-    title:       "Rooms & Suites | Chakwal Grand Guest House",
+    title:       `Rooms & Suites | ${siteConfig.name}`,
     description: "AC rooms, family suites & VIP rooms from PKR 2,000/night in Chakwal, Punjab.",
-    url:         "https://www.staychakwal.de/rooms",
+    url:         `${siteConfig.url}/rooms`,
   },
 };
 
@@ -63,9 +64,9 @@ export default async function RoomsPage() {
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-md transition-all">
               Check Availability
             </Link>
-            <a href="tel:+923347742767"
+            <a href={`tel:${siteConfig.phoneE164}`}
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border border-border text-foreground font-semibold rounded-xl hover:bg-accent transition-colors">
-              Call 0334-7742767
+              Call {siteConfig.phone}
             </a>
           </div>
         </div>

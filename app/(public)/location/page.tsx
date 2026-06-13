@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MapPin, Navigation, Phone, Clock, Car } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Location & Directions | Chakwal Grand Guest House — Chakwal, Punjab",
   description: "Find Chakwal Grand Guest House easily. Located near District Courts, Talagang Road, Chakwal. Also branches in Kallar Kahar & Sargodha. Get directions, map & contact details.",
   keywords: ["Chakwal Grand Guest House location", "guest house near Chakwal city", "how to reach Chakwal Grand", "Talagang Road Chakwal guest house", "accommodation near Katas Raj"],
-  alternates: { canonical: "https://www.staychakwal.de/location" },
+  alternates: { canonical: `${siteConfig.url}/location` },
   openGraph: {
     title: "Location | Chakwal Grand Guest House — Near District Courts, Chakwal",
     description: "We are located near District Courts, Talagang Road, Chakwal. Easy access from Rawalpindi, Islamabad, and Lahore via GT Road.",
-    url: "https://www.staychakwal.de/location",
+    url: `${siteConfig.url}/location`,
   },
 };
 
@@ -18,7 +19,7 @@ const LOCATION_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "LodgingBusiness",
   "name": "Chakwal Grand Guest House",
-  "url": "https://www.staychakwal.de",
+  "url": siteConfig.url,
   "telephone": "+92-334-7742767",
   "address": {
     "@type": "PostalAddress",
@@ -152,8 +153,8 @@ export default function LocationPage() {
             <h2 className="text-2xl font-bold font-serif text-foreground mb-4">Need Help Finding Us?</h2>
             <p className="text-muted-foreground mb-6">Call or WhatsApp us and our staff will guide you directly to our doorstep.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="tel:+923347742767" className="flex items-center justify-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
-                <Phone className="w-4 h-4" /> Call 0334-7742767
+              <a href={`tel:${siteConfig.phoneE164}`} className="flex items-center justify-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
+                <Phone className="w-4 h-4" /> Call {siteConfig.phone}
               </a>
               <Link href="/book" className="flex items-center justify-center gap-2 px-6 py-3 border border-gold-500/30 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 transition-colors">
                 Book Online

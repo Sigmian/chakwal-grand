@@ -9,6 +9,7 @@ import { RoomGallery }           from "@/features/public/components/RoomGallery"
 import { AvailabilityCalendar }  from "@/features/public/components/AvailabilityCalendar";
 import { formatPKR }             from "@/utils";
 import type { Metadata } from "next";
+import { siteConfig } from "@/config/site";
 
 interface Props { params: { id: string } }
 
@@ -46,7 +47,7 @@ export default async function RoomDetailPage({ params }: Props) {
     "@type": "HotelRoom",
     "name": room.name,
     "description": room.description ?? `${room.name} at Chakwal Grand Guest House`,
-    "url": `https://www.staychakwal.de/rooms/${room.id}`,
+    "url": `${siteConfig.url}/rooms/${room.id}`,
     "occupancy": { "@type": "QuantitativeValue", "maxValue": room.maxAdults },
     "amenityFeature": room.amenities.map((a: string) => ({
       "@type": "LocationFeatureSpecification",
@@ -58,7 +59,7 @@ export default async function RoomDetailPage({ params }: Props) {
       "price": Number(room.pricePerNight),
       "priceCurrency": "PKR",
       "availability": "https://schema.org/InStock",
-      "url": `https://www.staychakwal.de/book?branchId=${room.branchId}&roomId=${room.id}`,
+      "url": `${siteConfig.url}/book?branchId=${room.branchId}&roomId=${room.id}`,
     },
   };
 

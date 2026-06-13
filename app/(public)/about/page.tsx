@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, MapPin, Phone, Star, Shield, Clock, Users } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "About Us | Chakwal Grand Guest House — Best Stay in Chakwal",
   description: "Learn about Chakwal Grand Guest House — Chakwal's most trusted guest house with 3 locations across Punjab. Affordable luxury, family-friendly, 24/7 service since establishment.",
   keywords: ["about Chakwal Grand Guest House", "best guest house Chakwal", "trusted guest house Pakistan", "family guest house Chakwal Punjab"],
-  alternates: { canonical: "https://www.staychakwal.de/about" },
+  alternates: { canonical: `${siteConfig.url}/about` },
   openGraph: {
     title: "About Chakwal Grand Guest House | Best Guest House in Chakwal",
     description: "Chakwal's most trusted guest house chain with branches in Chakwal, Kallar Kahar, and Sargodha. Family-friendly, affordable, 24/7 service.",
-    url: "https://www.staychakwal.de/about",
+    url: `${siteConfig.url}/about`,
   },
 };
 
@@ -18,13 +19,13 @@ const ABOUT_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
   "name": "About Chakwal Grand Guest House",
-  "url": "https://www.staychakwal.de/about",
+  "url": `${siteConfig.url}/about`,
   "description": "Chakwal Grand Guest House is the premier accommodation provider in Chakwal, Punjab with branches in Chakwal, Kallar Kahar, and Sargodha.",
   "mainEntity": {
     "@type": "LodgingBusiness",
     "name": "Chakwal Grand Guest House",
     "telephone": "+92-334-7742767",
-    "url": "https://www.staychakwal.de",
+    "url": siteConfig.url,
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "Near District Courts, Talagang Road",
@@ -88,12 +89,16 @@ export default function AboutPage() {
                   24/7 hot water, attached bathrooms, and round-the-clock staff assistance.
                 </p>
                 <div className="space-y-3">
-                  {["No advance payment required — pay cash on arrival", "CNIC-verified, secure guest environment", "Free cancellation up to 24 hours before check-in", "Online booking available 24/7 at staychakwal.de"].map(point => (
+                  {["No advance payment required — pay cash on arrival", "CNIC-verified, secure guest environment", "Free cancellation up to 24 hours before check-in"].map(point => (
                     <div key={point} className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-gold-400 flex-shrink-0 mt-0.5" />
                       <span className="text-sm text-foreground">{point}</span>
                     </div>
                   ))}
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-gold-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-foreground">Online booking available 24/7 at {siteConfig.url.replace("https://", "")}</span>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -150,9 +155,9 @@ export default function AboutPage() {
                   </div>
                   <h3 className="font-bold text-foreground mb-2">{b.name}</h3>
                   <p className="text-sm text-muted-foreground mb-4">{b.address}</p>
-                  <a href="tel:+923347742767" className="flex items-center gap-2 text-sm text-gold-400 hover:underline">
+                  <a href={`tel:${siteConfig.phoneE164}`} className="flex items-center gap-2 text-sm text-gold-400 hover:underline">
                     <Phone className="w-4 h-4" />
-                    0334-7742767
+                    {siteConfig.phone}
                   </a>
                 </div>
               ))}
@@ -169,8 +174,8 @@ export default function AboutPage() {
               <Link href="/book" className="px-8 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
                 Book a Room
               </Link>
-              <a href="tel:+923347742767" className="px-8 py-3 border border-gold-500/30 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 transition-colors">
-                Call 0334-7742767
+              <a href={`tel:${siteConfig.phoneE164}`} className="px-8 py-3 border border-gold-500/30 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 transition-colors">
+                Call {siteConfig.phone}
               </a>
             </div>
           </div>
