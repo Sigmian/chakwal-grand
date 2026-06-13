@@ -49,6 +49,7 @@ export function GuestReviewForm() {
             <button
               key={n}
               type="button"
+              aria-label={`Rate ${n} star${n !== 1 ? "s" : ""}`}
               onClick={() => setRating(n)}
               onMouseEnter={() => setHover(n)}
               onMouseLeave={() => setHover(0)}

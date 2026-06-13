@@ -49,12 +49,13 @@ export function GuestLoginForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Booking Ref */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+            <label htmlFor="guest-booking-ref" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
               Booking Reference
             </label>
             <div className="relative">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
+                id="guest-booking-ref"
                 type="text"
                 value={ref}
                 onChange={(e) => setRef(e.target.value.toUpperCase())}
@@ -67,12 +68,13 @@ export function GuestLoginForm() {
 
           {/* Phone */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+            <label htmlFor="guest-phone" className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
               Phone Number
             </label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
+                id="guest-phone"
                 type={showPhone ? "text" : "tel"}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
