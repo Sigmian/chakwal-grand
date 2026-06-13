@@ -5,6 +5,7 @@ import { ChatWidget }  from "@/features/public/components/ChatWidget";
 import { ScrollToTop } from "@/features/public/components/ScrollToTop";
 import { AnnouncementBanner } from "@/features/public/components/AnnouncementBanner";
 import { getActiveAnnouncement } from "@/server/actions/public";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: { default: "Chakwal Grand Guest House | Best Stay in Chakwal Punjab", template: "%s | Chakwal Grand Guest House" },
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
     "family rooms Chakwal", "AC rooms Chakwal", "cheap stay Chakwal", "Chakwal Grand",
     "best hotel Chakwal Punjab", "overnight stay Chakwal", "CGH Chakwal",
   ],
-  alternates: { canonical: "https://www.staychakwal.de" },
+  alternates: { canonical: siteConfig.url },
 };
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
