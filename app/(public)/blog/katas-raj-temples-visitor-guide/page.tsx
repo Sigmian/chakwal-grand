@@ -56,7 +56,7 @@ const TOURIST_SCHEMA = {
   "@type": "TouristAttraction",
   "name": "Katas Raj Temples",
   "description": "Ancient Hindu temple complex in Chakwal district, Punjab, Pakistan. One of the most sacred Hindu sites in Pakistan, dating back over 1,500 years.",
-  "url": "https://www.staychakwal.de/blog/katas-raj-temples-visitor-guide",
+  "url": `${siteConfig.url}/blog/katas-raj-temples-visitor-guide`,
   "address": {
     "@type": "PostalAddress",
     "addressLocality": "Katas, Choa Saidanshah",
