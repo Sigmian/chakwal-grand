@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -122,7 +123,7 @@ export default function ChakwalTravelGuidePage() {
               </ul>
               <div className="mt-5 pt-4 border-t border-border space-y-2">
                 <Link href="/book" className="block text-center py-2 bg-gold-gradient text-background text-xs font-bold rounded-lg hover:shadow-gold-lg transition-all">Book Accommodation</Link>
-                <a href="tel:+923347742767" className="block text-center py-2 border border-gold-500/30 text-gold-400 text-xs rounded-lg hover:bg-gold-500/10 transition-colors">Call 0334-7742767</a>
+                <a href={`tel:${siteConfig.phoneE164}`} className="block text-center py-2 border border-gold-500/30 text-gold-400 text-xs rounded-lg hover:bg-gold-500/10 transition-colors">Call {siteConfig.phone}</a>
               </div>
             </div>
           </aside>
@@ -376,7 +377,7 @@ export default function ChakwalTravelGuidePage() {
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
                   Book Accommodation <ArrowRight className="w-4 h-4" />
                 </Link>
-                <a href="tel:+923347742767" className="inline-flex items-center gap-2 px-6 py-3 border border-gold-500/30 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 transition-colors">
+                <a href={`tel:${siteConfig.phoneE164}`} className="inline-flex items-center gap-2 px-6 py-3 border border-gold-500/30 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 transition-colors">
                   <Phone className="w-4 h-4" /> Call for Help Planning
                 </a>
               </div>

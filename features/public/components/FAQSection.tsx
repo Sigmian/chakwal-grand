@@ -11,7 +11,7 @@ const FAQS = [
     items: [
       {
         q: "How do I book a room?",
-        a: "You can book online through our website (click 'Book Now'), send a WhatsApp message to 0334-7742767, or call us directly. Online bookings get an instant reference number. We recommend calling to confirm your booking once made.",
+        a: `You can book online through our website (click 'Book Now'), send a WhatsApp message to ${siteConfig.phone}, or call us directly. Online bookings get an instant reference number. We recommend calling to confirm your booking once made.`,
       },
       {
         q: "Is advance booking required?",
@@ -19,7 +19,7 @@ const FAQS = [
       },
       {
         q: "What is your cancellation policy?",
-        a: "We offer free cancellation up to 24 hours before your check-in time. For cancellations within 24 hours, please call us at 0334-7742767 to discuss your situation — we're flexible with genuine emergencies.",
+        a: `We offer free cancellation up to 24 hours before your check-in time. For cancellations within 24 hours, please call us at ${siteConfig.phone} to discuss your situation — we're flexible with genuine emergencies.`,
       },
       {
         q: "Do I need to pay anything online to book?",
@@ -61,7 +61,7 @@ const FAQS = [
       },
       {
         q: "Can I request early check-in?",
-        a: "Early check-in is subject to room availability. Please call us at 0334-7742767 the day before to request it. We'll do our best to accommodate you, sometimes at a small extra charge for the additional hours.",
+        a: `Early check-in is subject to room availability. Please call us at ${siteConfig.phone} the day before to request it. We'll do our best to accommodate you, sometimes at a small extra charge for the additional hours.`,
       },
     ],
   },

@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -379,8 +380,8 @@ export default function KatasRajPage() {
                   <Link href="/book" className="flex-1 flex items-center justify-center gap-2 py-3 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-lg transition-all">
                     Book Now — No Payment Required <ArrowRight className="w-4 h-4" />
                   </Link>
-                  <a href="tel:+923347742767" className="flex-1 flex items-center justify-center gap-2 py-3 border border-gold-500/30 text-gold-400 text-sm font-semibold rounded-xl hover:bg-gold-500/10 transition-colors">
-                    Call 0334-7742767
+                  <a href={`tel:${siteConfig.phoneE164}`} className="flex-1 flex items-center justify-center gap-2 py-3 border border-gold-500/30 text-gold-400 text-sm font-semibold rounded-xl hover:bg-gold-500/10 transition-colors">
+                    Call {siteConfig.phone}
                   </a>
                 </div>
               </div>
