@@ -61,6 +61,11 @@ export enum SaleType {
   WALK_IN = "WALK_IN",
 }
 
+export enum ExpenseType {
+  INVENTORY  = "INVENTORY",
+  GUESTHOUSE = "GUESTHOUSE",
+}
+
 export enum ExpenseCategory {
   ELECTRICITY = "ELECTRICITY",
   GAS = "GAS",
@@ -643,6 +648,7 @@ export interface CreateBookingInput {
   guestName?: string;        // If new customer
   guestPhone?: string;
   guestEmail?: string;
+  guestCnic?: string;        // Optional CNIC for identity verification
   checkInDate: string;       // ISO date string
   checkOutDate: string;
   adultCount: number;

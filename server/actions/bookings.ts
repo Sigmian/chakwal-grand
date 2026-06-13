@@ -109,6 +109,7 @@ export async function createBooking(rawInput: CreateBookingInput) {
             name:  input.guestName!,
             phone: input.guestPhone!,
             email: input.guestEmail || undefined,
+            cnic:  (input as any).guestCnic || undefined,
           },
         });
         customerId = newCustomer.id;
@@ -595,4 +596,55 @@ export async function getBookingStatusCounts(branchId?: string) {
     checked_out: counts["checked_out"] ?? 0,
     cancelled:   counts["cancelled"]   ?? 0,
   };
+}
+
+// ─── APPLY BOOKING ADJUSTMENT (discount or extra charge) ─────
+
+export async function applyBookingAdjustment(input: {
+  bookingId:       string;
+  adjustmentType:  "DISCOUNT" | "EXTRA_CHARGE";
+  amount:          number;
+  description:     string;
+}) {
+  await requirePermission("bookings:update");
+
+  if (!input.bookingId) return { success: false, error: "Booking ID required" };
+  if (input.amount <= 0)  return { success: false, error: "Amount must be greater than zero" };
+  if (!input.description.trim()) return { success: false, error: "Please provide a reason" };
+
+  const booking = await prisma.booking.findUnique({ where: { id: input.bookingId } });
+  if (!booking) return { success: false, error: "Booking not found" };
+
+  const baseAmount     = Number(booking.baseAmount);
+  const taxAmount      = Number(booking.taxAmount);
+  const extraCharges   = Number(booking.extraCharges);
+  const discountAmount = Number(booking.discountAmount);
+
+  let newDiscount = discountAmount;
+  let newExtra    = extraCharges;
+
+  if (input.adjustmentType === "DISCOUNT") {
+    newDiscount = discountAmount + input.amount;
+    // Discount cannot exceed base amount
+    if (newDiscount > baseAmount) {
+      return { success: false, error: `Discount cannot exceed room rate of Rs ${baseAmount.toLocaleString()}` };
+    }
+  } else {
+    newExtra = extraCharges + input.amount;
+  }
+
+  const newTotal = baseAmount - newDiscount + newExtra + taxAmount;
+
+  await prisma.booking.update({
+    where: { id: input.bookingId },
+    data: {
+      discountAmount: newDiscount,
+      extraCharges:   newExtra,
+      totalAmount:    Math.max(0, newTotal),
+    },
+  });
+
+  revalidatePath(`/bookings/${input.bookingId}`);
+  revalidatePath("/bookings");
+  return { success: true, newTotal: Math.max(0, newTotal) };
 }

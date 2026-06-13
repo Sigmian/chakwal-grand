@@ -73,6 +73,11 @@ enum SaleType {
   WALK_IN        // Direct sale to a non-staying customer
 }
 
+enum ExpenseType {
+  INVENTORY   // Costs tied to stock/products (INVENTORY_PURCHASE)
+  GUESTHOUSE  // All operational running costs
+}
+
 enum ExpenseCategory {
   ELECTRICITY
   GAS
@@ -402,7 +407,8 @@ model Customer {
   name            String
   phone           String
   email           String?
-  cnic            String?     // Encrypted
+  cnic            String?     // National ID number
+  cnicImage       String?     // URL to uploaded CNIC photo (optional)
   passportNumber  String?
   nationality     String?     @default("Pakistani")
   city            String?
@@ -715,6 +721,7 @@ model Expense {
   branch      Branch          @relation(fields: [branchId], references: [id])
 
   category    ExpenseCategory
+  expenseType ExpenseType     @default(GUESTHOUSE)
   title       String
   amount      Decimal         @db.Decimal(10, 2)
   description String?
@@ -729,6 +736,7 @@ model Expense {
   @@index([branchId])
   @@index([month, year])
   @@index([category])
+  @@index([expenseType])
 }
 
 // ─────────────────────────────────────────────

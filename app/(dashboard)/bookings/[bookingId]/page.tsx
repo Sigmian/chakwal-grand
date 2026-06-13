@@ -12,6 +12,8 @@ import { SectionHeader } from "@/components/shared";
 import { BookingActions } from "@/features/bookings/components/BookingActions";
 import { PaymentPanel } from "@/features/bookings/components/PaymentPanel";
 import { BookingInvoice } from "@/features/bookings/components/BookingInvoice";
+import { BookingAdjustmentPanel } from "@/features/bookings/components/BookingAdjustmentPanel";
+import { CnicPanel } from "@/features/bookings/components/CnicPanel";
 import {
   formatPKR, formatDate, formatDateTime,
   BOOKING_STATUS_CONFIG, PAYMENT_STATUS_CONFIG,
@@ -279,6 +281,22 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
               </div>
             </div>
           )}
+
+          {/* Billing adjustments */}
+          <BookingAdjustmentPanel
+            bookingId={booking.id}
+            bookingStatus={booking.status}
+            baseAmount={Number(booking.baseAmount)}
+            currentDiscount={Number(booking.discountAmount)}
+            currentExtra={Number(booking.extraCharges)}
+          />
+
+          {/* CNIC verification */}
+          <CnicPanel
+            customerId={booking.customer.id}
+            cnic={booking.customer.cnic ?? null}
+            cnicImage={(booking.customer as any).cnicImage ?? null}
+          />
 
           {/* Add payment */}
           <PaymentPanel

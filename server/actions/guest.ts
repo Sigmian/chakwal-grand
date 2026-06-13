@@ -41,7 +41,7 @@ async function resolveSession(token?: string) {
         include: {
           room:     { select: { id: true, number: true, name: true, floor: true } },
           branch:   { select: { id: true, name: true, city: true, address: true, phone: true } },
-          customer: { select: { id: true, name: true, phone: true, email: true } },
+          customer: { select: { id: true, name: true, phone: true, email: true, cnic: true } },
           inRoomOrders: {
             orderBy: { createdAt: "desc" },
             include: { items: true },
@@ -147,6 +147,7 @@ export async function getGuestDashboard() {
       name:  booking.customer.name,
       phone: booking.customer.phone,
       email: booking.customer.email,
+      cnic:  booking.customer.cnic ?? null,
     },
     booking: {
       id:         booking.id,

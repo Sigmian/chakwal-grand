@@ -151,6 +151,7 @@ export const createBookingSchema = z
     guestName:    z.string().min(2).optional(),
     guestPhone:   phoneNumber.optional(),
     guestEmail:   z.string().email().optional().or(z.literal("")),
+    guestCnic:    z.string().optional(),
     // Dates
     checkInDate:  dateString,
     checkOutDate: dateString,

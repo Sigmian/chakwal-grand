@@ -1,6 +1,6 @@
 "use client";
 
-import { BedDouble, Calendar, Users, CreditCard, ShoppingBag, Clock, ChevronRight } from "lucide-react";
+import { BedDouble, Calendar, Users, CreditCard, ShoppingBag, Clock, ChevronRight, ShieldCheck, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { formatPKR, cn } from "@/utils";
 import type { getGuestDashboard } from "@/server/actions/guest";
@@ -208,6 +208,27 @@ export function GuestDashboardContent({ data }: { data: DashData }) {
           <a href={`tel:${branch.phone}`} className="font-semibold text-gold-400 hover:underline">
             {branch.phone}
           </a>
+        </div>
+      </div>
+
+      {/* CNIC / Identity */}
+      <div className={`border rounded-2xl p-4 flex items-start gap-3 ${guest.cnic ? "bg-green-500/5 border-green-500/20" : "bg-amber-500/5 border-amber-500/20"}`}>
+        {guest.cnic ? (
+          <ShieldCheck className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+        ) : (
+          <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+        )}
+        <div>
+          <p className={`text-sm font-bold ${guest.cnic ? "text-green-400" : "text-amber-400"}`}>
+            {guest.cnic ? "Identity Verified" : "Identity Verification Pending"}
+          </p>
+          {guest.cnic ? (
+            <p className="text-xs text-muted-foreground mt-0.5">CNIC on file: <span className="font-mono">{guest.cnic}</span></p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Please show your CNIC to reception staff upon check-in.
+            </p>
+          )}
         </div>
       </div>
 

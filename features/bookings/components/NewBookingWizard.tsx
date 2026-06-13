@@ -209,6 +209,7 @@ export function NewBookingWizard({ branches, rooms }: {
                 { label: "Full Name",        name: "guestName"  as const, type: "text",  ph: "Muhammad Ahmad" },
                 { label: "Phone Number",     name: "guestPhone" as const, type: "tel",   ph: "+92-300-0000000" },
                 { label: "Email (optional)", name: "guestEmail" as const, type: "email", ph: "guest@email.com" },
+                { label: "CNIC (optional)", name: "guestCnic"  as const, type: "text",  ph: "XXXXX-XXXXXXX-X" },
               ].map((f) => (
                 <div key={f.name}>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{f.label}</label>

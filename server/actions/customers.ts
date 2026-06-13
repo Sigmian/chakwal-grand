@@ -46,3 +46,26 @@ export async function createCustomer(rawInput: CreateCustomerInput) {
   revalidatePath("/customers");
   return { success: true, customerId: customer.id };
 }
+
+export async function updateCustomerCnic(customerId: string, cnic: string, cnicImage?: string) {
+  await requirePermission("bookings:update");
+
+  if (!customerId) return { success: false, error: "Customer ID required" };
+
+  await prisma.customer.update({
+    where: { id: customerId },
+    data: {
+      cnic:      cnic.trim() || null,
+      cnicImage: cnicImage?.trim() || undefined,
+    },
+  });
+
+  revalidatePath(`/customers/${customerId}`);
+  revalidatePath("/bookings");
+  return { success: true };
+}
+
+export async function getCustomer(customerId: string) {
+  await requirePermission("bookings:read");
+  return prisma.customer.findUnique({ where: { id: customerId } });
+}
