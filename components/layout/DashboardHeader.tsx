@@ -63,6 +63,15 @@ export function DashboardHeader({ user }: Props) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
 
+  // Auto-mark all as read 2s after opening panel
+  useEffect(() => {
+    if (!notifOpen) return;
+    const timer = setTimeout(() => {
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [notifOpen]);
+
   // Live clock
   useEffect(() => {
     const update = () => setTime(formatTime(new Date()));
@@ -89,6 +98,9 @@ export function DashboardHeader({ user }: Props) {
 
   const markAllRead = () =>
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+
+  const markOneRead = (id: string) =>
+    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
 
   const NOTIF_COLORS: Record<string, string> = {
     warning: "text-amber-400 bg-amber-400/10",
@@ -187,10 +199,11 @@ export function DashboardHeader({ user }: Props) {
 
                   <div className="divide-y divide-border/50 max-h-80 overflow-y-auto">
                     {notifications.map((n) => (
-                      <div
+                      <button
                         key={n.id}
+                        onClick={() => markOneRead(n.id)}
                         className={cn(
-                          "px-4 py-3 transition-colors hover:bg-accent/50",
+                          "w-full text-left px-4 py-3 transition-colors hover:bg-accent/50 cursor-pointer",
                           !n.read && "bg-accent/20"
                         )}
                       >
@@ -210,7 +223,7 @@ export function DashboardHeader({ user }: Props) {
                           )}
                         </div>
                         <p className="text-2xs text-muted-foreground mt-1.5 ml-0">{n.time}</p>
-                      </div>
+                      </button>
                     ))}
                   </div>
 
