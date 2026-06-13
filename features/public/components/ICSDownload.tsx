@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarDays } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 interface Props {
   bookingRef:   string;
@@ -33,7 +34,7 @@ export function ICSDownload({ bookingRef, roomName, checkInDate, checkOutDate, b
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
       "BEGIN:VEVENT",
-      `UID:${bookingRef}@chakwalgrand.pk`,
+      `UID:${bookingRef}@${siteConfig.url.replace("https://www.", "")}`,
       `DTSTAMP:${now}`,
       `DTSTART:${dtStart}`,
       `DTEND:${dtEnd}`,
