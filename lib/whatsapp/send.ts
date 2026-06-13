@@ -14,6 +14,8 @@
 // Pakistan numbers must be in E.164 format: 923001234567
 // ============================================================
 
+import { siteConfig } from "@/config/site";
+
 const WHATSAPP_API_URL = "https://graph.facebook.com/v19.0";
 
 function toE164(phone: string): string {
@@ -78,7 +80,7 @@ export async function sendBookingWhatsApp(payload: BookingWhatsAppPayload): Prom
     `📌 *Important:*\n` +
     `• Bring your original CNIC\n` +
     `• A/C available 12 hours daily\n` +
-    `• Call us: 0334-7742767\n\n` +
+    `• Call us: ${siteConfig.phone}\n\n` +
     `🗺️ *Location:* ${mapsUrl}\n\n` +
     `📄 *View Booking:* ${payload.confirmationUrl}\n\n` +
     `جزاک اللہ خیراً — Chakwal Grand Team`;

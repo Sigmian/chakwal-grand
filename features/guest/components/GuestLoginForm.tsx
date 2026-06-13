@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Hotel, Phone, Hash, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { guestLogin } from "@/server/actions/guest";
+import { siteConfig } from "@/config/site";
 
 export function GuestLoginForm() {
   const router = useRouter();
@@ -115,8 +116,8 @@ export function GuestLoginForm() {
 
         <p className="text-xs text-muted-foreground text-center mt-6">
           Need help? Call reception:{" "}
-          <a href="tel:+923347742767" className="text-gold-400 hover:underline font-medium">
-            0334-7742767
+          <a href={`tel:${siteConfig.phoneE164}`} className="text-gold-400 hover:underline font-medium">
+            {siteConfig.phone}
           </a>
         </p>
         <div className="mt-4 pt-4 border-t border-border text-center">
