@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, ArrowRight } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Travel Blog | Chakwal Grand Guest House — Chakwal Tourism & Travel Guide",
   description: "Explore Chakwal tourism guides, travel tips, places to visit near Chakwal, Katas Raj Temples, Kallar Kahar Lake, and the best accommodation options in Chakwal Punjab.",
   keywords: ["Chakwal tourism", "places to visit Chakwal", "Chakwal travel guide", "Katas Raj Temples", "Kallar Kahar Lake", "travel Pakistan Punjab"],
-  alternates: { canonical: "https://www.staychakwal.de/blog" },
+  alternates: { canonical: `${siteConfig.url}/blog` },
 };
 
 const BLOGS = [
