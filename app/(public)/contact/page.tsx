@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Phone, MapPin, Clock, MessageCircle, Mail } from "lucide-react";
+import { ContactForm } from "@/features/public/components/ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact Us | Chakwal Grand Guest House — Call & WhatsApp 0334-7742767",
@@ -175,8 +176,22 @@ export default function ContactPage() {
           </div>
         </section>
 
+        {/* Contact Form */}
+        <section className="py-16 bg-surface-elevated border-t border-border">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Get In Touch</p>
+              <h2 className="text-3xl font-bold font-serif text-foreground mb-3">Send Us a Message</h2>
+              <p className="text-muted-foreground">Fill the form below and we&apos;ll respond via WhatsApp within minutes.</p>
+            </div>
+            <div className="card-luxury rounded-2xl p-6 sm:p-8">
+              <ContactForm />
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
-        <section className="py-12 bg-surface-elevated">
+        <section className="py-12 bg-surface-base border-t border-border">
           <div className="max-w-xl mx-auto px-4 text-center">
             <h2 className="text-2xl font-bold font-serif text-foreground mb-4">Book Your Room Online</h2>
             <p className="text-muted-foreground mb-6">No advance payment needed. Reserve your room in 2 minutes.</p>

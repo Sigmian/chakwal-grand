@@ -1,8 +1,9 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import { BedDouble, Users, Wifi, Snowflake, Tv, Coffee } from "lucide-react";
-import { formatPKR } from "@/utils";
+import { BedDouble, Users, Wifi, Snowflake, Tv, Coffee, SlidersHorizontal, X } from "lucide-react";
+import { formatPKR, cn } from "@/utils";
 import { RoomCompare, CompareCheckbox } from "@/features/public/components/RoomCompare";
 import { RoomGallery } from "@/features/public/components/RoomGallery";
 
@@ -51,33 +52,147 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
 };
 
 export function RoomsClient({ rooms }: { rooms: Room[] }) {
+  const [guestFilter, setGuestFilter] = useState(0);
+  const [branchFilter, setBranchFilter] = useState("");
+  const [sortBy, setSortBy] = useState<"default" | "price_asc" | "price_desc">("default");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const branches = useMemo(() => {
+    const seen = new Set<string>();
+    return rooms.filter(r => { if (seen.has(r.branch.id)) return false; seen.add(r.branch.id); return true; }).map(r => r.branch);
+  }, [rooms]);
+
+  const filtered = useMemo(() => {
+    let list = rooms.filter(r => {
+      if (guestFilter > 0 && r.maxAdults < guestFilter) return false;
+      if (branchFilter && r.branch.id !== branchFilter) return false;
+      return true;
+    });
+    if (sortBy === "price_asc")  list = [...list].sort((a, b) => Number(a.pricePerNight) - Number(b.pricePerNight));
+    if (sortBy === "price_desc") list = [...list].sort((a, b) => Number(b.pricePerNight) - Number(a.pricePerNight));
+    return list;
+  }, [rooms, guestFilter, branchFilter, sortBy]);
+
   const grouped = TYPE_ORDER.reduce((acc, type) => {
-    const list = rooms.filter((r) => r.type === type);
+    const list = filtered.filter((r) => r.type === type);
     if (list.length > 0) acc[type] = list;
     return acc;
   }, {} as Record<string, Room[]>);
+
+  const activeFilters = (guestFilter > 0 ? 1 : 0) + (branchFilter ? 1 : 0) + (sortBy !== "default" ? 1 : 0);
+
+  const clearFilters = () => { setGuestFilter(0); setBranchFilter(""); setSortBy("default"); };
 
   return (
     <>
       <RoomCompare rooms={rooms} />
 
-      <div className="space-y-16">
-        {Object.entries(grouped).map(([type, typeRooms]) => (
-          <section key={type}>
-            <div className="flex items-center gap-4 mb-7">
-              <div className="text-3xl">{TYPE_ICON[type]}</div>
-              <div>
-                <h2 className="text-2xl font-bold font-serif text-foreground">{TYPE_LABEL[type]} Rooms</h2>
-                <p className="text-sm text-muted-foreground">
-                  {typeRooms.length} room{typeRooms.length > 1 ? "s" : ""} ·
-                  from {formatPKR(Math.min(...typeRooms.map((r) => Number(r.pricePerNight))))} / night
-                </p>
-              </div>
+      {/* Filter bar */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => setShowFilters(v => !v)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all",
+              showFilters ? "bg-gold-500/10 border-gold-500/30 text-gold-400" : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+            )}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters
+            {activeFilters > 0 && (
+              <span className="w-5 h-5 rounded-full bg-gold-gradient text-background text-[10px] font-bold flex items-center justify-center">
+                {activeFilters}
+              </span>
+            )}
+          </button>
+
+          {activeFilters > 0 && (
+            <button onClick={clearFilters} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <X className="w-3.5 h-3.5" /> Clear filters
+            </button>
+          )}
+
+          <p className="text-sm text-muted-foreground ml-auto">
+            {filtered.length} room{filtered.length !== 1 ? "s" : ""} found
+          </p>
+        </div>
+
+        {showFilters && (
+          <div className="mt-3 p-4 bg-surface-elevated border border-border rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Guests */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Min. Adults</label>
+              <select
+                value={guestFilter}
+                onChange={e => setGuestFilter(Number(e.target.value))}
+                className="w-full bg-surface-base border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-gold-500/50"
+              >
+                <option value={0}>Any</option>
+                <option value={1}>1+</option>
+                <option value={2}>2+</option>
+                <option value={3}>3+</option>
+                <option value={4}>4+</option>
+              </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {typeRooms.map((room) => {
-                return (
+            {/* Branch */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Location</label>
+              <select
+                value={branchFilter}
+                onChange={e => setBranchFilter(e.target.value)}
+                className="w-full bg-surface-base border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-gold-500/50"
+              >
+                <option value="">All Locations</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name} — {b.city}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sort */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Sort By</label>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as typeof sortBy)}
+                className="w-full bg-surface-base border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-gold-500/50"
+              >
+                <option value="default">Default</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-20">
+          <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-foreground mb-2">No rooms match your filters</h3>
+          <p className="text-muted-foreground mb-4">Try adjusting your guest count or location</p>
+          <button onClick={clearFilters} className="px-5 py-2.5 bg-gold-gradient text-background text-sm font-bold rounded-xl">
+            Clear Filters
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-16">
+          {Object.entries(grouped).map(([type, typeRooms]) => (
+            <section key={type}>
+              <div className="flex items-center gap-4 mb-7">
+                <div className="text-3xl">{TYPE_ICON[type]}</div>
+                <div>
+                  <h2 className="text-2xl font-bold font-serif text-foreground">{TYPE_LABEL[type]} Rooms</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {typeRooms.length} room{typeRooms.length > 1 ? "s" : ""} ·
+                    from {formatPKR(Math.min(...typeRooms.map((r) => Number(r.pricePerNight))))} / night
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {typeRooms.map((room) => (
                   <div
                     key={room.id}
                     className={`card-luxury rounded-2xl overflow-hidden border bg-gradient-to-br ${TYPE_COLOR[room.type] ?? ""} transition-all hover:-translate-y-1 hover:shadow-card-lg`}
@@ -133,7 +248,7 @@ export function RoomsClient({ rooms }: { rooms: Room[] }) {
                         Details
                       </Link>
                       <Link
-                        href={`/book?branchId=${room.branchId}`}
+                        href={`/book?branchId=${room.branchId}&roomId=${room.id}`}
                         className="flex-1 py-2.5 text-center bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-md transition-all hover:-translate-y-0.5"
                       >
                         Book →
@@ -141,12 +256,12 @@ export function RoomsClient({ rooms }: { rooms: Room[] }) {
                       <CompareCheckbox roomId={room.id} />
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-      </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </>
   );
 }
