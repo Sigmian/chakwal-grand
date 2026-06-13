@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Phone, MapPin, Clock, MessageCircle, Mail } from "lucide-react";
 import { ContactForm } from "@/features/public/components/ContactForm";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Contact Us | Chakwal Grand Guest House — Call & WhatsApp 0334-7742767",
-  description: "Contact Chakwal Grand Guest House for room bookings, inquiries, and reservations. Call or WhatsApp 0334-7742767. Located in Chakwal, Kallar Kahar & Sargodha, Punjab.",
+  title: `Contact Us | ${siteConfig.name} — Call & WhatsApp ${siteConfig.phone}`,
+  description: `Contact Chakwal Grand Guest House for room bookings, inquiries, and reservations. Call or WhatsApp ${siteConfig.phone}. Located in Chakwal, Kallar Kahar & Sargodha, Punjab.`,
   keywords: ["contact Chakwal Grand Guest House", "Chakwal guest house phone number", "book guest house Chakwal", "Chakwal accommodation contact"],
-  alternates: { canonical: "https://www.staychakwal.de/contact" },
+  alternates: { canonical: `${siteConfig.url}/contact` },
   openGraph: {
-    title: "Contact Chakwal Grand Guest House | 0334-7742767",
-    description: "Get in touch for room bookings and inquiries. Call or WhatsApp 0334-7742767. Multiple locations in Punjab.",
-    url: "https://www.staychakwal.de/contact",
+    title: `Contact Chakwal Grand Guest House | ${siteConfig.phone}`,
+    description: `Get in touch for room bookings and inquiries. Call or WhatsApp ${siteConfig.phone}. Multiple locations in Punjab.`,
+    url: `${siteConfig.url}/contact`,
   },
 };
 
@@ -19,13 +20,13 @@ const CONTACT_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "ContactPage",
   "name": "Contact Chakwal Grand Guest House",
-  "url": "https://www.staychakwal.de/contact",
+  "url": `${siteConfig.url}/contact`,
   "mainEntity": {
     "@type": "LodgingBusiness",
     "name": "Chakwal Grand Guest House",
     "telephone": "+92-334-7742767",
     "email": "chakwalguesthouse@gmail.com",
-    "url": "https://www.staychakwal.de",
+    "url": siteConfig.url,
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "Near District Courts, Talagang Road",
@@ -81,22 +82,22 @@ export default function ContactPage() {
         <section className="py-16">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16">
-              <a href="tel:+923347742767" className="card-luxury rounded-2xl p-6 text-center hover:border-gold-500/30 border border-transparent transition-all group">
+              <a href={`tel:${siteConfig.phoneE164}`} className="card-luxury rounded-2xl p-6 text-center hover:border-gold-500/30 border border-transparent transition-all group">
                 <div className="w-12 h-12 rounded-xl bg-gold-500/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-gold-500/20 transition-colors">
                   <Phone className="w-6 h-6 text-gold-400" />
                 </div>
                 <h2 className="font-bold text-foreground mb-1">Call Us</h2>
-                <p className="text-gold-400 font-mono font-semibold">0334-7742767</p>
+                <p className="text-gold-400 font-mono font-semibold">{siteConfig.phone}</p>
                 <p className="text-xs text-muted-foreground mt-1">Available 24/7</p>
               </a>
 
-              <a href="https://wa.me/923347742767?text=Hi, I want to book a room at Chakwal Grand Guest House" target="_blank" rel="noreferrer"
+              <a href={siteConfig.social.whatsappUrl} target="_blank" rel="noreferrer"
                 className="card-luxury rounded-2xl p-6 text-center hover:border-[#25D366]/30 border border-transparent transition-all group">
                 <div className="w-12 h-12 rounded-xl bg-[#25D366]/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-[#25D366]/20 transition-colors">
                   <MessageCircle className="w-6 h-6 text-[#25D366]" />
                 </div>
                 <h2 className="font-bold text-foreground mb-1">WhatsApp</h2>
-                <p className="text-[#25D366] font-mono font-semibold">0334-7742767</p>
+                <p className="text-[#25D366] font-mono font-semibold">{siteConfig.phone}</p>
                 <p className="text-xs text-muted-foreground mt-1">Instant reply</p>
               </a>
 
@@ -130,7 +131,7 @@ export default function ContactPage() {
                       </div>
                     </div>
                     <div className="flex gap-3 flex-shrink-0">
-                      <a href="tel:+923347742767" className="px-4 py-2 bg-gold-gradient text-background text-sm font-bold rounded-lg hover:shadow-gold-lg transition-all">
+                      <a href={`tel:${siteConfig.phoneE164}`} className="px-4 py-2 bg-gold-gradient text-background text-sm font-bold rounded-lg hover:shadow-gold-lg transition-all">
                         Call Now
                       </a>
                       <a href={b.mapUrl} target="_blank" rel="noreferrer" className="px-4 py-2 border border-gold-500/30 text-gold-400 text-sm font-semibold rounded-lg hover:bg-gold-500/10 transition-colors">
@@ -164,7 +165,7 @@ export default function ContactPage() {
                   ["Payment Method", "Cash on Arrival"],
                   ["ID Required", "Original CNIC at Check-In"],
                   ["Cancellation", "Free — up to 24 hours before check-in"],
-                  ["Booking", "Online or Call/WhatsApp 0334-7742767"],
+                  ["Booking", "Online or Call/WhatsApp {siteConfig.phone}"],
                 ].map(([label, val]) => (
                   <div key={label} className="flex justify-between border-b border-border pb-2">
                     <span className="font-medium text-foreground">{label}</span>
