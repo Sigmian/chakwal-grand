@@ -16,9 +16,17 @@ interface Props { params: { id: string } }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const room = await getPublicRoom(params.id);
   if (!room) return { title: "Room Not Found" };
+  const coverImage = room.images.find(i => i.isCover) ?? room.images[0];
   return {
-    title:       `${room.name} — Chakwal Grand`,
-    description: room.description ?? `Book ${room.name} at Chakwal Grand Guest House from ${formatPKR(Number(room.pricePerNight))}/night.`,
+    title:       `${room.name} | ${siteConfig.name}`,
+    description: room.description ?? `Book ${room.name} at Chakwal Grand Guest House from ${formatPKR(Number(room.pricePerNight))}/night. Free WiFi, AC, 24/7 service.`,
+    alternates:  { canonical: `${siteConfig.url}/rooms/${params.id}` },
+    openGraph: {
+      title:       `${room.name} | Chakwal Grand Guest House`,
+      description: room.description ?? `Book from ${formatPKR(Number(room.pricePerNight))}/night.`,
+      url:         `${siteConfig.url}/rooms/${params.id}`,
+      images:      coverImage ? [{ url: coverImage.url, width: 1200, height: 630, alt: room.name }] : undefined,
+    },
   };
 }
 
