@@ -3,10 +3,17 @@ import { Suspense } from "react";
 import { getPublicBranches } from "@/server/actions/public";
 import { BookingForm } from "@/features/public/components/BookingForm";
 import { Loader2 } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Book a Room",
+  title: `Book a Room | ${siteConfig.name}`,
   description: "Book your room at Chakwal Grand Guest House. Check availability and confirm your booking in minutes.",
+  alternates: { canonical: `${siteConfig.url}/book` },
+  openGraph: {
+    title:       "Book a Room | Chakwal Grand Guest House",
+    description: "Reserve your room at Chakwal Grand Guest House. Instant confirmation, free cancellation up to 24 hours.",
+    url:         `${siteConfig.url}/book`,
+  },
 };
 
 export default async function BookPage() {

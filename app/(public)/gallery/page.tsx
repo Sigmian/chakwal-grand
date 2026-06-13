@@ -2,10 +2,18 @@
 import type { Metadata } from "next";
 import prisma from "@/lib/db/prisma";
 import { GalleryGrid } from "@/features/public/components/GalleryGrid";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title:       "Photo Gallery | Chakwal Grand Guest House",
+  title:       `Photo Gallery | ${siteConfig.name}`,
   description: "Browse our photo gallery — elegant rooms, cosy interiors, and beautiful facilities at Chakwal Grand Guest House.",
+  alternates: { canonical: `${siteConfig.url}/gallery` },
+  openGraph: {
+    title:       "Photo Gallery | Chakwal Grand Guest House",
+    description: "Elegant rooms and beautiful facilities — browse photos of Chakwal Grand Guest House.",
+    url:         `${siteConfig.url}/gallery`,
+    images:      [{ url: `${siteConfig.url}/images/og-image.jpg`, width: 1200, height: 630, alt: "Chakwal Grand Guest House photo gallery" }],
+  },
 };
 
 export const revalidate = 3600; // Re-generate at most once per hour
