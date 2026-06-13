@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Home, Phone, Search } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 export default function NotFound() {
   return (
@@ -29,7 +30,7 @@ export default function NotFound() {
             Browse Rooms
           </Link>
           <a
-            href="tel:+923347742767"
+            href={`tel:${siteConfig.phoneE164}`}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-gold-500/30 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 transition-colors text-sm"
           >
             <Phone className="w-4 h-4" />
@@ -38,8 +39,8 @@ export default function NotFound() {
         </div>
         <p className="text-xs text-muted-foreground mt-8">
           Need help? Call us at{" "}
-          <a href="tel:+923347742767" className="text-gold-400 hover:underline font-mono">
-            0334-7742767
+          <a href={`tel:${siteConfig.phoneE164}`} className="text-gold-400 hover:underline font-mono">
+            {siteConfig.phone}
           </a>
         </p>
       </div>

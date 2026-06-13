@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { siteConfig } from "@/config/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -6,9 +7,9 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow:     "/",
-        disallow:  ["/dashboard/", "/api/", "/guest/", "/unauthorized"],
+        disallow:  ["/dashboard/", "/api/", "/guest/", "/unauthorized", "/booking-confirmation/"],
       },
     ],
-    sitemap: "https://www.staychakwal.de/sitemap.xml",
+    sitemap: `${siteConfig.url}/sitemap.xml`,
   };
 }

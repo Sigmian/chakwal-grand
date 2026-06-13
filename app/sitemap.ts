@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { siteConfig } from "@/config/site";
 
-const BASE = "https://www.staychakwal.de";
+const BASE = siteConfig.url;
 const NOW  = new Date();
 
 export default function sitemap(): MetadataRoute.Sitemap {
