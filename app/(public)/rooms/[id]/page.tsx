@@ -65,7 +65,20 @@ export default async function RoomDetailPage({ params }: Props) {
   return (
     <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(roomSchema) }} />
-    <div className="pt-28 pb-20 px-4">
+    {/* Mobile sticky bottom bar */}
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-elevated/95 backdrop-blur-sm border-t border-border px-4 py-3 flex items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-muted-foreground truncate">{room.name}</p>
+        <p className="text-sm font-bold text-gold-400">{formatPKR(Number(room.pricePerNight))} <span className="text-xs font-normal text-muted-foreground">/night</span></p>
+      </div>
+      <Link
+        href={`/book?branchId=${room.branchId}&roomId=${room.id}`}
+        className="px-6 py-2.5 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-md transition-all flex-shrink-0"
+      >
+        Book Now
+      </Link>
+    </div>
+    <div className="pt-28 pb-28 lg:pb-20 px-4">
       <div className="max-w-5xl mx-auto">
 
         {/* Back link */}

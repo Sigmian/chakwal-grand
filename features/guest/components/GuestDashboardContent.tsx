@@ -1,9 +1,10 @@
 "use client";
 
-import { BedDouble, Calendar, Users, CreditCard, ShoppingBag, Clock, ChevronRight, ShieldCheck, AlertCircle } from "lucide-react";
+import { BedDouble, Calendar, Users, CreditCard, ShoppingBag, Clock, ChevronRight, ShieldCheck, AlertCircle, Star } from "lucide-react";
 import Link from "next/link";
 import { formatPKR, cn } from "@/utils";
 import type { getGuestDashboard } from "@/server/actions/guest";
+import { GuestReviewForm } from "./GuestReviewForm";
 
 type DashData = Extract<Awaited<ReturnType<typeof getGuestDashboard>>, { authenticated: true }>;
 
@@ -231,6 +232,17 @@ export function GuestDashboardContent({ data }: { data: DashData }) {
           )}
         </div>
       </div>
+
+      {/* Review form — show after checkout */}
+      {booking.status === "CHECKED_OUT" && (
+        <div className="card-luxury rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="w-4 h-4 text-gold-400" />
+            <h3 className="font-bold text-sm text-foreground">Rate Your Stay</h3>
+          </div>
+          <GuestReviewForm />
+        </div>
+      )}
 
       <div className="pb-4" />
     </div>

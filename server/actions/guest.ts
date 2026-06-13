@@ -460,3 +460,35 @@ export async function cancelGuestOrder(orderId: string) {
 
   return { success: true };
 }
+
+export async function submitGuestReview(input: {
+  rating: number;
+  title?: string;
+  body: string;
+}) {
+  const session = await resolveSession();
+  if (!session) return { success: false, error: "Not authenticated" };
+
+  if (input.rating < 1 || input.rating > 5) return { success: false, error: "Rating must be 1-5" };
+  if (!input.body.trim()) return { success: false, error: "Review text is required" };
+
+  // Check if already reviewed this booking
+  const existing = await prisma.review.findFirst({
+    where: { bookingId: session.booking.id },
+  });
+  if (existing) return { success: false, error: "You have already submitted a review for this booking." };
+
+  await prisma.review.create({
+    data: {
+      customerId: session.booking.customerId,
+      branchId:   session.booking.branchId,
+      bookingId:  session.booking.id,
+      rating:     input.rating,
+      title:      input.title?.trim() || null,
+      body:       input.body.trim(),
+      isApproved: false,
+    },
+  });
+
+  return { success: true };
+}
