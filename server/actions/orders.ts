@@ -30,13 +30,66 @@ export async function getInRoomOrders(branchId?: string) {
 export async function updateOrderStatus(orderId: string, status: "PENDING" | "PREPARING" | "DELIVERED" | "CANCELLED") {
   await requirePermission("bookings:update");
 
-  await prisma.inRoomOrder.update({
-    where: { id: orderId },
-    data: {
-      status,
-      ...(status === "DELIVERED" ? { deliveredAt: new Date() } : {}),
-    },
-  });
+  if (status === "CANCELLED") {
+    // Fetch order with items so we can reverse charges and restore stock
+    const order = await prisma.inRoomOrder.findUnique({
+      where:   { id: orderId },
+      include: { items: true },
+    });
+
+    if (!order) return { success: false, error: "Order not found." };
+    if (order.status === "CANCELLED") return { success: true }; // already cancelled
+    if (order.status === "DELIVERED") return { success: false, error: "Delivered orders cannot be cancelled." };
+
+    const orderTotal = Number(order.totalAmount);
+
+    await prisma.$transaction(async (tx) => {
+      // Mark order cancelled
+      await tx.inRoomOrder.update({
+        where: { id: orderId },
+        data:  { status: "CANCELLED" },
+      });
+
+      // Reverse the charge from the booking
+      await tx.booking.update({
+        where: { id: order.bookingId },
+        data:  {
+          extraCharges: { decrement: orderTotal },
+          totalAmount:  { decrement: orderTotal },
+        },
+      });
+
+      // Restore stock for each item
+      for (const item of order.items) {
+        const inv = await tx.inventoryItem.findUnique({ where: { id: item.inventoryItemId } });
+        if (!inv) continue;
+        const newStock = inv.currentStock + item.quantity;
+        await tx.inventoryItem.update({
+          where: { id: item.inventoryItemId },
+          data:  { currentStock: newStock },
+        });
+        await tx.stockMovement.create({
+          data: {
+            inventoryItemId: item.inventoryItemId,
+            type:            "ADJUSTMENT",
+            quantity:        item.quantity,
+            previousStock:   inv.currentStock,
+            newStock,
+            reference:       orderId,
+            notes:           `Cancelled room order (staff) — order #${orderId.slice(-6)}`,
+          },
+        });
+      }
+    });
+  } else {
+    await prisma.inRoomOrder.update({
+      where: { id: orderId },
+      data: {
+        status,
+        ...(status === "DELIVERED" ? { deliveredAt: new Date() } : {}),
+      },
+    });
+  }
 
   revalidatePath("/dashboard/orders");
   return { success: true };

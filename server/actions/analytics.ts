@@ -128,7 +128,7 @@ export async function getRevenueChartData(branchId?: string) {
 
   const chartData = await Promise.all(
     months.map(async ({ label, start, end }) => {
-      const [bookingRevenue, productRevenue, expenses] = await Promise.all([
+      const [bookingRevenue, productRevenue, ghExpenses, invExpenses] = await Promise.all([
         prisma.booking.aggregate({
           where: {
             ...branchFilter,
@@ -142,21 +142,29 @@ export async function getRevenueChartData(branchId?: string) {
           _sum:  { totalAmount: true },
         }),
         prisma.expense.aggregate({
-          where: { ...branchFilter, paidAt: { gte: start, lte: end } },
+          where: { ...branchFilter, paidAt: { gte: start, lte: end }, expenseType: "GUESTHOUSE" as never },
+          _sum:  { amount: true },
+        }),
+        prisma.expense.aggregate({
+          where: { ...branchFilter, paidAt: { gte: start, lte: end }, expenseType: "INVENTORY" as never },
           _sum:  { amount: true },
         }),
       ]);
 
-      const roomRevenue   = Number(bookingRevenue._sum.totalAmount ?? 0);
-      const productRev    = Number(productRevenue._sum.totalAmount ?? 0);
-      const totalRevenue  = roomRevenue + productRev;
-      const totalExpenses = Number(expenses._sum.amount ?? 0);
+      const roomRevenue    = Number(bookingRevenue._sum.totalAmount ?? 0);
+      const productRev     = Number(productRevenue._sum.totalAmount ?? 0);
+      const totalRevenue   = roomRevenue + productRev;
+      const ghExpTotal     = Number(ghExpenses._sum.amount ?? 0);
+      const invExpTotal    = Number(invExpenses._sum.amount ?? 0);
+      const totalExpenses  = ghExpTotal + invExpTotal;
 
       return {
         label,
         roomRevenue,
         productRevenue: productRev,
         expenses:       totalExpenses,
+        ghExpenses:     ghExpTotal,
+        invExpenses:    invExpTotal,
         profit:         totalRevenue - totalExpenses,
       };
     })

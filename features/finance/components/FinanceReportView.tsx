@@ -20,6 +20,8 @@ interface MonthlyData {
   roomRevenue:    number;
   productRevenue: number;
   expenses:       number;
+  ghExpenses:     number;
+  invExpenses:    number;
   profit:         number;
 }
 
@@ -319,8 +321,8 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
                       <td className="text-right text-muted-foreground">{formatPKR(row.roomRevenue)}</td>
                       <td className="text-right text-muted-foreground">{formatPKR(row.productRevenue)}</td>
                       <td className="text-right font-semibold text-gold-400">{formatPKR(rev)}</td>
-                      <td className="text-right text-amber-400">{formatPKR(ghExpenses / Math.max(data.length, 1))}</td>
-                      <td className="text-right text-blue-400">{formatPKR(invExpenses / Math.max(data.length, 1))}</td>
+                      <td className="text-right text-amber-400">{formatPKR(row.ghExpenses)}</td>
+                      <td className="text-right text-blue-400">{formatPKR(row.invExpenses)}</td>
                       <td className={cn("text-right font-bold", row.profit >= 0 ? "text-green-400" : "text-red-400")}>
                         {row.profit >= 0 ? "+" : ""}{formatPKR(row.profit)}
                       </td>
