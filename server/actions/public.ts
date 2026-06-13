@@ -336,7 +336,7 @@ export async function createPublicBooking(input: {
     nights,
     totalAmount,
     branchAddress,
-    confirmationUrl: `https://www.chakwalgrand.pk/booking-confirmation/${ref}`,
+    confirmationUrl: `${siteConfig.url}/booking-confirmation/${ref}`,
   }).catch((err) => console.error("[WhatsApp]", err));
 
   return { success: true, bookingId: booking.id, ref, shareToken, discountAmount };

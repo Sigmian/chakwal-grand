@@ -55,13 +55,13 @@ export const metadata: Metadata = {
     siteName:    "Chakwal Grand Guest House",
     title:       "Chakwal Grand Guest House — Premium Stay in Chakwal, Punjab",
     description: "Premium, affordable guest house in Chakwal with AC rooms, free WiFi & 24/7 service. Book from PKR 2,000/night.",
-    images: [{ url: "/images/logo.png", width: 1200, height: 630, alt: "Chakwal Grand Guest House" }],
+    images: [{ url: "/images/blogs/chakwal-travel-mountains-punjab.jpg", width: 1200, height: 630, alt: "Chakwal Grand Guest House — Chakwal, Punjab" }],
   },
   twitter: {
     card:        "summary_large_image",
     title:       "Chakwal Grand Guest House — Premium Stay in Chakwal",
     description: "Book AC rooms from PKR 2,000/night. Free WiFi, 24/7 service, Chakwal Punjab.",
-    images:      ["/images/logo.png"],
+    images:      ["/images/blogs/chakwal-travel-mountains-punjab.jpg"],
   },
   robots: {
     index:  true,
