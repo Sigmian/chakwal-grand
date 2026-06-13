@@ -1,9 +1,11 @@
 "use server";
 
+import { headers } from "next/headers";
 import prisma from "@/lib/db/prisma";
 import { sendPushToBranch } from "@/lib/push/send";
 import { sendBookingWhatsApp } from "@/lib/whatsapp/send";
 import { siteConfig } from "@/config/site";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function getPublicRooms() {
   return prisma.room.findMany({
@@ -185,6 +187,11 @@ export async function createPublicBooking(input: {
   estimatedArrival?:   string;
   structuredRequests?: Record<string, boolean | string>;
 }) {
+  const ip = headers().get("x-forwarded-for") ?? "unknown";
+  if (!rateLimit(`public-booking:${ip}`, 5, 60_000)) {
+    return { success: false, error: "Too many booking attempts. Please wait a minute." };
+  }
+
   const ci = new Date(input.checkIn);
   const co = new Date(input.checkOut);
 

@@ -1,10 +1,11 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import prisma from "@/lib/db/prisma";
 import { sendPushToBranch } from "@/lib/push/send";
 import { formatPKR } from "@/utils";
+import { rateLimit } from "@/lib/rate-limit";
 
 const COOKIE_NAME = "guest_token";
 const SESSION_DAYS = 7;
@@ -66,6 +67,11 @@ async function resolveSession(token?: string) {
 // ─── GUEST LOGIN ──────────────────────────────────────────────
 
 export async function guestLogin(bookingRef: string, phone: string) {
+  const ip = headers().get("x-forwarded-for") ?? "unknown";
+  if (!rateLimit(`guest-login:${ip}`, 10, 60_000)) {
+    return { success: false, error: "Too many attempts. Please wait a minute and try again." };
+  }
+
   const ref = bookingRef.trim().toUpperCase();
   const ph  = phone.trim();
 
