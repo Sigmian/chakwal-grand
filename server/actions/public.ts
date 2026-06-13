@@ -116,7 +116,7 @@ export async function getAvailableRooms(
   return prisma.room.findMany({
     where: {
       branchId,
-      status: "AVAILABLE",
+      status: { notIn: ["BLOCKED", "MAINTENANCE"] },
       isActive: true,
       maxAdults: { gte: adults },
       id: { notIn: takenIds },
@@ -155,7 +155,7 @@ export async function getRoomsForPicker(
 
   return rooms.map((r) => ({
     ...r,
-    isAvailable: r.status === "AVAILABLE" && !takenIds.has(r.id),
+    isAvailable: !takenIds.has(r.id),
   }));
 }
 
