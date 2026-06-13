@@ -122,10 +122,25 @@ export default async function HomePage() {
     .map(type => rooms.find(r => r.type === type))
     .filter(Boolean);
 
+  const reviewSchema = reviews.length >= 3 ? {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "name": "Chakwal Grand Guest House",
+    "url": siteConfig.url,
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": avgRating?.toFixed(1),
+      "bestRating": "5",
+      "worstRating": "1",
+      "ratingCount": reviews.length,
+    },
+  } : null;
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_SCHEMA) }} />
+      {reviewSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewSchema) }} />}
       <PublicNavbar />
 
       <main>
