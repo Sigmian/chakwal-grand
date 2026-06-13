@@ -3,6 +3,7 @@
 export const siteConfig = {
   name:        "Chakwal Grand Guest House",
   tagline:     "Premium Guest House Chain",
+  url:         "https://www.staychakwal.de",
   phone:       "0334-7742767",
   phoneE164:   "+923347742767",
   whatsapp:    "923347742767",

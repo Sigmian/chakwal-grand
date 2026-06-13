@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow:     "/",
-        disallow:  ["/dashboard/", "/api/", "/login"],
+        disallow:  ["/dashboard/", "/api/", "/guest/", "/unauthorized"],
       },
     ],
     sitemap: "https://www.staychakwal.de/sitemap.xml",

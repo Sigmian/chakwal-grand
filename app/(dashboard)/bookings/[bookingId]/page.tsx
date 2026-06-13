@@ -337,7 +337,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                 taxAmount:      Number(booking.taxAmount),
                 totalAmount:    Number(booking.totalAmount),
                 paidAmount:     Number(booking.paidAmount),
-                confirmedAt:    formatDateTime(booking.updatedAt),
+                confirmedAt:    formatDateTime(booking.createdAt),
               }}
             />
           )}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PublicNavbar } from "@/features/public/components/PublicNavbar";
 import { PublicFooter } from "@/features/public/components/PublicFooter";
 import { ChatWidget }  from "@/features/public/components/ChatWidget";
+import { ScrollToTop } from "@/features/public/components/ScrollToTop";
 
 export const metadata: Metadata = {
   title: { default: "Chakwal Grand Guest House | Best Stay in Chakwal Punjab", template: "%s | Chakwal Grand Guest House" },
@@ -21,6 +22,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <main className="min-h-screen">{children}</main>
       <PublicFooter />
       <ChatWidget />
+      <ScrollToTop />
     </>
   );
 }

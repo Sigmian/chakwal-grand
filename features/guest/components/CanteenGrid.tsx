@@ -145,7 +145,10 @@ export function CanteenGrid({ data }: { data: MenuData }) {
           return (
             <div
               key={item.inventoryItemId}
-              className="bg-surface-elevated border border-border rounded-2xl overflow-hidden hover:border-gold-500/30 transition-all"
+              className={cn(
+                "bg-surface-elevated border border-border rounded-2xl overflow-hidden transition-all",
+                item.stock > 0 ? "hover:border-gold-500/30" : "opacity-60"
+              )}
             >
               {/* Image */}
               <div className="relative h-28 bg-accent">
@@ -154,6 +157,16 @@ export function CanteenGrid({ data }: { data: MenuData }) {
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-3xl">
                     {item.category.icon ?? "🛒"}
+                  </div>
+                )}
+                {item.stock === 0 && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <span className="text-xs font-bold text-white bg-red-500/80 px-2 py-1 rounded-lg">Out of Stock</span>
+                  </div>
+                )}
+                {item.stock > 0 && item.stock <= 3 && (
+                  <div className="absolute top-1.5 right-1.5">
+                    <span className="text-[10px] font-bold text-amber-900 bg-amber-400 px-1.5 py-0.5 rounded">Only {item.stock} left</span>
                   </div>
                 )}
               </div>
@@ -167,7 +180,11 @@ export function CanteenGrid({ data }: { data: MenuData }) {
                 </div>
 
                 {/* Cart controls */}
-                {inCart ? (
+                {item.stock === 0 ? (
+                  <div className="w-full mt-2 py-1.5 rounded-lg text-xs font-bold text-center text-muted-foreground bg-accent">
+                    Out of Stock
+                  </div>
+                ) : inCart ? (
                   <div className="flex items-center justify-between mt-2 bg-gold-500/10 border border-gold-500/20 rounded-lg px-2 py-1">
                     <button onClick={() => removeFromCart(item.inventoryItemId)} className="p-0.5 text-gold-400 hover:text-foreground">
                       <Minus className="w-3.5 h-3.5" />

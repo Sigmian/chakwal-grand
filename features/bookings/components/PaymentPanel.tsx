@@ -94,6 +94,7 @@ export function PaymentPanel(props: Props) {
   const handleAdd = () => {
     const amt = Number(form.amount);
     if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
+    if (amt > remaining) { toast.error(`Amount cannot exceed balance due (${formatPKR(remaining)})`); return; }
     startTransition(async () => {
       const res = await addPayment({
         bookingId: props.bookingId,
@@ -181,6 +182,8 @@ export function PaymentPanel(props: Props) {
                     value={form.amount}
                     onChange={set("amount")}
                     placeholder={`Amount (max ${formatPKR(remaining)})`}
+                    min="1"
+                    max={remaining}
                     autoFocus
                     className="w-full bg-surface-base border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-500/50"
                   />

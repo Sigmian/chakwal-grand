@@ -15,7 +15,7 @@ const NAV = [
   { label: "About",        href: "/about"      },
   { label: "Contact",      href: "/contact"    },
   { label: "My Booking",   href: "/my-booking" },
-  { label: "Guest Portal", href: "/guest/login"},
+  { label: "My Stay",      href: "/guest/login"},
 ];
 
 export function PublicNavbar() {
@@ -63,7 +63,7 @@ export function PublicNavbar() {
                 href={href}
                 className={cn(
                   "px-4 py-2 rounded-xl text-sm font-medium transition-all",
-                  pathname === href
+                  (href === "/" ? pathname === href : pathname.startsWith(href))
                     ? "text-gold-400 bg-gold-500/10"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 )}

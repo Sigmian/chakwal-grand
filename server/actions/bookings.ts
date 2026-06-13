@@ -95,12 +95,22 @@ export async function createBooking(rawInput: CreateBookingInput) {
 
     // 5. Resolve or create customer
     let customerId = input.customerId;
+    if (customerId) {
+      const existing = await prisma.customer.findUnique({ where: { id: customerId }, select: { isBlacklisted: true, blacklistReason: true } });
+      if (existing?.isBlacklisted) {
+        return { success: false, error: `Booking declined: this guest is blacklisted. Reason: ${existing.blacklistReason ?? "Policy violation"}` };
+      }
+    }
     if (!customerId) {
       // Find by phone or create new customer
       const existing = await prisma.customer.findUnique({
         where: { phone: input.guestPhone! },
       });
       if (existing) {
+        // Block blacklisted customers
+        if (existing.isBlacklisted) {
+          return { success: false, error: `Booking declined: this guest is blacklisted. Reason: ${existing.blacklistReason ?? "Policy violation"}` };
+        }
         customerId = existing.id;
       } else {
         const newCustomer = await prisma.customer.create({

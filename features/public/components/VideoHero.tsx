@@ -5,10 +5,11 @@ import Link from "next/link";
 import { Wifi, Snowflake, Shield, Clock, ChevronRight, Volume2, VolumeX, Play } from "lucide-react";
 
 interface Props {
-  branches: { id: string; name: string; city: string }[];
+  branches:     { id: string; name: string; city: string }[];
+  startingFrom?: number;
 }
 
-export function VideoHero({ branches }: Props) {
+export function VideoHero({ branches, startingFrom = 2000 }: Props) {
   const videoRef   = useRef<HTMLVideoElement>(null);
   const [muted, setMuted]     = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -37,7 +38,7 @@ export function VideoHero({ branches }: Props) {
         muted
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
         onCanPlay={() => setLoaded(true)}
       />
 
@@ -77,7 +78,7 @@ export function VideoHero({ branches }: Props) {
           <p className="text-lg sm:text-xl text-white/75 leading-relaxed mb-8 max-w-2xl">
             Premium accommodation in Chakwal with clean rooms, fast WiFi, 24/7 service, and unbeatable value.
             Starting from just{" "}
-            <strong className="text-gold-400 font-bold">PKR 2,000 / night</strong>.
+            <strong className="text-gold-400 font-bold">PKR {startingFrom.toLocaleString("en-PK")} / night</strong>.
           </p>
 
           {/* Feature pills */}

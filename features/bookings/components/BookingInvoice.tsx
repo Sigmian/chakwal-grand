@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Printer, Download, Loader2 } from "lucide-react";
 import { cn } from "@/utils";
+import { siteConfig } from "@/config/site";
 
 interface InvoiceData {
   bookingRef:     string;
@@ -121,7 +122,7 @@ export function BookingInvoice({ invoice }: Props) {
       doc.setFontSize(9);
       doc.setTextColor(...gray);
       doc.text(invoice.branchName + (invoice.branchAddress ? ` · ${invoice.branchAddress}` : ""), 20, y + 6);
-      doc.text("Tel: 0334-7742767  |  www.staychakwal.de", 20, y + 11);
+      doc.text(`Tel: ${siteConfig.phone}  |  ${siteConfig.url.replace("https://", "")}`, 20, y + 11);
 
       // Invoice badge (right)
       doc.setFillColor(...gold);
@@ -309,7 +310,7 @@ export function BookingInvoice({ invoice }: Props) {
           <div className="logo-area">
             <h1>Chakwal Grand Guest House</h1>
             <p>{invoice.branchName}{invoice.branchAddress ? ` · ${invoice.branchAddress}` : ""}</p>
-            <p>Tel: 0334-7742767  |  www.staychakwal.de</p>
+            <p>Tel: {siteConfig.phone}  |  {siteConfig.url.replace("https://", "")}</p>
           </div>
           <div className="invoice-meta">
             <div className="badge">Tax Invoice</div>
@@ -402,7 +403,7 @@ export function BookingInvoice({ invoice }: Props) {
         <div className="footer">
           <p>Payment: <strong>Cash</strong> · CNIC required at check-in</p>
           <p style={{ marginTop: "6px" }}>Thank you for choosing <strong>Chakwal Grand Guest House</strong> — we look forward to your stay!</p>
-          <p style={{ marginTop: "6px" }}>www.staychakwal.de · WhatsApp: 0334-7742767</p>
+          <p style={{ marginTop: "6px" }}>{siteConfig.url.replace("https://", "")} · WhatsApp: {siteConfig.phone}</p>
         </div>
       </div>
 

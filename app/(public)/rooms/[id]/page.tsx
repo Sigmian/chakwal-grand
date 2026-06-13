@@ -41,7 +41,30 @@ export default async function RoomDetailPage({ params }: Props) {
 
   if (!room) notFound();
 
+  const roomSchema = {
+    "@context": "https://schema.org",
+    "@type": "HotelRoom",
+    "name": room.name,
+    "description": room.description ?? `${room.name} at Chakwal Grand Guest House`,
+    "url": `https://www.staychakwal.de/rooms/${room.id}`,
+    "occupancy": { "@type": "QuantitativeValue", "maxValue": room.maxAdults },
+    "amenityFeature": room.amenities.map((a: string) => ({
+      "@type": "LocationFeatureSpecification",
+      "name": a,
+      "value": true,
+    })),
+    "offers": {
+      "@type": "Offer",
+      "price": Number(room.pricePerNight),
+      "priceCurrency": "PKR",
+      "availability": "https://schema.org/InStock",
+      "url": `https://www.staychakwal.de/book?branchId=${room.branchId}&roomId=${room.id}`,
+    },
+  };
+
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(roomSchema) }} />
     <div className="pt-28 pb-20 px-4">
       <div className="max-w-5xl mx-auto">
 
@@ -54,9 +77,14 @@ export default async function RoomDetailPage({ params }: Props) {
           {/* Left: photos + details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Gallery */}
-            {room.images.length > 0 && (
+            {room.images.length > 0 ? (
               <div className="rounded-2xl overflow-hidden">
                 <RoomGallery images={room.images} roomName={room.name} />
+              </div>
+            ) : (
+              <div className="rounded-2xl overflow-hidden h-64 bg-surface-elevated border border-border flex flex-col items-center justify-center gap-3">
+                <BedDouble className="w-12 h-12 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">Room photos coming soon</p>
               </div>
             )}
 
@@ -123,14 +151,21 @@ export default async function RoomDetailPage({ params }: Props) {
             />
 
             <Link
+              href={`/book?branchId=${room.branchId}&roomId=${room.id}`}
+              className="block text-center py-3.5 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-lg transition-all"
+            >
+              Book This Room
+            </Link>
+            <Link
               href={`/book?branchId=${room.branchId}`}
               className="block text-center py-3 border border-border text-sm text-muted-foreground rounded-xl hover:bg-accent hover:border-gold-500/20 transition-all"
             >
-              Book without selecting dates →
+              Browse other rooms →
             </Link>
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }

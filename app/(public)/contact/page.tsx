@@ -23,7 +23,7 @@ const CONTACT_SCHEMA = {
     "@type": "LodgingBusiness",
     "name": "Chakwal Grand Guest House",
     "telephone": "+92-334-7742767",
-    "email": "info@chakwalgrand.pk",
+    "email": "chakwalguesthouse@gmail.com",
     "url": "https://www.staychakwal.de",
     "address": {
       "@type": "PostalAddress",
@@ -137,17 +137,17 @@ export default function ContactPage() {
                       </a>
                     </div>
                   </div>
-                  <div className="h-52 bg-surface-base border-t border-border flex flex-col items-center justify-center gap-4 px-6 text-center">
-                    <div className="w-12 h-12 rounded-full bg-gold-500/10 flex items-center justify-center">
-                      <MapPin className="w-6 h-6 text-gold-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-foreground font-medium mb-1">{b.address}</p>
-                      <a href={b.mapUrl} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-gold-400 hover:text-gold-300 font-semibold transition-colors underline underline-offset-2">
-                        Open in Google Maps →
-                      </a>
-                    </div>
+                  <div className="h-64 border-t border-border overflow-hidden">
+                    <iframe
+                      src={b.mapEmbed}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title={`Map of ${b.name}`}
+                    />
                   </div>
                 </div>
               ))}

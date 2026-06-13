@@ -124,7 +124,10 @@ export default async function HomePage() {
 
       <main>
         {/* ══════════════════════════════════════════════ HERO (VIDEO) */}
-        <VideoHero branches={branches as { id: string; name: string; city: string }[]} />
+        <VideoHero
+          branches={branches as { id: string; name: string; city: string }[]}
+          startingFrom={rooms.length > 0 ? Math.min(...rooms.map(r => Number(r.pricePerNight))) : 2000}
+        />
 
         {/* ══════════════════════════════════════════════ ROOMS */}
         <section className="py-20 bg-surface-elevated">
@@ -139,7 +142,7 @@ export default async function HomePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {featured.map(room => room && (
-                <Link key={room.id} href="/rooms"
+                <Link key={room.id} href={`/rooms/${room.id}`}
                   className="card-luxury rounded-2xl p-6 border border-transparent hover:border-gold-500/30 hover:-translate-y-1 transition-all group">
                   <div className="text-3xl mb-4">{TYPE_ICON[room.type]}</div>
                   <h3 className="font-bold text-foreground mb-1 group-hover:text-gold-400 transition-colors">

@@ -12,6 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/about`,      lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/contact`,    lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/location`,   lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/gallery`,    lastModified: NOW, changeFrequency: "weekly",  priority: 0.7 },
+    { url: `${BASE}/location`,   lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/my-booking`, lastModified: NOW, changeFrequency: "monthly", priority: 0.5 },
 
     // Blog

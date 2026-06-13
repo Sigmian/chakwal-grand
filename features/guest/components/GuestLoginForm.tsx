@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Hotel, Phone, Hash, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { guestLogin } from "@/server/actions/guest";
 
@@ -116,10 +117,16 @@ export function GuestLoginForm() {
             0334-7742767
           </a>
         </p>
+        <div className="mt-4 pt-4 border-t border-border text-center">
+          <p className="text-xs text-muted-foreground mb-2">Don&apos;t have a booking yet?</p>
+          <Link href="/book" className="inline-flex items-center gap-1.5 text-xs font-semibold text-gold-400 hover:text-gold-300 transition-colors">
+            Book a Room Now <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground mt-8 text-center">
-        Your booking reference is on your confirmation email or SMS.
+        Your booking reference is on your confirmation SMS.
       </p>
     </div>
   );
