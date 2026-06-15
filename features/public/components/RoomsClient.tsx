@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { BedDouble, Users, Wifi, Snowflake, Tv, Coffee, SlidersHorizontal, X } from "lucide-react";
+import { BedDouble, Users, Wifi, Snowflake, Tv, Coffee, SlidersHorizontal, X, Star, Home, Crown } from "lucide-react";
 import { formatPKR, cn } from "@/utils";
 import { RoomCompare, CompareCheckbox } from "@/features/public/components/RoomCompare";
 import { RoomGallery } from "@/features/public/components/RoomGallery";
@@ -33,8 +33,8 @@ const TYPE_LABEL: Record<string, string> = {
   STANDARD: "Classic", DELUXE: "Executive", SUITE: "Apartment / Suite",
   FAMILY: "Family", VIP: "VIP Suite",
 };
-const TYPE_ICON: Record<string, string> = {
-  STANDARD: "🛏️", DELUXE: "⭐", SUITE: "🏠", FAMILY: "👨‍👩‍👧", VIP: "👑",
+const TYPE_ICON: Record<string, typeof BedDouble> = {
+  STANDARD: BedDouble, DELUXE: Star, SUITE: Home, FAMILY: Users, VIP: Crown,
 };
 const TYPE_COLOR: Record<string, string> = {
   STANDARD: "from-slate-500/20 to-slate-600/10 border-slate-500/20",
@@ -181,7 +181,9 @@ export function RoomsClient({ rooms }: { rooms: Room[] }) {
           {Object.entries(grouped).map(([type, typeRooms]) => (
             <section key={type}>
               <div className="flex items-center gap-4 mb-7">
-                <div className="text-3xl">{TYPE_ICON[type]}</div>
+                <div className="w-12 h-12 rounded-2xl bg-gold-gradient flex items-center justify-center shadow-gold-sm flex-shrink-0">
+                  {(() => { const Icon = TYPE_ICON[type] ?? BedDouble; return <Icon className="w-6 h-6 text-background" />; })()}
+                </div>
                 <div>
                   <h2 className="text-2xl font-bold font-serif text-foreground">{TYPE_LABEL[type]} Rooms</h2>
                   <p className="text-sm text-muted-foreground">

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getPublicBranches } from "@/server/actions/public";
 import { BookingForm } from "@/features/public/components/BookingForm";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, Wallet, PhoneCall, BadgePercent } from "lucide-react";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -34,13 +34,15 @@ export default async function BookPage() {
         {/* Info strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
           {[
-            { icon: "✅", label: "Free cancellation", sub: "24h before check-in" },
-            { icon: "💵", label: "Pay on arrival",    sub: "No card required" },
-            { icon: "📞", label: "Instant confirmation", sub: "Via call / WhatsApp" },
-            { icon: "🛏️", label: "Best price",        sub: "Direct booking rate" },
-          ].map(({ icon, label, sub }) => (
-            <div key={label} className="card-luxury rounded-xl p-3 text-center">
-              <div className="text-xl mb-1">{icon}</div>
+            { Icon: CheckCircle2, label: "Free cancellation",    sub: "24h before check-in" },
+            { Icon: Wallet,       label: "Pay on arrival",       sub: "No card required" },
+            { Icon: PhoneCall,    label: "Instant confirmation", sub: "Via call / WhatsApp" },
+            { Icon: BadgePercent, label: "Best price",           sub: "Direct booking rate" },
+          ].map(({ Icon, label, sub }) => (
+            <div key={label} className="card-luxury rounded-xl p-3 text-center flex flex-col items-center">
+              <div className="w-9 h-9 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center mb-2">
+                <Icon className="w-5 h-5 text-gold-400" />
+              </div>
               <p className="text-xs font-semibold text-foreground">{label}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>
             </div>

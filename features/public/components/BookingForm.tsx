@@ -7,7 +7,8 @@ import Image from "next/image";
 import {
   CalendarDays, Users, Building2, BedDouble,
   User, Phone, CreditCard, ChevronRight, ChevronLeft,
-  Loader2, AlertCircle, Search,
+  Loader2, AlertCircle, Search, Star, Home, Crown,
+  Snowflake, Sunrise, Moon, Check,
 } from "lucide-react";
 import { getAvailableRooms, createPublicBooking, lookupGuestByPhone } from "@/server/actions/public";
 import { cn, formatPKR } from "@/utils";
@@ -26,8 +27,8 @@ const tomorrow = new Date(Date.now() + 86_400_000).toISOString().split("T")[0];
 const inputCls = "w-full bg-surface-base border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-500/60 focus:ring-1 focus:ring-gold-500/20 transition-all";
 const labelCls = "block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5";
 
-const TYPE_ICON: Record<string, string> = {
-  STANDARD: "🛏️", DELUXE: "⭐", SUITE: "🏠", FAMILY: "👨‍👩‍👧", VIP: "👑",
+const TYPE_ICON: Record<string, typeof BedDouble> = {
+  STANDARD: BedDouble, DELUXE: Star, SUITE: Home, FAMILY: Users, VIP: Crown,
 };
 
 export function BookingForm({ branches }: { branches: Branch[] }) {
@@ -187,7 +188,7 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
               <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold",
                 step > n ? "bg-green-500 text-white" : step === n ? "bg-gold-500 text-background" : "bg-border text-muted-foreground"
               )}>
-                {step > n ? "✓" : n}
+                {step > n ? <Check className="w-3 h-3" /> : n}
               </span>
               <span className="hidden sm:block">{label}</span>
             </div>
@@ -293,10 +294,10 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                           <Image src={room.images[0].url} alt={room.name} fill className="object-cover" sizes="80px" />
                         </div>
                       ) : (
-                        <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center text-2xl flex-shrink-0",
+                        <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0",
                           isSelected ? "bg-gold-500/20" : "bg-accent"
                         )}>
-                          {TYPE_ICON[room.type] ?? "🛏️"}
+                          {(() => { const Icon = TYPE_ICON[room.type] ?? BedDouble; return <Icon className="w-6 h-6 text-gold-400" />; })()}
                         </div>
                       )}
                       <div>
@@ -386,7 +387,7 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                   </button>
                 </div>
                 {lookupDone && (
-                  <p className="text-xs text-emerald-400 mt-2">✓ Details filled in — edit any field below</p>
+                  <p className="inline-flex items-center gap-1 text-xs text-emerald-400 mt-2"><Check className="w-3.5 h-3.5" /> Details filled in — edit any field below</p>
                 )}
               </div>
 
@@ -423,11 +424,11 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                   <label className={labelCls}>Special Requests (Optional)</label>
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     {([
-                      ["acPreference", "❄️ AC Preference"],
-                      ["extraBed",     "🛏️ Extra Bed"],
-                      ["earlyCheckIn", "🌅 Early Check-in"],
-                      ["lateCheckout", "🌙 Late Check-out"],
-                    ] as [keyof typeof structuredReqs, string][]).map(([key, label]) => (
+                      ["acPreference", Snowflake, "AC Preference"],
+                      ["extraBed",     BedDouble,  "Extra Bed"],
+                      ["earlyCheckIn", Sunrise,    "Early Check-in"],
+                      ["lateCheckout", Moon,       "Late Check-out"],
+                    ] as [keyof typeof structuredReqs, typeof Snowflake, string][]).map(([key, Icon, label]) => (
                       <button
                         key={key}
                         type="button"
@@ -439,8 +440,9 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                             : "bg-surface-base border-border text-muted-foreground hover:border-border/80"
                         )}
                       >
+                        <Icon className="w-4 h-4 flex-shrink-0" />
                         <span>{label}</span>
-                        {structuredReqs[key] && <span className="ml-auto text-gold-400 text-xs font-bold">✓</span>}
+                        {structuredReqs[key] && <Check className="ml-auto w-3.5 h-3.5 text-gold-400" />}
                       </button>
                     ))}
                   </div>
@@ -463,8 +465,8 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                 <h3 className="font-bold text-foreground mb-4">Booking Summary</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-3 pb-3 border-b border-border">
-                    <div className="w-10 h-10 rounded-xl bg-gold-500/15 flex items-center justify-center text-xl flex-shrink-0">
-                      {TYPE_ICON[selectedRoom?.type ?? "STANDARD"]}
+                    <div className="w-10 h-10 rounded-xl bg-gold-500/15 flex items-center justify-center flex-shrink-0">
+                      {(() => { const Icon = TYPE_ICON[selectedRoom?.type ?? "STANDARD"] ?? BedDouble; return <Icon className="w-5 h-5 text-gold-400" />; })()}
                     </div>
                     <div>
                       <p className="font-semibold text-foreground">{selectedRoom?.name}</p>
@@ -490,10 +492,10 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                   )}
                   {Object.values(structuredReqs).some(Boolean) && (
                     <div className="flex flex-wrap gap-1 pt-1">
-                      {structuredReqs.acPreference && <span className="text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400">❄️ AC</span>}
-                      {structuredReqs.extraBed     && <span className="text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400">🛏️ Extra Bed</span>}
-                      {structuredReqs.earlyCheckIn && <span className="text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400">🌅 Early In</span>}
-                      {structuredReqs.lateCheckout && <span className="text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400">🌙 Late Out</span>}
+                      {structuredReqs.acPreference && <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400"><Snowflake className="w-3 h-3" /> AC</span>}
+                      {structuredReqs.extraBed     && <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400"><BedDouble className="w-3 h-3" /> Extra Bed</span>}
+                      {structuredReqs.earlyCheckIn && <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400"><Sunrise className="w-3 h-3" /> Early In</span>}
+                      {structuredReqs.lateCheckout && <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400"><Moon className="w-3 h-3" /> Late Out</span>}
                     </div>
                   )}
                   <div className="border-t border-border pt-3 mt-3">

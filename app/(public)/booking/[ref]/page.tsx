@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Calendar, Users, MapPin, Phone, Home } from "lucide-react";
+import { CheckCircle2, Calendar, Users, MapPin, Phone, Home, BedDouble } from "lucide-react";
 import prisma from "@/lib/db/prisma";
 import { formatPKR } from "@/utils";
 
@@ -65,7 +65,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
 
           <div className="p-6 space-y-4">
             <div className="flex items-center gap-4 pb-4 border-b border-border">
-              <div className="w-12 h-12 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-xl">🛏️</div>
+              <div className="w-12 h-12 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center"><BedDouble className="w-6 h-6 text-gold-400" /></div>
               <div>
                 <p className="font-bold text-foreground">{booking.room?.name}</p>
                 <p className="text-xs text-muted-foreground">Room {booking.room?.number}</p>

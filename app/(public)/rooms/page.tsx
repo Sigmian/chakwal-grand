@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Building2, ArrowRight } from "lucide-react";
 import { getPublicRooms } from "@/server/actions/public";
 import { RoomsClient } from "@/features/public/components/RoomsClient";
 import { siteConfig } from "@/config/site";
@@ -37,7 +38,7 @@ export default async function RoomsPage() {
             href="/rooms/pick"
             className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-md transition-all text-sm"
           >
-            🏨 Choose Your Room by Floor →
+            <Building2 className="w-4 h-4" /> Choose Your Room by Floor <ArrowRight className="w-4 h-4" />
           </Link>
           <p className="text-xs text-muted-foreground self-center hidden sm:block">
             or browse by category below · tick rooms to compare side-by-side

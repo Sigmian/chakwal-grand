@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   Users, BedDouble, MapPin, Snowflake, Wifi, Tv, Coffee,
-  ChevronLeft, CheckCircle2,
+  ChevronLeft, CheckCircle2, Mountain, CookingPot, Bath,
 } from "lucide-react";
 import { getPublicRoom, getRoomBookedDates } from "@/server/actions/public";
 import { RoomGallery }           from "@/features/public/components/RoomGallery";
@@ -161,9 +161,9 @@ export default async function RoomDetailPage({ params }: Props) {
                     <span className="text-sm text-foreground">{a}</span>
                   </div>
                 ))}
-                {room.hasBalcony    && <div className="flex items-center gap-2 p-3 bg-accent rounded-xl border border-border"><span>🌅</span><span className="text-sm text-foreground">Balcony</span></div>}
-                {room.hasKitchenette && <div className="flex items-center gap-2 p-3 bg-accent rounded-xl border border-border"><span>🍳</span><span className="text-sm text-foreground">Kitchenette</span></div>}
-                {room.hasJacuzzi   && <div className="flex items-center gap-2 p-3 bg-accent rounded-xl border border-border"><span>🛁</span><span className="text-sm text-foreground">Jacuzzi</span></div>}
+                {room.hasBalcony    && <div className="flex items-center gap-2 p-3 bg-accent rounded-xl border border-border"><Mountain className="w-4 h-4 text-gold-400" /><span className="text-sm text-foreground">Balcony</span></div>}
+                {room.hasKitchenette && <div className="flex items-center gap-2 p-3 bg-accent rounded-xl border border-border"><CookingPot className="w-4 h-4 text-gold-400" /><span className="text-sm text-foreground">Kitchenette</span></div>}
+                {room.hasJacuzzi   && <div className="flex items-center gap-2 p-3 bg-accent rounded-xl border border-border"><Bath className="w-4 h-4 text-gold-400" /><span className="text-sm text-foreground">Jacuzzi</span></div>}
               </div>
             </div>
           </div>
