@@ -2,7 +2,8 @@
 
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
-import { Wifi, Snowflake, Shield, Clock, ChevronRight, Volume2, VolumeX, Play } from "lucide-react";
+import { Wifi, Snowflake, Shield, Clock, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { siteConfig } from "@/config/site";
 
 interface Props {
   branches:     { id: string; name: string; city: string }[];
@@ -114,7 +115,7 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
               View All Rooms
             </Link>
             <a
-              href="https://wa.me/923347742767?text=Hi%2C%20I%27d%20like%20to%20book%20a%20room%20at%20Chakwal%20Grand%20Guest%20House"
+              href={`${siteConfig.social.whatsappUrl}?text=Hi%2C%20I%27d%20like%20to%20book%20a%20room%20at%20Chakwal%20Grand%20Guest%20House`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-[#25D366]/20 backdrop-blur-sm border border-[#25D366]/40 text-[#25D366] font-semibold rounded-xl hover:bg-[#25D366]/30 transition-colors text-base"
