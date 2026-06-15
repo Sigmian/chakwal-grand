@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Phone, MapPin, Clock, MessageCircle, Mail } from "lucide-react";
+import { Phone, MapPin, Clock, MessageCircle } from "lucide-react";
 import { ContactForm } from "@/features/public/components/ContactForm";
 import { siteConfig } from "@/config/site";
+import { Reveal } from "@/features/public/components/Reveal";
 
 export const metadata: Metadata = {
   title: `Contact Us | ${siteConfig.name} — Call & WhatsApp ${siteConfig.phone}`,
@@ -43,19 +44,19 @@ const BRANCHES = [
     name:    "Chakwal — Main Branch",
     address: "Near District Courts, Talagang Road, Chakwal, Punjab",
     mapUrl:  "https://maps.google.com/?q=Near+District+Courts+Talagang+Road+Chakwal",
-    mapEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3317.3!2d72.856!3d32.931!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzLCsDU1JzUxLjUiTiA3MsKwNTEnMjEuNiJF!5e0!3m2!1sen!2spk!4v1",
+    mapEmbed: "https://www.google.com/maps?q=Chakwal,Punjab,Pakistan&z=13&output=embed",
   },
   {
     name:    "Kallar Kahar Branch",
     address: "Lake View Road, Near Salt Mine, Kallar Kahar, Chakwal, Punjab",
     mapUrl:  "https://maps.google.com/?q=Kallar+Kahar+Lake+View+Road+Chakwal",
-    mapEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3317.3!2d72.7!3d32.8!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzLCsDQ4JzAwLjAiTiA3MsKwNDInMDAuMCJF!5e0!3m2!1sen!2spk!4v1",
+    mapEmbed: "https://www.google.com/maps?q=Kallar+Kahar,Punjab,Pakistan&z=13&output=embed",
   },
   {
     name:    "Sargodha Branch",
     address: "University Road, Near Peoples Colony, Sargodha, Punjab",
     mapUrl:  "https://maps.google.com/?q=University+Road+Sargodha+Punjab",
-    mapEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3317.3!2d72.67!3d32.08!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzLCsDA0JzQ4LjAiTiA3MsKwNDAnMTIuMCJF!5e0!3m2!1sen!2spk!4v1",
+    mapEmbed: "https://www.google.com/maps?q=Sargodha,Punjab,Pakistan&z=12&output=embed",
   },
 ];
 
@@ -81,7 +82,7 @@ export default function ContactPage() {
         {/* Contact Cards */}
         <section className="py-16">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16">
+            <Reveal className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16">
               <a href={`tel:${siteConfig.phoneE164}`} className="card-luxury rounded-2xl p-6 text-center hover:border-gold-500/30 border border-transparent transition-all group">
                 <div className="w-12 h-12 rounded-xl bg-gold-500/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-gold-500/20 transition-colors">
                   <Phone className="w-6 h-6 text-gold-400" />
@@ -109,7 +110,7 @@ export default function ContactPage() {
                 <p className="text-foreground font-semibold">Open 24 Hours</p>
                 <p className="text-xs text-muted-foreground mt-1">7 days a week</p>
               </div>
-            </div>
+            </Reveal>
 
             {/* Branch Locations */}
             <div className="text-center mb-10">
@@ -118,8 +119,8 @@ export default function ContactPage() {
             </div>
 
             <div className="space-y-10">
-              {BRANCHES.map(b => (
-                <div key={b.name} className="card-luxury rounded-2xl overflow-hidden">
+              {BRANCHES.map((b, i) => (
+                <Reveal key={b.name} delay={i * 0.06} className="card-luxury rounded-2xl overflow-hidden block">
                   <div className="p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-xl bg-gold-gradient flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -151,7 +152,7 @@ export default function ContactPage() {
                       title={`Map of ${b.name}`}
                     />
                   </div>
-                </div>
+                </Reveal>
               ))}
             </div>
 
@@ -165,7 +166,7 @@ export default function ContactPage() {
                   ["Payment Method", "Cash on Arrival"],
                   ["ID Required", "Original CNIC at Check-In"],
                   ["Cancellation", "Free — up to 24 hours before check-in"],
-                  ["Booking", "Online or Call/WhatsApp {siteConfig.phone}"],
+                  ["Booking", `Online or Call/WhatsApp ${siteConfig.phone}`],
                 ].map(([label, val]) => (
                   <div key={label} className="flex justify-between border-b border-border pb-2">
                     <span className="font-medium text-foreground">{label}</span>
