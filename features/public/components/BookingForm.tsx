@@ -241,6 +241,13 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                 </p>
               </div>
             )}
+
+            {dates.checkIn && dates.checkOut && new Date(dates.checkOut) <= new Date(dates.checkIn) && (
+              <div className="sm:col-span-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <p className="text-sm text-red-400">Check-out must be at least one night after check-in.</p>
+              </div>
+            )}
           </div>
 
           {searchDone && rooms.length === 0 && (
@@ -251,10 +258,12 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
           )}
 
           <div className="flex justify-end mt-8">
-            <button onClick={searchRooms} disabled={searching}
-              className="flex items-center gap-2 px-8 py-3 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-md transition-all disabled:opacity-70">
+            <button
+              onClick={searchRooms}
+              disabled={searching || !dates.branchId || !dates.checkIn || !dates.checkOut || new Date(dates.checkOut) <= new Date(dates.checkIn)}
+              className="flex items-center gap-2 px-8 py-3 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-md transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               {searching ? <><Loader2 className="w-4 h-4 animate-spin" />Searching…</>
-                         : <><Building2 className="w-4 h-4" />Search Available Rooms</>}
+                         : <><Search className="w-4 h-4" />Search Available Rooms</>}
             </button>
           </div>
         </div>
@@ -498,14 +507,22 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                       {structuredReqs.lateCheckout && <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-gold-500/10 border border-gold-500/20 rounded-full text-gold-400"><Moon className="w-3 h-3" /> Late Out</span>}
                     </div>
                   )}
-                  <div className="border-t border-border pt-3 mt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">{formatPKR(Number(selectedRoom?.pricePerNight ?? 0))} × {nights} night{nights > 1 ? "s" : ""}</span>
-                      <span className="font-bold text-gold-400 text-base font-serif">
+                  <div className="border-t border-border pt-3 mt-3 space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Room rate</span>
+                      <span>{formatPKR(Number(selectedRoom?.pricePerNight ?? 0))} / night</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Length of stay</span>
+                      <span>{nights} night{nights > 1 ? "s" : ""}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-border/60">
+                      <span className="text-sm font-semibold text-foreground">Total</span>
+                      <span className="font-bold text-gold-400 text-lg font-serif">
                         {formatPKR(Number(selectedRoom?.pricePerNight ?? 0) * nights)}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Payment: Cash on arrival</p>
+                    <p className="inline-flex items-center gap-1 text-xs text-emerald-400/90"><Check className="w-3.5 h-3.5" /> Pay in cash on arrival — no online payment</p>
                   </div>
                 </div>
 
