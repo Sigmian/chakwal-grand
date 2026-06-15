@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { Wifi, Snowflake, Shield, Clock, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { CountUp } from "@/features/public/components/CountUp";
 
 interface Props {
   branches:     { id: string; name: string; city: string }[];
@@ -127,14 +128,18 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
           {/* Stats */}
           <div className="flex flex-wrap gap-8">
             {[
-              { value: totalGuests ? `${totalGuests}+` : "500+", label: "Happy Guests"  },
-              { value: avgRating ? `${avgRating.toFixed(1)}★` : "4.8★", label: "Average Rating" },
-              { value: String(branches.length || 3), label: "Prime Locations" },
-              { value: "24/7", label: "Support"         },
-            ].map(({ value, label }) => (
-              <div key={label}>
-                <p className="text-2xl font-bold font-serif text-gold-400">{value}</p>
-                <p className="text-xs text-white/60 mt-0.5">{label}</p>
+              { num: totalGuests ?? 500,        decimals: 0, suffix: "+", label: "Happy Guests"   },
+              { num: avgRating ?? 4.8,          decimals: 1, suffix: "★", label: "Average Rating" },
+              { num: branches.length || 3,      decimals: 0, suffix: "",  label: "Prime Locations" },
+              { text: "24/7",                                             label: "Support"         },
+            ].map((s) => (
+              <div key={s.label}>
+                <p className="text-2xl font-bold font-serif text-gold-400">
+                  {"text" in s
+                    ? s.text
+                    : <CountUp value={s.num} decimals={s.decimals} suffix={s.suffix} />}
+                </p>
+                <p className="text-xs text-white/60 mt-0.5">{s.label}</p>
               </div>
             ))}
           </div>
