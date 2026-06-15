@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MapPin, Navigation, Phone, Clock, Car } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { Reveal } from "@/features/public/components/Reveal";
 
 export const metadata: Metadata = {
   title: "Location & Directions | Chakwal Grand Guest House — Chakwal, Punjab",
@@ -87,11 +88,32 @@ export default function LocationPage() {
           </div>
         </section>
 
+        {/* Embedded Map */}
+        <section className="py-12">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Reveal>
+              <div className="rounded-2xl overflow-hidden border border-gold-500/20 shadow-card-lg">
+                <iframe
+                  title="Chakwal Grand Guest House location map"
+                  src="https://www.google.com/maps?q=32.9318,72.8560&z=14&output=embed"
+                  width="100%"
+                  height="420"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full grayscale-[0.2] contrast-[1.05]"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                />
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
         {/* Branches */}
         <section className="py-16">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
             {BRANCHES.map((b, i) => (
-              <div key={b.name} className="card-luxury rounded-2xl p-6">
+              <Reveal key={b.name} delay={i * 0.06} className="card-luxury rounded-2xl p-6 block hover:border-gold-500/20 transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-gold-gradient flex items-center justify-center flex-shrink-0">
@@ -116,7 +138,7 @@ export default function LocationPage() {
                   </a>
                 </div>
                 <p className="text-sm text-muted-foreground">{b.description}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </section>
@@ -129,8 +151,8 @@ export default function LocationPage() {
               <h2 className="text-3xl font-bold font-serif text-foreground">How to Reach Chakwal</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {HOW_TO_REACH.map(({ from, via, time }) => (
-                <div key={from} className="card-luxury rounded-2xl p-5 flex items-start gap-4">
+              {HOW_TO_REACH.map(({ from, via, time }, i) => (
+                <Reveal key={from} delay={i * 0.06} className="card-luxury rounded-2xl p-5 flex items-start gap-4 hover:border-gold-500/20 transition-colors">
                   <div className="w-10 h-10 rounded-xl bg-gold-500/10 flex items-center justify-center flex-shrink-0">
                     <Car className="w-5 h-5 text-gold-400" />
                   </div>
@@ -141,7 +163,7 @@ export default function LocationPage() {
                       <Clock className="w-3 h-3" /> {time}
                     </p>
                   </div>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>

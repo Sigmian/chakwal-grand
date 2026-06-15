@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, MapPin, Phone, Star, Shield, Clock, Users } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { Reveal } from "@/features/public/components/Reveal";
+import { CountUp } from "@/features/public/components/CountUp";
 
 export const metadata: Metadata = {
   title: "About Us | Chakwal Grand Guest House — Best Stay in Chakwal",
@@ -103,15 +105,19 @@ export default function AboutPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { num: "3",     label: "Branches in Punjab" },
-                  { num: "10+",   label: "Room Types" },
-                  { num: "24/7",  label: "Staff Available" },
-                  { num: "PKR 2,000", label: "Starting Price/Night" },
-                ].map(({ num, label }) => (
-                  <div key={label} className="card-luxury rounded-2xl p-6 text-center">
-                    <p className="text-3xl font-bold text-gold-400 font-serif mb-2">{num}</p>
-                    <p className="text-sm text-muted-foreground">{label}</p>
-                  </div>
+                  { num: 3,  suffix: "",  label: "Branches in Punjab" },
+                  { num: 10, suffix: "+", label: "Room Types" },
+                  { text: "24/7",         label: "Staff Available" },
+                  { text: "PKR 2,000",    label: "Starting Price/Night" },
+                ].map((s, i) => (
+                  <Reveal key={s.label} delay={i * 0.08}>
+                    <div className="card-luxury rounded-2xl p-6 text-center h-full hover:border-gold-500/20 transition-colors">
+                      <p className="text-3xl font-bold text-gold-400 font-serif mb-2">
+                        {"text" in s ? s.text : <CountUp value={s.num} suffix={s.suffix} />}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{s.label}</p>
+                    </div>
+                  </Reveal>
                 ))}
               </div>
             </div>
@@ -126,14 +132,16 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold font-serif text-foreground">What Sets Us Apart</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {VALUES.map(({ icon: Icon, title, desc }) => (
-                <div key={title} className="card-luxury rounded-2xl p-6 text-center">
-                  <div className="w-12 h-12 rounded-xl bg-gold-500/10 flex items-center justify-center mx-auto mb-4">
-                    <Icon className="w-6 h-6 text-gold-400" />
+              {VALUES.map(({ icon: Icon, title, desc }, i) => (
+                <Reveal key={title} delay={i * 0.08}>
+                  <div className="card-luxury rounded-2xl p-6 text-center h-full hover:-translate-y-1 hover:border-gold-500/30 transition-all group">
+                    <div className="w-12 h-12 rounded-2xl bg-gold-gradient flex items-center justify-center mx-auto mb-4 shadow-gold-sm group-hover:shadow-gold-md transition-shadow">
+                      <Icon className="w-6 h-6 text-background" />
+                    </div>
+                    <h3 className="font-bold text-foreground mb-2">{title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
                   </div>
-                  <h3 className="font-bold text-foreground mb-2">{title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -148,18 +156,20 @@ export default function AboutPage() {
               <p className="text-muted-foreground mt-3">Find us in Chakwal, Kallar Kahar, and Sargodha</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {BRANCHES.map(b => (
-                <div key={b.name} className="card-luxury rounded-2xl p-6">
-                  <div className="w-10 h-10 rounded-xl bg-gold-gradient flex items-center justify-center mb-4">
-                    <MapPin className="w-5 h-5 text-background" />
+              {BRANCHES.map((b, i) => (
+                <Reveal key={b.name} delay={i * 0.08}>
+                  <div className="card-luxury rounded-2xl p-6 h-full hover:-translate-y-1 hover:border-gold-500/20 transition-all">
+                    <div className="w-10 h-10 rounded-xl bg-gold-gradient flex items-center justify-center mb-4">
+                      <MapPin className="w-5 h-5 text-background" />
+                    </div>
+                    <h3 className="font-bold text-foreground mb-2">{b.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">{b.address}</p>
+                    <a href={`tel:${siteConfig.phoneE164}`} className="flex items-center gap-2 text-sm text-gold-400 hover:underline">
+                      <Phone className="w-4 h-4" />
+                      {siteConfig.phone}
+                    </a>
                   </div>
-                  <h3 className="font-bold text-foreground mb-2">{b.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">{b.address}</p>
-                  <a href={`tel:${siteConfig.phoneE164}`} className="flex items-center gap-2 text-sm text-gold-400 hover:underline">
-                    <Phone className="w-4 h-4" />
-                    {siteConfig.phone}
-                  </a>
-                </div>
+                </Reveal>
               ))}
             </div>
           </div>
