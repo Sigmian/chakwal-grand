@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   BedDouble, DollarSign, CalendarCheck, TrendingUp,
   AlertTriangle, ArrowRight, Clock, UserCheck, UserMinus,
-  Building2, Package,
+  Building2, Package, Lightbulb, CheckCircle2, Info,
 } from "lucide-react";
 import { requireAuth } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
@@ -66,6 +66,33 @@ export default async function DashboardPage() {
     { name: "Maintenance", value: overview.maintenanceRooms,  color: "#F59E0B" },
   ].filter((d) => d.value > 0) : [];
 
+  // ── Smart insights: turn the raw numbers into a few actionable highlights ──
+  type Insight = { tone: "positive" | "warning" | "info"; text: string; href?: string };
+  const insights: Insight[] = [];
+  if (overview) {
+    if (overview.revenueTrend !== null && overview.revenueTrend > 0)
+      insights.push({ tone: "positive", text: `Revenue is up ${overview.revenueTrend}% vs last month — momentum is building.`, href: "/finance/revenue" });
+    if (overview.revenueTrend !== null && overview.revenueTrend < 0)
+      insights.push({ tone: "warning", text: `Revenue is down ${Math.abs(overview.revenueTrend)}% vs last month — consider a weekend or weekly-stay promotion.`, href: "/offers" });
+    if (overview.profitThisMonth < 0)
+      insights.push({ tone: "warning", text: `Expenses are exceeding revenue this month — review costs in Finance.`, href: "/finance" });
+    if (overview.pendingBookings > 0)
+      insights.push({ tone: "warning", text: `${overview.pendingBookings} booking${overview.pendingBookings > 1 ? "s are" : " is"} awaiting confirmation.`, href: "/bookings" });
+    if (overview.occupancyRate >= 80)
+      insights.push({ tone: "positive", text: `Strong ${overview.occupancyRate}% occupancy — only ${overview.availableRooms} room${overview.availableRooms !== 1 ? "s" : ""} left tonight.` });
+    else if (overview.occupancyRate < 40 && overview.totalRooms > 0)
+      insights.push({ tone: "info", text: `Occupancy is ${overview.occupancyRate}% — ${overview.availableRooms} rooms free. A short-stay offer could lift bookings.`, href: "/offers" });
+    if (overview.lowStockAlerts > 0)
+      insights.push({ tone: "warning", text: `${overview.lowStockAlerts} inventory item${overview.lowStockAlerts > 1 ? "s are" : " is"} running low on stock.`, href: "/inventory/products" });
+  }
+  const topInsights = insights.slice(0, 4);
+
+  const INSIGHT_STYLE = {
+    positive: { Icon: CheckCircle2,  color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
+    warning:  { Icon: AlertTriangle, color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20" },
+    info:     { Icon: Info,          color: "text-blue-400",    bg: "bg-blue-500/10 border-blue-500/20" },
+  } as const;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* ── Greeting ── */}
@@ -101,7 +128,7 @@ export default async function DashboardPage() {
           subtitle={`Profit: ${formatPKRShort(overview.profitThisMonth)}`}
           icon={<DollarSign className="w-5 h-5 text-gold-400" />}
           iconBg="bg-gold-500/15"
-          trend={{ value: 12, label: "vs last month" }}
+          trend={overview.revenueTrend !== null ? { value: overview.revenueTrend, label: "vs last month" } : undefined}
         />
         <StatCard
           title="Occupancy Rate"
@@ -124,6 +151,33 @@ export default async function DashboardPage() {
           icon={<TrendingUp className="w-5 h-5 text-amber-400" />}
           iconBg="bg-amber-500/15"
         />
+      </div>
+      )}
+
+      {/* ── Smart Insights (analytics roles only) ── */}
+      {canViewAnalytics && topInsights.length > 0 && (
+      <div className="card-luxury p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-xl bg-gold-500/15 flex items-center justify-center">
+            <Lightbulb className="w-4 h-4 text-gold-400" />
+          </div>
+          <h2 className="font-bold text-foreground">Insights &amp; Recommendations</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {topInsights.map((ins, i) => {
+            const { Icon, color, bg } = INSIGHT_STYLE[ins.tone];
+            const body = (
+              <div className={cn("flex items-start gap-3 p-3.5 rounded-xl border h-full transition-colors", bg, ins.href && "hover:brightness-125")}>
+                <Icon className={cn("w-4 h-4 flex-shrink-0 mt-0.5", color)} />
+                <p className="text-sm text-foreground leading-relaxed">{ins.text}</p>
+                {ins.href && <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5 ml-auto" />}
+              </div>
+            );
+            return ins.href
+              ? <Link key={i} href={ins.href}>{body}</Link>
+              : <div key={i}>{body}</div>;
+          })}
+        </div>
       </div>
       )}
 

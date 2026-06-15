@@ -15,6 +15,8 @@ export async function getDashboardOverview(branchId?: string) {
   const todayEnd   = endOfDay(now);
   const monthStart = startOfMonth(now);
   const monthEnd   = endOfMonth(now);
+  const lastMonthStart = startOfMonth(subMonths(now, 1));
+  const lastMonthEnd   = endOfMonth(subMonths(now, 1));
 
   const branchFilter = scopedBranch ? { branchId: scopedBranch } : {};
 
@@ -27,6 +29,7 @@ export async function getDashboardOverview(branchId?: string) {
     allInventory,
     checkInsToday,
     checkOutsToday,
+    lastMonthRevenue,
   ] = await Promise.all([
     prisma.room.groupBy({
       by:    ["status"],
@@ -76,6 +79,14 @@ export async function getDashboardOverview(branchId?: string) {
         status: { in: [BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT] },
       },
     }),
+    prisma.booking.aggregate({
+      where: {
+        ...branchFilter,
+        status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT] },
+        checkInDate: { gte: lastMonthStart, lte: lastMonthEnd },
+      },
+      _sum: { totalAmount: true },
+    }),
   ]);
 
   const lowStockCount = allInventory.filter(
@@ -88,11 +99,17 @@ export async function getDashboardOverview(branchId?: string) {
   const occupiedRooms  = roomStatusMap[RoomStatus.OCCUPIED]  ?? 0;
 
   const revenueThisMonth  = Number(monthRevenue._sum.totalAmount ?? 0);
+  const revenueLastMonth  = Number(lastMonthRevenue._sum.totalAmount ?? 0);
   const expensesThisMonth = Number(monthExpenses._sum.amount ?? 0);
   const profitThisMonth   = revenueThisMonth - expensesThisMonth;
   const occupancyRate     = totalRooms > 0
     ? Math.round((occupiedRooms / totalRooms) * 100)
     : 0;
+
+  // Real month-over-month revenue trend (null when no prior-month baseline).
+  const revenueTrend = revenueLastMonth > 0
+    ? Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100)
+    : null;
 
   return {
     totalRooms,
@@ -101,6 +118,8 @@ export async function getDashboardOverview(branchId?: string) {
     maintenanceRooms: roomStatusMap[RoomStatus.MAINTENANCE] ?? 0,
     cleaningRooms:    roomStatusMap[RoomStatus.CLEANING] ?? 0,
     revenueThisMonth,
+    revenueLastMonth,
+    revenueTrend,
     expensesThisMonth,
     profitThisMonth,
     bookingsToday:    todayBookings,
