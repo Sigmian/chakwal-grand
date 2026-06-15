@@ -6,6 +6,7 @@ import { BedDouble, Users, Wifi, Snowflake, Tv, Coffee, SlidersHorizontal, X, St
 import { formatPKR, cn } from "@/utils";
 import { RoomCompare, CompareCheckbox } from "@/features/public/components/RoomCompare";
 import { RoomGallery } from "@/features/public/components/RoomGallery";
+import { Reveal } from "@/features/public/components/Reveal";
 
 type Room = {
   id:            string;
@@ -194,9 +195,10 @@ export function RoomsClient({ rooms }: { rooms: Room[] }) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {typeRooms.map((room) => (
-                  <div
+                {typeRooms.map((room, idx) => (
+                  <Reveal
                     key={room.id}
+                    delay={idx * 0.05}
                     className={`card-luxury rounded-2xl overflow-hidden border bg-gradient-to-br ${TYPE_COLOR[room.type] ?? ""} transition-all hover:-translate-y-1 hover:shadow-card-lg`}
                   >
                     {/* Room photo gallery */}
@@ -257,7 +259,7 @@ export function RoomsClient({ rooms }: { rooms: Room[] }) {
                       </Link>
                       <CompareCheckbox roomId={room.id} />
                     </div>
-                  </div>
+                  </Reveal>
                 ))}
               </div>
             </section>
