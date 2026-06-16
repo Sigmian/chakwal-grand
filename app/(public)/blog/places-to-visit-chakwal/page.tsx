@@ -5,7 +5,7 @@ import { MapPin, Clock, ArrowRight, ChevronRight, Camera, Star } from "lucide-re
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Top 10 Places to Visit in Chakwal 2025 — Complete Tourist Guide | Chakwal Grand",
+  title: "Top 10 Places to Visit in Chakwal 2025 — Complete Tourist Guide",
   description: "Discover the most beautiful and historic places in Chakwal district — Katas Raj Temples, Kallar Kahar Lake, Choa Saidan Shah, Pharwala Fort, Salt Range & more. Best tourist spots in Chakwal Punjab 2025.",
   keywords: [
     "places to visit Chakwal", "tourist spots Chakwal", "Katas Raj Temples",

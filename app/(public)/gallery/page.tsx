@@ -5,7 +5,7 @@ import { GalleryGrid } from "@/features/public/components/GalleryGrid";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title:       `Photo Gallery | ${siteConfig.name}`,
+  title: "Photo Gallery",
   description: "Browse our photo gallery — elegant rooms, cosy interiors, and beautiful facilities at Chakwal Grand Guest House.",
   alternates: { canonical: `${siteConfig.url}/gallery` },
   openGraph: {

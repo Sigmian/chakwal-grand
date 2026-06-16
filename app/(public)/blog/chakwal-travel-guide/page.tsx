@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Clock, Car, Sun, CloudRain, ChevronRight, Phone, MapPin } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Complete Chakwal Travel Guide 2025 — How to Get There, Stay & Explore | Chakwal Grand",
+  title: "Complete Chakwal Travel Guide 2025 — How to Get There, Stay & Explore",
   description: "Planning a trip to Chakwal, Punjab? Complete travel guide covering best time to visit, how to reach Chakwal from Rawalpindi/Lahore, accommodation, places to visit, local food, and insider travel tips for 2025.",
   keywords: [
     "Chakwal travel guide", "visiting Chakwal Punjab", "how to reach Chakwal",

@@ -6,7 +6,7 @@ import { Loader2, CheckCircle2, Wallet, PhoneCall, BadgePercent } from "lucide-r
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: `Book a Room | ${siteConfig.name}`,
+  title: "Book a Room",
   description: "Book your room at Chakwal Grand Guest House. Check availability and confirm your booking in minutes.",
   alternates: { canonical: `${siteConfig.url}/book` },
   openGraph: {

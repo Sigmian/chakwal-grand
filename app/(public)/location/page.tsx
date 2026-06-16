@@ -5,7 +5,7 @@ import { siteConfig } from "@/config/site";
 import { Reveal } from "@/features/public/components/Reveal";
 
 export const metadata: Metadata = {
-  title: "Location & Directions | Chakwal Grand Guest House — Chakwal, Punjab",
+  title: "Location & Directions — Chakwal, Punjab",
   description: "Find Chakwal Grand Guest House easily. Located near District Courts, Talagang Road, Chakwal. Also branches in Kallar Kahar & Sargodha. Get directions, map & contact details.",
   keywords: ["Chakwal Grand Guest House location", "guest house near Chakwal city", "how to reach Chakwal Grand", "Talagang Road Chakwal guest house", "accommodation near Katas Raj"],
   alternates: { canonical: `${siteConfig.url}/location` },

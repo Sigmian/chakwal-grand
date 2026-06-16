@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, ArrowRight, Star, ChevronRight, Phone } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels | Chakwal Grand",
+  title: "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
   description: "Complete guide to the best accommodation in Chakwal, Punjab. Chakwal Grand Guest House — top-rated, AC rooms, family suites, free WiFi from PKR 2,000/night. Book now, pay on arrival.",
   keywords: [
     "where to stay in Chakwal", "best guest house Chakwal", "hotel in Chakwal Punjab",

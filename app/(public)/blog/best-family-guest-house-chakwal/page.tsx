@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Star, Users, ChevronRight, CheckCircle2, Phone } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Best Family Guest House in Chakwal 2025 — Family Rooms, Rates & Booking | Chakwal Grand",
+  title: "Best Family Guest House in Chakwal 2025 — Family Rooms, Rates & Booking",
   description: "Looking for a family guest house in Chakwal? Chakwal Grand Guest House offers spacious family rooms for 4–6 guests, kids-friendly facilities, free WiFi, and 24/7 service from PKR 2,500/night. Book now, pay on arrival.",
   keywords: [
     "family guest house Chakwal", "best family hotel Chakwal", "family rooms Chakwal",

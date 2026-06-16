@@ -6,7 +6,7 @@ import { RoomsClient } from "@/features/public/components/RoomsClient";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: `Rooms & Suites | ${siteConfig.name}`,
+  title: "Rooms & Suites",
   description: "Explore AC rooms, family suites and VIP rooms at Chakwal Grand Guest House in Chakwal, Punjab. Rates from PKR 2,000/night. View availability and book online.",
   keywords: ["rooms in Chakwal", "AC room Chakwal", "family suite Chakwal", "VIP room Chakwal", "cheap hotel room Chakwal", "Chakwal Grand rooms"],
   alternates: { canonical: `${siteConfig.url}/rooms` },

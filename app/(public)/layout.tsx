@@ -15,7 +15,6 @@ export const metadata: Metadata = {
     "family rooms Chakwal", "AC rooms Chakwal", "cheap stay Chakwal", "Chakwal Grand",
     "best hotel Chakwal Punjab", "overnight stay Chakwal", "CGH Chakwal",
   ],
-  alternates: { canonical: siteConfig.url },
 };
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {

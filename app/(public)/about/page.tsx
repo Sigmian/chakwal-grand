@@ -6,7 +6,7 @@ import { Reveal } from "@/features/public/components/Reveal";
 import { CountUp } from "@/features/public/components/CountUp";
 
 export const metadata: Metadata = {
-  title: "About Us | Chakwal Grand Guest House — Best Stay in Chakwal",
+  title: "About Us — Best Stay in Chakwal",
   description: "Learn about Chakwal Grand Guest House — Chakwal's most trusted guest house with 3 locations across Punjab. Affordable luxury, family-friendly, 24/7 service since establishment.",
   keywords: ["about Chakwal Grand Guest House", "best guest house Chakwal", "trusted guest house Pakistan", "family guest house Chakwal Punjab"],
   alternates: { canonical: `${siteConfig.url}/about` },

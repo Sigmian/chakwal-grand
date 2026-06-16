@@ -6,7 +6,7 @@ import { siteConfig } from "@/config/site";
 import { Reveal } from "@/features/public/components/Reveal";
 
 export const metadata: Metadata = {
-  title: `Contact Us | ${siteConfig.name} — Call & WhatsApp ${siteConfig.phone}`,
+  title: `Contact Us — Call & WhatsApp ${siteConfig.phone}`,
   description: `Contact Chakwal Grand Guest House for room bookings, inquiries, and reservations. Call or WhatsApp ${siteConfig.phone}. Located in Chakwal, Kallar Kahar & Sargodha, Punjab.`,
   keywords: ["contact Chakwal Grand Guest House", "Chakwal guest house phone number", "book guest house Chakwal", "Chakwal accommodation contact"],
   alternates: { canonical: `${siteConfig.url}/contact` },
