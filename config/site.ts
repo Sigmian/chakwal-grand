@@ -16,8 +16,12 @@ export const siteConfig = {
   acHoursDaily: 12,
 
   social: {
-    whatsappUrl: "https://wa.me/923347742767",
+    whatsappUrl:       "https://wa.me/923347742767",
+    googleBusinessUrl: "https://maps.app.goo.gl/jRnLGENGuGrcHUZUA",
+    googleReviewUrl:   "https://maps.app.goo.gl/jRnLGENGuGrcHUZUA",
   },
+
+  mapEmbed: "https://www.google.com/maps?q=32.9289899,72.8109609&z=17&output=embed",
 
   branches: [
     { name: "Chakwal",      city: "Chakwal",     address: "Near District Courts, Talagang Road, Chakwal" },

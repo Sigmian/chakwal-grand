@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   CheckCircle2, MapPin, Phone, BedDouble,
-  CalendarDays, Users, Clock, MessageSquare,
+  CalendarDays, Users, Clock, MessageSquare, Star,
 } from "lucide-react";
 import { getBookingByRef } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
@@ -262,6 +262,62 @@ export default async function BookingConfirmationPage({ params }: Props) {
           {booking.shareToken && (
             <ShareBookingButton bookingRef={booking.bookingRef} shareToken={booking.shareToken} />
           )}
+        </div>
+
+        {/* ── Review Card ── */}
+        <div className="relative overflow-hidden rounded-2xl mb-5 border border-gold-500/30 bg-gradient-to-br from-gold-500/10 via-surface-elevated to-amber-500/5 p-6">
+          {/* decorative stars */}
+          <div className="absolute top-3 right-4 flex gap-0.5 opacity-20">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="w-5 h-5 fill-gold-400 text-gold-400" />
+            ))}
+          </div>
+
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-gold-gradient flex items-center justify-center flex-shrink-0 shadow-gold-sm">
+              <Star className="w-6 h-6 fill-background text-background" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-foreground text-base mb-0.5">Loved your stay? You earn cashback!</p>
+              <p className="text-muted-foreground text-xs leading-relaxed mb-4">
+                Leave us a Google review and get <span className="text-gold-400 font-bold">10% cashback</span> on your next booking.
+                Screenshot your review and WhatsApp it to us — we'll apply the discount instantly.
+              </p>
+
+              {/* Stars row */}
+              <div className="flex gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-5 h-5 fill-gold-400 text-gold-400" />
+                ))}
+                <span className="text-xs text-muted-foreground ml-2 self-center">Tap a star to rate us</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <a
+                  href={siteConfig.social.googleReviewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-md transition-all"
+                >
+                  <Star className="w-4 h-4 fill-background text-background" />
+                  Write a Google Review
+                </a>
+                <a
+                  href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(`السلام علیکم! I just left a Google review for Chakwal Grand Guest House. My booking ref is ${booking.bookingRef}. Please apply my 10% cashback discount on my next booking. JazakAllah!`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-sm font-semibold rounded-xl hover:bg-[#25D366]/25 transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Claim Cashback
+                </a>
+              </div>
+
+              <p className="text-xs text-muted-foreground mt-3">
+                How it works: Leave review → Screenshot → WhatsApp screenshot to us → Get 10% off next stay ✓
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* ── Guest Portal ── */}

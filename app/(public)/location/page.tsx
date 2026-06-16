@@ -95,7 +95,7 @@ export default function LocationPage() {
               <div className="rounded-2xl overflow-hidden border border-gold-500/20 shadow-card-lg">
                 <iframe
                   title="Chakwal Grand Guest House location map"
-                  src="https://www.google.com/maps?q=32.9318,72.8560&z=14&output=embed"
+                  src={siteConfig.mapEmbed}
                   width="100%"
                   height="420"
                   loading="lazy"
@@ -104,6 +104,24 @@ export default function LocationPage() {
                   style={{ border: 0 }}
                   allowFullScreen
                 />
+              </div>
+              <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
+                <a
+                  href={siteConfig.social.googleBusinessUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-md transition-all text-sm"
+                >
+                  <MapPin className="w-4 h-4" />
+                  View on Google Maps
+                </a>
+                <a
+                  href={`tel:${siteConfig.phoneE164}`}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-gold-500/30 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 transition-all text-sm"
+                >
+                  <Phone className="w-4 h-4" />
+                  Call for Directions
+                </a>
               </div>
             </Reveal>
           </div>
