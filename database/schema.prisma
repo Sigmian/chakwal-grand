@@ -880,3 +880,15 @@ model PushSubscription {
 
   @@index([userId])
 }
+
+// WhatsApp AI Agent — conversation sessions per phone number
+model WhatsAppSession {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  messages  Json     @default("[]")  // Anthropic MessageParam[]
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@index([updatedAt])
+}
