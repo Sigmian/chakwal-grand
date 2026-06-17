@@ -22,11 +22,14 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <>
-      {announcement && (
-        <AnnouncementBanner title={announcement.title} body={announcement.body} />
-      )}
-      <PublicNavbar />
-      <main className="min-h-screen">{children}</main>
+      <div className="fixed top-0 left-0 right-0 z-50">
+        {announcement && (
+          <AnnouncementBanner title={announcement.title} body={announcement.body} />
+        )}
+        <PublicNavbar />
+      </div>
+      {/* pt-20 = navbar height; banner adds ~36px when present */}
+      <main className={`min-h-screen ${announcement ? "pt-[calc(5rem+36px)]" : "pt-20"}`}>{children}</main>
       <PublicFooter />
       <ChatWidget />
       <ScrollToTop />
