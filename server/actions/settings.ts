@@ -86,6 +86,30 @@ export async function toggleAnnouncement(id: string, isActive: boolean) {
   }
 }
 
+export async function updateAnnouncement(
+  id: string,
+  data: { title: string; body: string; isActive: boolean; expiresAt: string | null },
+) {
+  await requirePermission("settings:company");
+  try {
+    await prisma.announcement.update({
+      where: { id },
+      data: {
+        title:     data.title,
+        body:      data.body,
+        isActive:  data.isActive,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+      },
+    });
+    revalidatePath("/announcements");
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    console.error("[updateAnnouncement]", err);
+    return { success: false, error: "Failed to update announcement." };
+  }
+}
+
 export async function deleteAnnouncement(id: string) {
   await requirePermission("settings:company");
   try {
