@@ -8,9 +8,9 @@ import {
   CalendarDays, Users, Building2, BedDouble,
   User, Phone, CreditCard, ChevronRight, ChevronLeft,
   Loader2, AlertCircle, Search, Star, Home, Crown,
-  Snowflake, Sunrise, Moon, Check,
+  Snowflake, Sunrise, Moon, Check, Tag, X,
 } from "lucide-react";
-import { getAvailableRooms, createPublicBooking, lookupGuestByPhone } from "@/server/actions/public";
+import { getAvailableRooms, createPublicBooking, lookupGuestByPhone, validatePromoCode } from "@/server/actions/public";
 import { cn, formatPKR } from "@/utils";
 
 interface Branch { id: string; name: string; city: string }
@@ -85,6 +85,13 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupDone, setLookupDone] = useState(false);
 
+  // Promo code validation state
+  const [promoValidating, setPromoValidating] = useState(false);
+  const [promoResult, setPromoResult] = useState<{
+    discountAmount: number; discountLabel: string; offerName: string;
+  } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+
   const lookupGuest = async () => {
     if (!returningPhone.trim()) return;
     setLookingUp(true);
@@ -112,8 +119,38 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
   const setD = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setDates(f => ({ ...f, [k]: k === "adults" || k === "children" ? Number(e.target.value) : e.target.value }));
 
-  const setG = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+  const setG = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setGuest(f => ({ ...f, [k]: e.target.value }));
+    // Reset promo state when code field changes
+    if (k === "promoCode") { setPromoResult(null); setPromoError(null); }
+  };
+
+  const applyPromo = async () => {
+    const code = guest.promoCode.trim().toUpperCase();
+    if (!code) { setPromoError("Please enter a promo code."); return; }
+    const baseAmount = Number(selectedRoom?.pricePerNight ?? 0) * nights;
+    setPromoValidating(true);
+    setPromoResult(null);
+    setPromoError(null);
+    try {
+      const res = await validatePromoCode(code, nights, baseAmount);
+      if (res.valid) {
+        setPromoResult({ discountAmount: res.discountAmount, discountLabel: res.discountLabel, offerName: res.offerName });
+      } else {
+        setPromoError(res.error);
+      }
+    } catch {
+      setPromoError("Could not validate code. Please try again.");
+    } finally {
+      setPromoValidating(false);
+    }
+  };
+
+  const removePromo = () => {
+    setGuest(g => ({ ...g, promoCode: "" }));
+    setPromoResult(null);
+    setPromoError(null);
+  };
 
   const searchRooms = async () => {
     if (!dates.branchId || !dates.checkIn || !dates.checkOut) {
@@ -459,9 +496,54 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                     className={inputCls + " resize-none"} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label htmlFor="guest-promo" className={labelCls}>Promo Code (Optional)</label>
-                  <input id="guest-promo" value={guest.promoCode} onChange={setG("promoCode")} placeholder="e.g. WELCOME10"
-                    className={inputCls + " font-mono tracking-widest uppercase"} />
+                  <label htmlFor="guest-promo" className={labelCls}>
+                    <Tag className="w-3 h-3 inline mr-1" />Promo Code (Optional)
+                  </label>
+                  {promoResult ? (
+                    /* Applied state */
+                    <div className="flex items-center gap-3 px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                      <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-emerald-400">{guest.promoCode.toUpperCase()} applied!</p>
+                        <p className="text-xs text-muted-foreground">{promoResult.offerName} · {promoResult.discountLabel}</p>
+                      </div>
+                      <button
+                        onClick={removePromo}
+                        className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center hover:bg-emerald-500/20 transition-colors"
+                        title="Remove promo code"
+                      >
+                        <X className="w-3.5 h-3.5 text-emerald-400" />
+                      </button>
+                    </div>
+                  ) : (
+                    /* Input state */
+                    <div className="flex gap-2">
+                      <input
+                        id="guest-promo"
+                        value={guest.promoCode}
+                        onChange={setG("promoCode")}
+                        onKeyDown={(e) => e.key === "Enter" && applyPromo()}
+                        placeholder="e.g. NEW20"
+                        className={cn(
+                          inputCls, "flex-1 font-mono tracking-widest uppercase",
+                          promoError ? "border-red-500/50 focus:border-red-500/60" : ""
+                        )}
+                      />
+                      <button
+                        onClick={applyPromo}
+                        disabled={promoValidating || !guest.promoCode.trim()}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-gold-gradient text-background text-sm font-semibold rounded-xl hover:shadow-gold-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {promoValidating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Tag className="w-4 h-4" />}
+                        {promoValidating ? "Checking…" : "Apply"}
+                      </button>
+                    </div>
+                  )}
+                  {promoError && (
+                    <p className="flex items-center gap-1.5 text-xs text-red-400 mt-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />{promoError}
+                    </p>
+                  )}
                   <p className="text-[10px] text-muted-foreground mt-1">Weekly stays (7+ nights) and monthly stays (30+ nights) get automatic discounts — no code needed.</p>
                 </div>
               </div>
@@ -513,14 +595,33 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                       <span>{formatPKR(Number(selectedRoom?.pricePerNight ?? 0))} / night</span>
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Length of stay</span>
-                      <span>{nights} night{nights > 1 ? "s" : ""}</span>
+                      <span>Subtotal ({nights} night{nights > 1 ? "s" : ""})</span>
+                      <span>{formatPKR(Number(selectedRoom?.pricePerNight ?? 0) * nights)}</span>
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-border/60">
+                    {promoResult && (
+                      <div className="flex justify-between text-xs text-emerald-400">
+                        <span className="flex items-center gap-1">
+                          <Tag className="w-3 h-3" />
+                          Discount ({guest.promoCode.toUpperCase()})
+                        </span>
+                        <span>- {formatPKR(promoResult.discountAmount)}</span>
+                      </div>
+                    )}
+                    <div className={cn(
+                      "flex justify-between items-center pt-2 border-t border-border/60",
+                      promoResult ? "border-emerald-500/20" : ""
+                    )}>
                       <span className="text-sm font-semibold text-foreground">Total</span>
-                      <span className="font-bold text-gold-400 text-lg font-serif">
-                        {formatPKR(Number(selectedRoom?.pricePerNight ?? 0) * nights)}
-                      </span>
+                      <div className="text-right">
+                        {promoResult && (
+                          <p className="text-xs text-muted-foreground line-through">
+                            {formatPKR(Number(selectedRoom?.pricePerNight ?? 0) * nights)}
+                          </p>
+                        )}
+                        <span className="font-bold text-gold-400 text-lg font-serif">
+                          {formatPKR(Math.max(0, Number(selectedRoom?.pricePerNight ?? 0) * nights - (promoResult?.discountAmount ?? 0)))}
+                        </span>
+                      </div>
                     </div>
                     <p className="inline-flex items-center gap-1 text-xs text-emerald-400/90"><Check className="w-3.5 h-3.5" /> Pay in cash on arrival — no online payment</p>
                   </div>

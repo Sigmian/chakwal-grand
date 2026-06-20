@@ -98,6 +98,52 @@ export async function getActiveAnnouncement() {
   });
 }
 
+export async function validatePromoCode(
+  code: string,
+  nights: number,
+  baseAmount: number,
+): Promise<
+  | { valid: true;  discountAmount: number; discountLabel: string; offerName: string }
+  | { valid: false; error: string }
+> {
+  const upper = code.trim().toUpperCase();
+  if (!upper) return { valid: false, error: "Please enter a promo code." };
+
+  const offer = await prisma.offer.findFirst({
+    where: {
+      code:      upper,
+      isActive:  true,
+      startsAt:  { lte: new Date() },
+      expiresAt: { gte: new Date() },
+    },
+  });
+
+  if (!offer) return { valid: false, error: "Invalid or expired promo code." };
+
+  if (offer.minNights && nights < offer.minNights)
+    return { valid: false, error: `This code requires a minimum stay of ${offer.minNights} nights.` };
+
+  if (offer.maxUses && offer.usedCount >= offer.maxUses)
+    return { valid: false, error: "This promo code has reached its usage limit." };
+
+  const discountAmount =
+    offer.discountType === "PERCENTAGE"
+      ? Math.round((baseAmount * Number(offer.discountValue)) / 100)
+      : Math.min(Number(offer.discountValue), baseAmount);
+
+  const discountLabel =
+    offer.discountType === "PERCENTAGE"
+      ? `${Number(offer.discountValue)}% off`
+      : `PKR ${Number(offer.discountValue).toLocaleString()} off`;
+
+  return {
+    valid: true,
+    discountAmount,
+    discountLabel,
+    offerName: offer.name,
+  };
+}
+
 export async function checkRoomAvailability(
   roomId: string,
   checkIn: string,
