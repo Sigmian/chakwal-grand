@@ -75,9 +75,14 @@ export async function POST(req: NextRequest) {
 }
 
 // ── Send reply via Meta Cloud API ─────────────────────────────
+// Strip BOM, zero-width chars, and whitespace — env values pasted via
+// some shells (PowerShell pipe) carry a UTF-8 BOM that breaks HTTP headers.
+const clean = (s: string | undefined) =>
+  s ? s.replace(/^﻿/, "").replace(/[​-‍﻿]/g, "").trim() : s;
+
 async function sendReply(to: string, text: string): Promise<void> {
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const token   = process.env.WHATSAPP_API_TOKEN;
+  const phoneId = clean(process.env.WHATSAPP_PHONE_NUMBER_ID);
+  const token   = clean(process.env.WHATSAPP_API_TOKEN);
 
   if (!phoneId || !token) {
     console.error("[WhatsApp] Missing WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_API_TOKEN env vars");
