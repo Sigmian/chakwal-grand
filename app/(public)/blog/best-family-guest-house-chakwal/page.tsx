@@ -282,7 +282,7 @@ export default function BestFamilyGuestHousePage() {
             <section id="attractions">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Best Chakwal Attractions for Families</h2>
               <div className="relative h-48 rounded-2xl overflow-hidden mb-5">
-                <Image src="/images/blogs/sacred-pond-katas-raj-chakwal.jpg" alt="Kallar Kahar Lake Chakwal family scenic tourist destination Punjab Pakistan" fill className="object-cover" />
+                <Image src="/images/blogs/sacred-pond-katas-raj-chakwal.webp" alt="Kallar Kahar Lake Chakwal family scenic tourist destination Punjab Pakistan" fill className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-4">
                   <p className="text-xs text-muted-foreground italic">Kallar Kahar Lake — boat rides are a favourite with children</p>
                 </div>

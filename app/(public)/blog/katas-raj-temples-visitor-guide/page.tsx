@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     title: "Katas Raj Temples — Complete Visitor Guide 2025 | Chakwal Punjab",
     description: "Everything you need to know before visiting Katas Raj Temples — one of Pakistan's most sacred and historic sites. History, timings, directions, and travel tips.",
     url: `${siteConfig.url}/blog/katas-raj-temples-visitor-guide`,
-    images: [{ url: `${siteConfig.url}/images/blogs/katas-raj-temples-chakwal-pakistan.jpg`, width: 1200, height: 630, alt: "Katas Raj Temples Chakwal Pakistan" }],
+    images: [{ url: `${siteConfig.url}/images/blogs/katas-raj-temples-chakwal-pakistan.webp`, width: 1200, height: 630, alt: "Katas Raj Temples Chakwal Pakistan" }],
   },
 };
 
@@ -28,7 +28,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Katas Raj Temples Complete Visitor Guide 2025 — History, Timings, How to Reach",
   "description": "Complete visitor guide to Katas Raj Temples, Chakwal — history, architecture, how to visit, timings, and travel tips.",
-  "image": `${siteConfig.url}/images/blogs/katas-raj-temples-chakwal-pakistan.jpg`,
+  "image": `${siteConfig.url}/images/blogs/katas-raj-temples-chakwal-pakistan.webp`,
   "url": `${siteConfig.url}/blog/katas-raj-temples-visitor-guide`,
   "datePublished": "2025-01-10",
   "dateModified": "2025-06-01",
@@ -92,7 +92,7 @@ export default function KatasRajPage() {
 
       {/* Hero */}
       <div className="relative h-[55vh] min-h-[380px] w-full overflow-hidden">
-        <Image src="/images/blogs/katas-raj-temples-chakwal-pakistan.jpg" alt="Katas Raj Temples ancient Hindu temple complex Chakwal Punjab Pakistan" fill className="object-cover" priority />
+        <Image src="/images/blogs/katas-raj-temples-chakwal-pakistan.webp" alt="Katas Raj Temples ancient Hindu temple complex Chakwal Punjab Pakistan" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 max-w-4xl mx-auto">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -170,7 +170,7 @@ export default function KatasRajPage() {
             <section id="history">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">History of Katas Raj Temples</h2>
               <div className="relative h-56 sm:h-72 rounded-2xl overflow-hidden mb-6">
-                <Image src="/images/blogs/hindu-temple-architecture-pakistan.jpg" alt="Ancient Hindu temple architecture Katas Raj temples Chakwal Pakistan" fill className="object-cover" />
+                <Image src="/images/blogs/hindu-temple-architecture-pakistan.webp" alt="Ancient Hindu temple architecture Katas Raj temples Chakwal Pakistan" fill className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-4">
                   <p className="text-xs text-muted-foreground italic">Katas Raj Temples date back to the Hindu Shahi dynasty, 7th–10th century CE</p>
                 </div>
@@ -193,10 +193,10 @@ export default function KatasRajPage() {
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Architecture & Structures</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 <div className="relative h-48 rounded-2xl overflow-hidden">
-                  <Image src="/images/blogs/temple-stone-carvings-ancient.jpg" alt="Hindu temple stone architecture carvings Katas Raj Pakistan" fill className="object-cover" />
+                  <Image src="/images/blogs/temple-stone-carvings-ancient.webp" alt="Hindu temple stone architecture carvings Katas Raj Pakistan" fill className="object-cover" />
                 </div>
                 <div className="relative h-48 rounded-2xl overflow-hidden">
-                  <Image src="/images/blogs/ancient-stone-temple-pakistan.jpg" alt="Ancient stone temple complex Katas Raj Chakwal Pakistan architecture" fill className="object-cover" />
+                  <Image src="/images/blogs/ancient-stone-temple-pakistan.webp" alt="Ancient stone temple complex Katas Raj Chakwal Pakistan architecture" fill className="object-cover" />
                 </div>
               </div>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
@@ -227,7 +227,7 @@ export default function KatasRajPage() {
             <section id="pond">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">The Sacred Katas Kund (Pond)</h2>
               <div className="relative h-64 rounded-2xl overflow-hidden mb-6">
-                <Image src="/images/blogs/sacred-pond-katas-raj-chakwal.jpg" alt="Sacred Katas Kund pond Katas Raj temple complex Chakwal Pakistan" fill className="object-cover" />
+                <Image src="/images/blogs/sacred-pond-katas-raj-chakwal.webp" alt="Sacred Katas Kund pond Katas Raj temple complex Chakwal Pakistan" fill className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent flex items-end p-4">
                   <p className="text-xs text-muted-foreground italic">The Katas Kund — the sacred pond at the center of the temple complex</p>
                 </div>

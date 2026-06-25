@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     title: "Complete Chakwal Travel Guide 2025 — How to Get There, Stay & Explore",
     description: "Everything you need to know for a perfect trip to Chakwal — transport, accommodation, attractions, food, and insider tips.",
     url: `${siteConfig.url}/blog/chakwal-travel-guide`,
-    images: [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`, width: 1200, height: 630, alt: "Chakwal Punjab Pakistan landscape travel guide" }],
+    images: [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal Punjab Pakistan landscape travel guide" }],
   },
 };
 
@@ -27,7 +27,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Complete Chakwal Travel Guide 2025 — How to Get There, Stay & Explore",
   "description": "The complete travel guide to Chakwal, Punjab, Pakistan — transport, accommodation, attractions, food, and travel tips.",
-  "image": `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`,
+  "image": `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`,
   "url": `${siteConfig.url}/blog/chakwal-travel-guide`,
   "datePublished": "2025-02-01",
   "dateModified": "2025-06-01",
@@ -88,7 +88,7 @@ export default function ChakwalTravelGuidePage() {
 
       {/* Hero */}
       <div className="relative h-[50vh] min-h-[350px] w-full overflow-hidden">
-        <Image src="/images/blogs/chakwal-travel-mountains-punjab.jpg" alt="Chakwal Punjab Pakistan landscape mountains hills travel destination" fill className="object-cover" priority />
+        <Image src="/images/blogs/chakwal-travel-mountains-punjab.webp" alt="Chakwal Punjab Pakistan landscape mountains hills travel destination" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 max-w-4xl mx-auto">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -133,7 +133,7 @@ export default function ChakwalTravelGuidePage() {
             <section id="intro">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-4">Why Visit Chakwal, Punjab?</h2>
               <div className="relative h-52 rounded-2xl overflow-hidden mb-5">
-                <Image src="/images/blogs/katas-raj-temples-chakwal-pakistan.jpg" alt="Katas Raj ancient temples Chakwal Punjab Pakistan heritage site" fill className="object-cover" />
+                <Image src="/images/blogs/katas-raj-temples-chakwal-pakistan.webp" alt="Katas Raj ancient temples Chakwal Punjab Pakistan heritage site" fill className="object-cover" />
               </div>
               <div className="space-y-3 text-muted-foreground leading-relaxed">
                 <p>Chakwal is one of Punjab&apos;s most underrated tourist destinations — a district packed with historical wonders, natural beauty, and cultural richness that few tourists ever discover. Located in the heart of the Potohar Plateau, Chakwal offers something for every kind of traveler.</p>

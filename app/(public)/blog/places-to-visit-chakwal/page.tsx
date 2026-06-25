@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     title: "Top 10 Places to Visit in Chakwal 2025 — Complete Tourist Guide",
     description: "From Katas Raj Temples to Kallar Kahar Lake — complete guide to tourist attractions in Chakwal, Punjab, Pakistan.",
     url: `${siteConfig.url}/blog/places-to-visit-chakwal`,
-    images: [{ url: `${siteConfig.url}/images/blogs/chakwal-landscape-punjab-pakistan.jpg`, width: 1200, height: 630, alt: "Beautiful landscape Chakwal Punjab Pakistan tourist attraction" }],
+    images: [{ url: `${siteConfig.url}/images/blogs/chakwal-landscape-punjab-pakistan.webp`, width: 1200, height: 630, alt: "Beautiful landscape Chakwal Punjab Pakistan tourist attraction" }],
   },
 };
 
@@ -27,7 +27,7 @@ const ARTICLE_SCHEMA = {
   "@type": "BlogPosting",
   "headline": "Top 10 Places to Visit in Chakwal — Complete Tourist Guide 2025",
   "description": "Discover the most beautiful and historic places in Chakwal district, Punjab Pakistan.",
-  "image": `${siteConfig.url}/images/blogs/chakwal-landscape-punjab-pakistan.jpg`,
+  "image": `${siteConfig.url}/images/blogs/chakwal-landscape-punjab-pakistan.webp`,
   "url": `${siteConfig.url}/blog/places-to-visit-chakwal`,
   "datePublished": "2025-01-15",
   "dateModified": "2025-06-01",
@@ -49,7 +49,7 @@ const FAQ_SCHEMA = {
 const PLACES = [
   {
     num: "01", name: "Katas Raj Temples", type: "Historic & Religious", distance: "40 km from Chakwal city",
-    image: "/images/blogs/katas-raj-temples-chakwal-pakistan.jpg",
+    image: "/images/blogs/katas-raj-temples-chakwal-pakistan.webp",
     imageAlt: "Ancient Hindu temple complex Katas Raj Chakwal Punjab Pakistan",
     desc: "The crown jewel of Chakwal tourism, Katas Raj Temples is one of the most sacred Hindu pilgrimage sites in all of South Asia. Dating back over 5,000 years, the complex features seven ancient temples surrounding the holy Katas Kund pond — believed to have formed from the tears of Lord Shiva. Mentioned in the Mahabharata, this UNESCO-recognized heritage site draws historians, pilgrims, and photographers from across the world.",
     highlights: ["Free entry", "Open daily sunrise to sunset", "Best visited 7–9 AM", "Photography allowed"],
@@ -59,7 +59,7 @@ const PLACES = [
   },
   {
     num: "02", name: "Kallar Kahar Lake", type: "Natural Lake", distance: "45 km from Chakwal",
-    image: "/images/blogs/sacred-pond-katas-raj-chakwal.jpg",
+    image: "/images/blogs/sacred-pond-katas-raj-chakwal.webp",
     imageAlt: "Kallar Kahar Lake Chakwal Pakistan Salt Range hills scenic view",
     desc: "Kallar Kahar is a stunning natural saline lake nestled in the Salt Range hills, covering approximately 9–10 km². Famous for its changing colours with the seasons — deep blue in winter, emerald green in spring — the lake is a paradise for nature lovers and photographers. The lake is surrounded by green parks, boating facilities, and the Kallar Kahar Wildlife Park where you can spot peacocks and migratory birds. A historical Babur&apos;s Throne (Takht-e-Babri) is located nearby.",
     highlights: ["Boating available", "Wildlife park adjacent", "Babur's Throne nearby", "Peacock sightings"],
@@ -68,7 +68,7 @@ const PLACES = [
   },
   {
     num: "03", name: "Choa Saidan Shah", type: "Hill Town", distance: "30 km from Chakwal",
-    image: "/images/blogs/chakwal-landscape-punjab-pakistan.jpg",
+    image: "/images/blogs/chakwal-landscape-punjab-pakistan.webp",
     imageAlt: "Choa Saidan Shah hill town Salt Range Punjab Pakistan green hills",
     desc: "Perched in the Salt Range hills, Choa Saidan Shah is a picturesque hill town famous for its mild climate, natural mineral springs, and the revered shrine of Hazrat Saidan Shah. The town sits at an elevation that keeps it noticeably cooler than the plains — making it a perfect escape from Rawalpindi&apos;s summer heat. The surrounding hills provide excellent hiking trails with panoramic views, and the weekly bazaar is a colourful cultural experience.",
     highlights: ["Natural springs", "Cooler climate than plains", "Shrine of Hazrat Saidan Shah", "Weekly bazaar"],
@@ -77,7 +77,7 @@ const PLACES = [
   },
   {
     num: "04", name: "Pharwala Fort (Qila Pharwala)", type: "Historic Fort", distance: "25 km from Chakwal",
-    image: "/images/blogs/salt-range-mountain-chakwal-pakistan.jpg",
+    image: "/images/blogs/salt-range-mountain-chakwal-pakistan.webp",
     imageAlt: "Pharwala Fort ancient ruins hilltop panoramic view Chakwal Punjab Pakistan",
     desc: "Pharwala Fort is a magnificent 11th-century fortification built by the Gakhar tribe — a Rajput clan that controlled much of this region before the Mughal era. Perched dramatically on a hilltop above a narrow gorge, the fort offers breathtaking panoramic views of the surrounding valleys. Despite centuries of neglect, the massive stone walls and towers remain impressive. Visiting requires a short but rewarding hike up the hillside path.",
     highlights: ["11th century architecture", "Panoramic valley views", "Short 20-min hike", "Gakhar tribe heritage"],
@@ -86,7 +86,7 @@ const PLACES = [
   },
   {
     num: "05", name: "Tilla Jogian", type: "Religious & Scenic Hilltop", distance: "40 km from Chakwal",
-    image: "/images/blogs/chakwal-travel-mountains-punjab.jpg",
+    image: "/images/blogs/chakwal-travel-mountains-punjab.webp",
     imageAlt: "Tilla Jogian sacred hilltop Pakistan Salt Range scenic mountain landscape",
     desc: "Rising 975 metres above sea level, Tilla Jogian is the highest peak in the Salt Range and one of the most sacred sites in Punjab. The hilltop hosts an ancient Hindu and Jain monastery complex, revered for centuries as a place of meditation and spiritual retreat. The climb to the summit takes approximately 1.5–2 hours and rewards you with possibly the most spectacular 360-degree panorama in all of Punjab — on a clear day, you can see as far as the Himalayas.",
     highlights: ["Highest peak in Salt Range", "Ancient monastery complex", "360° panoramic views", "Spiritual atmosphere"],
@@ -95,7 +95,7 @@ const PLACES = [
   },
   {
     num: "06", name: "Kallar Kahar Wildlife Park", type: "Nature & Wildlife", distance: "45 km from Chakwal",
-    image: "/images/blogs/chakwal-landscape-punjab-pakistan.jpg",
+    image: "/images/blogs/chakwal-landscape-punjab-pakistan.webp",
     imageAlt: "Kallar Kahar Wildlife Park Chakwal Pakistan peacock nature forest",
     desc: "Adjacent to the lake, Kallar Kahar Wildlife Park covers a substantial area of natural woodland and lakeside habitat. The park is home to a breeding population of peacocks (Pakistan&apos;s most famous bird), along with deer, monkeys, and a rich variety of migratory waterfowl that visit in winter. The park is ideal for a family picnic, birdwatching, and relaxed nature walks with excellent facilities.",
     highlights: ["Peacock breeding population", "Migratory bird watching", "Deer and monkey sightings", "Family picnic facilities"],
@@ -104,7 +104,7 @@ const PLACES = [
   },
   {
     num: "07", name: "Salt Range Hills", type: "Nature & Geology", distance: "Throughout Chakwal district",
-    image: "/images/blogs/salt-range-mountain-chakwal-pakistan.jpg",
+    image: "/images/blogs/salt-range-mountain-chakwal-pakistan.webp",
     imageAlt: "Salt Range hills Pakistan ancient geological formation Chakwal district",
     desc: "The Salt Range is one of the world&apos;s most geologically significant mountain ranges — an ancient fold of the Earth&apos;s crust containing rocks that are over 600 million years old. Stretching across Chakwal and Khushab districts, the range contains the world-famous Khewra Salt Mine (one of the largest in the world), ancient fossils, and stunning red sandstone landscapes. Trekking routes, off-road tracks, and viewpoints make it a paradise for adventure travelers.",
     highlights: ["600 million year old geology", "Khewra Salt Mine access", "Trekking routes", "Off-road 4x4 tracks"],
@@ -113,7 +113,7 @@ const PLACES = [
   },
   {
     num: "08", name: "Khewra Salt Mine", type: "Industrial Wonder", distance: "50 km from Chakwal",
-    image: "/images/blogs/hindu-temple-architecture-pakistan.jpg",
+    image: "/images/blogs/hindu-temple-architecture-pakistan.webp",
     imageAlt: "Khewra Salt Mine underground tunnel Jhelum Pakistan pink Himalayan salt",
     desc: "Technically in neighbouring Jhelum district but easily visited from Chakwal, Khewra Salt Mine is the second largest salt mine in the world and one of Pakistan&apos;s top tourist attractions. The underground complex features vast chambers with walls of glowing pink Himalayan salt, a salt mosque, a salt replica of the Great Wall of China, and a brackish underground lake. The guided tour takes approximately 1.5–2 hours.",
     highlights: ["Second largest salt mine globally", "Underground salt mosque", "Pink Himalayan salt walls", "Guided tours available"],
@@ -130,7 +130,7 @@ export default function PlacesToVisitPage() {
 
       {/* Hero */}
       <div className="relative h-[50vh] min-h-[350px] w-full overflow-hidden">
-        <Image src="/images/blogs/chakwal-landscape-punjab-pakistan.jpg" alt="Scenic landscape Chakwal Punjab Pakistan mountains hills tourist destination" fill className="object-cover" priority />
+        <Image src="/images/blogs/chakwal-landscape-punjab-pakistan.webp" alt="Scenic landscape Chakwal Punjab Pakistan mountains hills tourist destination" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 max-w-4xl mx-auto">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">

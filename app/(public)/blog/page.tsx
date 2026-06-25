@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title:       "Travel Blog — Chakwal Tourism & Travel Guide",
     description: "Explore Chakwal tourism guides, travel tips, places to visit near Chakwal, Katas Raj Temples, Kallar Kahar Lake, and accommodation in Punjab.",
     url:         `${siteConfig.url}/blog`,
-    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`, width: 1200, height: 630, alt: "Chakwal travel blog" }],
+    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal travel blog" }],
   },
 };
 

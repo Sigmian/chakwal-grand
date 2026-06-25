@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title:       "Photo Gallery | Chakwal Grand Guest House",
     description: "Elegant rooms and beautiful facilities — browse photos of Chakwal Grand Guest House.",
     url:         `${siteConfig.url}/gallery`,
-    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`, width: 1200, height: 630, alt: "Chakwal Grand Guest House photo gallery" }],
+    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal Grand Guest House photo gallery" }],
   },
 };
 
