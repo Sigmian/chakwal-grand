@@ -1,4 +1,4 @@
-// app/(public)/gallery/page.tsx
+﻿// app/(public)/gallery/page.tsx
 import type { Metadata } from "next";
 import prisma from "@/lib/db/prisma";
 import { GalleryGrid } from "@/features/public/components/GalleryGrid";
@@ -6,13 +6,13 @@ import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Photo Gallery",
-  description: "Browse our photo gallery — elegant rooms, cosy interiors, and beautiful facilities at Chakwal Grand Guest House.",
+  description: "Browse our photo gallery â€” elegant rooms, cosy interiors, and beautiful facilities at Chakwal Grand Guest House.",
   alternates: { canonical: `${siteConfig.url}/gallery` },
   openGraph: {
     title:       "Photo Gallery | Chakwal Grand Guest House",
-    description: "Elegant rooms and beautiful facilities — browse photos of Chakwal Grand Guest House.",
+    description: "Elegant rooms and beautiful facilities â€” browse photos of Chakwal Grand Guest House.",
     url:         `${siteConfig.url}/gallery`,
-    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal Grand Guest House photo gallery" }],
+    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`, width: 1200, height: 630, alt: "Chakwal Grand Guest House photo gallery" }],
   },
 };
 

@@ -1,6 +1,6 @@
-// ============================================================
+﻿// ============================================================
 // app/layout.tsx
-// Root layout — sets up fonts, theme provider, toasts
+// Root layout â€” sets up fonts, theme provider, toasts
 // ============================================================
 
 import type { Metadata } from "next";
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
     template: "%s | Chakwal Grand Guest House",
-    default:  "Chakwal Grand Guest House — Premium Stay in Chakwal, Punjab",
+    default:  "Chakwal Grand Guest House â€” Premium Stay in Chakwal, Punjab",
   },
   description:
     "Chakwal Grand Guest House offers premium, affordable accommodation in Chakwal with AC rooms, free WiFi, and 24/7 service. Book your stay today from PKR 2,000/night.",
@@ -53,15 +53,15 @@ export const metadata: Metadata = {
     locale:      "en_PK",
     url:         siteConfig.url,
     siteName:    "Chakwal Grand Guest House",
-    title:       "Chakwal Grand Guest House — Premium Stay in Chakwal, Punjab",
+    title:       "Chakwal Grand Guest House â€” Premium Stay in Chakwal, Punjab",
     description: "Premium, affordable guest house in Chakwal with AC rooms, free WiFi & 24/7 service. Book from PKR 2,000/night.",
-    images: [{ url: "/images/blogs/chakwal-travel-mountains-punjab.webp", width: 1200, height: 630, alt: "Chakwal Grand Guest House — Chakwal, Punjab" }],
+    images: [{ url: "/images/blogs/chakwal-travel-mountains-punjab.jpg", width: 1200, height: 630, alt: "Chakwal Grand Guest House â€” Chakwal, Punjab" }],
   },
   twitter: {
     card:        "summary_large_image",
-    title:       "Chakwal Grand Guest House — Premium Stay in Chakwal",
+    title:       "Chakwal Grand Guest House â€” Premium Stay in Chakwal",
     description: "Book AC rooms from PKR 2,000/night. Free WiFi, 24/7 service, Chakwal Punjab.",
-    images:      ["/images/blogs/chakwal-travel-mountains-punjab.webp"],
+    images:      ["/images/blogs/chakwal-travel-mountains-punjab.jpg"],
   },
   robots: {
     index:  true,

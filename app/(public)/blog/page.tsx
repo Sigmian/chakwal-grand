@@ -1,54 +1,54 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, ArrowRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Travel Blog — Chakwal Tourism & Travel Guide",
+  title: "Travel Blog â€” Chakwal Tourism & Travel Guide",
   description: "Explore Chakwal tourism guides, travel tips, places to visit near Chakwal, Katas Raj Temples, Kallar Kahar Lake, and the best accommodation options in Chakwal Punjab.",
   keywords: ["Chakwal tourism", "places to visit Chakwal", "Chakwal travel guide", "Katas Raj Temples", "Kallar Kahar Lake", "travel Pakistan Punjab"],
   alternates: { canonical: `${siteConfig.url}/blog` },
   openGraph: {
-    title:       "Travel Blog — Chakwal Tourism & Travel Guide",
+    title:       "Travel Blog â€” Chakwal Tourism & Travel Guide",
     description: "Explore Chakwal tourism guides, travel tips, places to visit near Chakwal, Katas Raj Temples, Kallar Kahar Lake, and accommodation in Punjab.",
     url:         `${siteConfig.url}/blog`,
-    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal travel blog" }],
+    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`, width: 1200, height: 630, alt: "Chakwal travel blog" }],
   },
 };
 
 const BLOGS = [
   {
     slug:    "places-to-visit-chakwal",
-    title:   "Top 10 Places to Visit in Chakwal — Complete Tourist Guide 2025",
-    excerpt: "Discover the most beautiful and historic places in Chakwal district — from Katas Raj Temples to Kallar Kahar Lake, Salt Range, and Choa Saidan Shah.",
+    title:   "Top 10 Places to Visit in Chakwal â€” Complete Tourist Guide 2025",
+    excerpt: "Discover the most beautiful and historic places in Chakwal district â€” from Katas Raj Temples to Kallar Kahar Lake, Salt Range, and Choa Saidan Shah.",
     date:    "2025-01-15",
     tag:     "Tourism",
   },
   {
     slug:    "best-family-guest-house-chakwal",
-    title:   "Best Family Guest House in Chakwal — Why Families Choose Chakwal Grand",
+    title:   "Best Family Guest House in Chakwal â€” Why Families Choose Chakwal Grand",
     excerpt: "Looking for a safe, spacious, and affordable family guest house in Chakwal? Here is why thousands of families choose Chakwal Grand for their stays in Punjab.",
     date:    "2025-01-20",
     tag:     "Accommodation",
   },
   {
     slug:    "chakwal-travel-guide",
-    title:   "Complete Chakwal Travel Guide 2025 — How to Get There, Stay & Explore",
+    title:   "Complete Chakwal Travel Guide 2025 â€” How to Get There, Stay & Explore",
     excerpt: "Planning a trip to Chakwal? This complete travel guide covers transport, accommodation, weather, food, and top attractions in Chakwal district, Punjab.",
     date:    "2025-02-01",
     tag:     "Travel Guide",
   },
   {
     slug:    "katas-raj-temples-visitor-guide",
-    title:   "Katas Raj Temples Visitor Guide — History, Timings & How to Get There",
-    excerpt: "A complete guide to visiting the sacred Katas Raj Temples in Chakwal — one of Pakistan's most important Hindu pilgrimage sites. History, visiting tips, and nearby stay options.",
+    title:   "Katas Raj Temples Visitor Guide â€” History, Timings & How to Get There",
+    excerpt: "A complete guide to visiting the sacred Katas Raj Temples in Chakwal â€” one of Pakistan's most important Hindu pilgrimage sites. History, visiting tips, and nearby stay options.",
     date:    "2025-02-10",
     tag:     "Attractions",
   },
   {
     slug:    "where-to-stay-chakwal",
-    title:   "Where to Stay in Chakwal — Best Guest Houses & Hotels 2025",
-    excerpt: "A comprehensive guide to the best accommodation options in Chakwal — from budget rooms to executive suites. Find out why Chakwal Grand is the top-rated guest house in the city.",
+    title:   "Where to Stay in Chakwal â€” Best Guest Houses & Hotels 2025",
+    excerpt: "A comprehensive guide to the best accommodation options in Chakwal â€” from budget rooms to executive suites. Find out why Chakwal Grand is the top-rated guest house in the city.",
     date:    "2025-02-20",
     tag:     "Accommodation",
   },

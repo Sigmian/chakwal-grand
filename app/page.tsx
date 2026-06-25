@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Star, MapPin, Phone, CheckCircle2, ChevronRight,
@@ -17,13 +17,13 @@ import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Chakwal Grand Guest House | Best Accommodation in Chakwal Punjab",
-  description: "Welcome to Chakwal Grand Guest House — the premier destination for travelers in Chakwal, Punjab. AC rooms, family suites, free WiFi & 24/7 room service from PKR 2,000/night. Book online instantly.",
+  description: "Welcome to Chakwal Grand Guest House â€” the premier destination for travelers in Chakwal, Punjab. AC rooms, family suites, free WiFi & 24/7 room service from PKR 2,000/night. Book online instantly.",
   alternates: { canonical: siteConfig.url },
   openGraph: {
     title:       "Chakwal Grand Guest House | Best Accommodation in Chakwal Punjab",
     description: "AC rooms, family suites & VIP rooms from PKR 2,000/night. Free WiFi, 24/7 service. Book your stay online at Chakwal Grand Guest House.",
     url:         siteConfig.url,
-    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal Grand Guest House — Premium Accommodation in Chakwal Punjab" }],
+    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`, width: 1200, height: 630, alt: "Chakwal Grand Guest House â€” Premium Accommodation in Chakwal Punjab" }],
   },
 };
 
@@ -35,7 +35,7 @@ const LOCAL_BUSINESS_SCHEMA = {
   "url":         siteConfig.url,
   "telephone":   siteConfig.phoneE164,
   "priceRange":  "PKR 2,000 - PKR 5,000",
-  "image":       `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`,
+  "image":       `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`,
   "address": {
     "@type":           "PostalAddress",
     "addressLocality": "Chakwal",
@@ -85,7 +85,7 @@ const FAQ_SCHEMA = {
     {
       "@type": "Question",
       "name": "How do I book a room at Chakwal Grand Guest House?",
-      "acceptedAnswer": { "@type": "Answer", "text": `You can book online instantly at ${siteConfig.url.replace("https://", "")}, or call/WhatsApp us at ${siteConfig.phone}. No advance payment required — pay cash on arrival.` }
+      "acceptedAnswer": { "@type": "Answer", "text": `You can book online instantly at ${siteConfig.url.replace("https://", "")}, or call/WhatsApp us at ${siteConfig.phone}. No advance payment required â€” pay cash on arrival.` }
     },
     {
       "@type": "Question",
@@ -115,7 +115,7 @@ export default async function HomePage() {
     : undefined;
 
   // Pick one representative room per type, serialized to plain objects
-  // (Prisma Decimal can't cross the server→client boundary).
+  // (Prisma Decimal can't cross the serverâ†’client boundary).
   const featured = ["STANDARD", "FAMILY", "DELUXE", "SUITE"]
     .map(type => rooms.find(r => r.type === type))
     .filter((r): r is NonNullable<typeof r> => Boolean(r))
@@ -155,7 +155,7 @@ export default async function HomePage() {
       <PublicNavbar />
 
       <main>
-        {/* ══════════════════════════════════════════════ HERO (VIDEO) */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HERO (VIDEO) */}
         <VideoHero
           branches={branches as { id: string; name: string; city: string }[]}
           startingFrom={rooms.length > 0 ? Math.min(...rooms.map(r => Number(r.pricePerNight))) : 2000}
@@ -163,7 +163,7 @@ export default async function HomePage() {
           avgRating={avgRating}
         />
 
-        {/* ══════════════════════════════════════════════ TRUST STRIP */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• TRUST STRIP */}
         <section className="border-y border-gold-500/10 bg-surface-elevated/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -187,14 +187,14 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════ ROOMS */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• ROOMS */}
         <section className="py-20 bg-surface-elevated">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Reveal className="text-center mb-12">
               <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Accommodations</p>
               <h2 className="text-3xl sm:text-4xl font-bold font-serif text-foreground mb-4">Rooms Designed for Comfort</h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Every room is equipped with WiFi, hot water, and attached bathroom — built for comfort at every budget.
+                Every room is equipped with WiFi, hot water, and attached bathroom â€” built for comfort at every budget.
               </p>
             </Reveal>
 
@@ -208,7 +208,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════ WHY US */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• WHY US */}
         <section className="py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Reveal className="text-center mb-12">
@@ -221,11 +221,11 @@ export default async function HomePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 { Icon: Award,       title: "Best Value",      body: "Transparent pricing with no hidden charges. Rates from PKR 2,000/night for fully-equipped rooms." },
-                { Icon: Wifi,        title: "Fast WiFi",       body: "High-speed internet in all rooms — perfect for business travellers and long stays." },
+                { Icon: Wifi,        title: "Fast WiFi",       body: "High-speed internet in all rooms â€” perfect for business travellers and long stays." },
                 { Icon: Snowflake,   title: "A/C Available",   body: "Air conditioning in select rooms, included in the room rate (12 hours daily)." },
                 { Icon: ShowerHead,  title: "Hot Water 24/7",  body: "Attached bathrooms with reliable hot water available around the clock." },
                 { Icon: ShieldCheck, title: "Safe & Secure",   body: "CCTV coverage, front-desk staffed 24/7, secure key access to all rooms." },
-                { Icon: MapPin,      title: "Prime Locations", body: "Centrally located in Chakwal, Kallar Kahar, and Sargodha — close to all amenities." },
+                { Icon: MapPin,      title: "Prime Locations", body: "Centrally located in Chakwal, Kallar Kahar, and Sargodha â€” close to all amenities." },
               ].map(({ Icon, title, body }, i) => (
                 <Reveal key={title} delay={i * 0.06}>
                   <div className="card-luxury rounded-2xl p-6 h-full hover:-translate-y-1 hover:border-gold-500/30 transition-all group">
@@ -241,7 +241,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════ BRANCHES */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• BRANCHES */}
         {branches.length > 0 && (
           <section id="about" className="py-20 bg-surface-elevated">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -276,7 +276,7 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* ══════════════════════════════════════════════ REVIEWS */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• REVIEWS */}
         {reviews.length > 0 && (
           <section className="py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -291,7 +291,7 @@ export default async function HomePage() {
                       ))}
                     </div>
                     <span className="text-sm font-bold text-foreground">{avgRating.toFixed(1)}</span>
-                    <span className="text-xs text-muted-foreground">· {reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
+                    <span className="text-xs text-muted-foreground">Â· {reviews.length} review{reviews.length !== 1 ? "s" : ""}</span>
                   </div>
                 )}
               </Reveal>
@@ -322,7 +322,7 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* ══════════════════════════════════════════════ CONTACT CTA */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• CONTACT CTA */}
         <section id="contact" className="py-20 bg-gradient-to-br from-gold-500/5 via-surface-elevated to-surface-elevated border-y border-gold-500/10">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Get In Touch</p>
@@ -330,7 +330,7 @@ export default async function HomePage() {
               Ready to Plan Your Stay?
             </h2>
             <p className="text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Book online for instant confirmation, or call us directly — our team is available 24/7 to help you find the perfect room.
+              Book online for instant confirmation, or call us directly â€” our team is available 24/7 to help you find the perfect room.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Link href="/book"
@@ -364,10 +364,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════ GALLERY */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• GALLERY */}
         <GallerySection />
 
-        {/* ══════════════════════════════════════════════ FAQ */}
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• FAQ */}
         <FAQSection />
       </main>
 

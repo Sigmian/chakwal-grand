@@ -1,12 +1,12 @@
-import { siteConfig } from "@/config/site";
+﻿import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Star, Users, ChevronRight, CheckCircle2, Phone } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Best Family Guest House in Chakwal 2025 — Family Rooms, Rates & Booking",
-  description: "Looking for a family guest house in Chakwal? Chakwal Grand Guest House offers spacious family rooms for 4–6 guests, kids-friendly facilities, free WiFi, and 24/7 service from PKR 2,500/night. Book now, pay on arrival.",
+  title: "Best Family Guest House in Chakwal 2025 â€” Family Rooms, Rates & Booking",
+  description: "Looking for a family guest house in Chakwal? Chakwal Grand Guest House offers spacious family rooms for 4â€“6 guests, kids-friendly facilities, free WiFi, and 24/7 service from PKR 2,500/night. Book now, pay on arrival.",
   keywords: [
     "family guest house Chakwal", "best family hotel Chakwal", "family rooms Chakwal",
     "Chakwal family accommodation", "family trip Chakwal", "family stay Chakwal Punjab",
@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: `${siteConfig.url}/blog/best-family-guest-house-chakwal` },
   openGraph: {
-    title: "Best Family Guest House in Chakwal 2025 — Family Rooms & Rates",
-    description: "Spacious family rooms, 24/7 service, free WiFi. Chakwal Grand Guest House — the top choice for families visiting Chakwal.",
+    title: "Best Family Guest House in Chakwal 2025 â€” Family Rooms & Rates",
+    description: "Spacious family rooms, 24/7 service, free WiFi. Chakwal Grand Guest House â€” the top choice for families visiting Chakwal.",
     url: `${siteConfig.url}/blog/best-family-guest-house-chakwal`,
     images: [{ url: `${siteConfig.url}/images/rooms/suite-room-chakwal-grand-guest-house.jpg`, width: 1200, height: 630, alt: "Family guest house room Chakwal clean comfortable" }],
   },
@@ -25,8 +25,8 @@ export const metadata: Metadata = {
 const ARTICLE_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "Best Family Guest House in Chakwal 2025 — Family Rooms, Rates & Booking",
-  "description": "Complete guide to family accommodation in Chakwal, Punjab — room options, features, rates, and booking tips.",
+  "headline": "Best Family Guest House in Chakwal 2025 â€” Family Rooms, Rates & Booking",
+  "description": "Complete guide to family accommodation in Chakwal, Punjab â€” room options, features, rates, and booking tips.",
   "image": `${siteConfig.url}/images/rooms/suite-room-chakwal-grand-guest-house.jpg`,
   "url": `${siteConfig.url}/blog/best-family-guest-house-chakwal`,
   "datePublished": "2025-03-01",
@@ -39,11 +39,11 @@ const FAQ_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
-    { "@type": "Question", "name": "Is there a family guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — Chakwal Grand Guest House has dedicated family rooms accommodating 4 adults + 2 children from PKR 2,500/night. They also have apartment suites with kitchenettes ideal for families staying multiple nights." } },
+    { "@type": "Question", "name": "Is there a family guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes â€” Chakwal Grand Guest House has dedicated family rooms accommodating 4 adults + 2 children from PKR 2,500/night. They also have apartment suites with kitchenettes ideal for families staying multiple nights." } },
     { "@type": "Question", "name": "What is the best hotel for families in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Grand Guest House is the top-rated family accommodation in Chakwal, with a 5.0 Google rating. It offers spacious family rooms, 24/7 reception, hot water, and free WiFi." } },
     { "@type": "Question", "name": "How much does a family room cost in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Family rooms at Chakwal Grand Guest House start from PKR 2,500/night for non-AC, and PKR 3,500/night for AC family rooms. Apartment suites start from PKR 4,500/night. No advance payment required." } },
-    { "@type": "Question", "name": "Are children allowed at guest houses in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — children are welcome at Chakwal Grand Guest House. Children under 5 stay free. Family rooms comfortably accommodate parents and children together with extra bedding available." } },
-    { "@type": "Question", "name": "Is Chakwal safe for family travel?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — Chakwal is considered one of the safer cities in Punjab for family travel. It is a military community with a strong law-and-order environment. Chakwal Grand Guest House has CCTV and 24/7 staff for guest safety." } },
+    { "@type": "Question", "name": "Are children allowed at guest houses in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes â€” children are welcome at Chakwal Grand Guest House. Children under 5 stay free. Family rooms comfortably accommodate parents and children together with extra bedding available." } },
+    { "@type": "Question", "name": "Is Chakwal safe for family travel?", "acceptedAnswer": { "@type": "Answer", "text": "Yes â€” Chakwal is considered one of the safer cities in Punjab for family travel. It is a military community with a strong law-and-order environment. Chakwal Grand Guest House has CCTV and 24/7 staff for guest safety." } },
   ],
 };
 
@@ -64,7 +64,7 @@ const ROOM_TYPES = [
   },
   {
     name: "Apartment Suite (AC)", price: "PKR 4,500/night",
-    capacity: "4–6 Adults", best: "Extended stays, large families",
+    capacity: "4â€“6 Adults", best: "Extended stays, large families",
     image: "/images/rooms/premium-room-chakwal-grand-guest-house.jpg",
     imageAlt: "Apartment suite Chakwal Grand Guest House kitchenette living area family stay",
     features: ["Kitchenette (basic cooking)", "Separate living room", "Air conditioning", "Mini fridge", "Free WiFi", "Premium linen"],
@@ -72,18 +72,18 @@ const ROOM_TYPES = [
 ];
 
 const FAMILY_FEATURES = [
-  { icon: "🛏️", title: "Extra Bedding", desc: "Additional mattresses and pillows available on request — accommodates children of all ages without extra charge." },
-  { icon: "🚿", title: "Hot Water 24/7", desc: "Round-the-clock hot water supply — critical for families with young children, especially in winter months." },
-  { icon: "📶", title: "Free WiFi", desc: "High-speed WiFi in all rooms — keep children entertained during downtime with streaming and downloads." },
-  { icon: "🔒", title: "Secure Environment", desc: "CCTV throughout the premises, 24/7 reception, and CNIC-verified guest registration for maximum family safety." },
-  { icon: "🅿️", title: "Vehicle Parking", desc: "Secure parking for family cars, vans, or buses — essential when travelling with luggage and kids." },
-  { icon: "📞", title: "24/7 Reception", desc: "Staff available around the clock to help with late check-ins, early breakfast needs, or local travel advice." },
+  { icon: "ðŸ›ï¸", title: "Extra Bedding", desc: "Additional mattresses and pillows available on request â€” accommodates children of all ages without extra charge." },
+  { icon: "ðŸš¿", title: "Hot Water 24/7", desc: "Round-the-clock hot water supply â€” critical for families with young children, especially in winter months." },
+  { icon: "ðŸ“¶", title: "Free WiFi", desc: "High-speed WiFi in all rooms â€” keep children entertained during downtime with streaming and downloads." },
+  { icon: "ðŸ”’", title: "Secure Environment", desc: "CCTV throughout the premises, 24/7 reception, and CNIC-verified guest registration for maximum family safety." },
+  { icon: "ðŸ…¿ï¸", title: "Vehicle Parking", desc: "Secure parking for family cars, vans, or buses â€” essential when travelling with luggage and kids." },
+  { icon: "ðŸ“ž", title: "24/7 Reception", desc: "Staff available around the clock to help with late check-ins, early breakfast needs, or local travel advice." },
 ];
 
 const FAMILY_ATTRACTIONS = [
-  { name: "Katas Raj Temples", time: "45 min drive", desc: "Children love the ancient temples and sacred pond — great for history lessons in a stunning setting.", tip: "Free entry, open daily" },
+  { name: "Katas Raj Temples", time: "45 min drive", desc: "Children love the ancient temples and sacred pond â€” great for history lessons in a stunning setting.", tip: "Free entry, open daily" },
   { name: "Kallar Kahar Lake", time: "50 min drive", desc: "Boat rides on the lake are a hit with kids. The adjacent wildlife park has peacocks and deer.", tip: "Boat hire ~PKR 400/hr" },
-  { name: "Kallar Kahar Wildlife Park", time: "50 min drive", desc: "Peacocks walking freely, deer grazing — a natural zoo experience that children absolutely love.", tip: "Best in morning hours" },
+  { name: "Kallar Kahar Wildlife Park", time: "50 min drive", desc: "Peacocks walking freely, deer grazing â€” a natural zoo experience that children absolutely love.", tip: "Best in morning hours" },
   { name: "Khewra Salt Mine", time: "1.5 hr drive", desc: "Underground tunnels and pink salt walls feel like a real adventure for children and adults alike.", tip: "Entry ~PKR 30/adult" },
 ];
 
@@ -104,7 +104,7 @@ export default function BestFamilyGuestHousePage() {
           </div>
           <span className="text-xs font-bold uppercase tracking-wider text-gold-400 bg-gold-500/10 border border-gold-500/20 px-3 py-1 rounded-full">Family Travel</span>
           <h1 className="text-3xl sm:text-5xl font-bold font-serif text-foreground mt-3 mb-3 leading-tight">
-            Best Family Guest House in Chakwal 2025<br className="hidden sm:block" /> — Rooms, Rates & Family Tips
+            Best Family Guest House in Chakwal 2025<br className="hidden sm:block" /> â€” Rooms, Rates & Family Tips
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">
             Planning a family trip to Chakwal? Complete guide to family-friendly accommodation, what to look for, and the best attractions for families.
@@ -150,10 +150,10 @@ export default function BestFamilyGuestHousePage() {
               <h2 className="text-2xl font-bold font-serif text-foreground mb-4">Why Chakwal is Perfect for a Family Trip</h2>
               <div className="space-y-3 text-muted-foreground leading-relaxed">
                 <p>
-                  More and more Pakistani families are choosing Chakwal for their holiday getaways — and for good reason. The district offers a rare combination of historical wonders, natural beauty, and family-safe activities, all within 2 hours of Rawalpindi and Islamabad.
+                  More and more Pakistani families are choosing Chakwal for their holiday getaways â€” and for good reason. The district offers a rare combination of historical wonders, natural beauty, and family-safe activities, all within 2 hours of Rawalpindi and Islamabad.
                 </p>
                 <p>
-                  The <Link href="/blog/katas-raj-temples-visitor-guide" className="text-gold-400 hover:underline">Katas Raj Temples</Link> give children a real sense of Pakistan&apos;s ancient history. Kallar Kahar Lake offers boat rides and peacock spotting that kids absolutely love. And unlike crowded tourist spots, Chakwal remains largely undiscovered — meaning shorter queues, lower prices, and a more relaxed experience for the whole family.
+                  The <Link href="/blog/katas-raj-temples-visitor-guide" className="text-gold-400 hover:underline">Katas Raj Temples</Link> give children a real sense of Pakistan&apos;s ancient history. Kallar Kahar Lake offers boat rides and peacock spotting that kids absolutely love. And unlike crowded tourist spots, Chakwal remains largely undiscovered â€” meaning shorter queues, lower prices, and a more relaxed experience for the whole family.
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
@@ -178,12 +178,12 @@ export default function BestFamilyGuestHousePage() {
               </p>
               <div className="space-y-3">
                 {[
-                  "Room size that comfortably fits parents + children without feeling cramped — at least 300 sq ft",
-                  "Hot water supply at all hours — children need baths and parents need showers regardless of the time",
-                  "24/7 reception — families with young children often have unpredictable schedules, including late arrivals",
-                  "Secure premises with CCTV and single entry point — peace of mind when children are in the building",
-                  "Flexibility on check-in/check-out times — young children make schedules unpredictable",
-                  "Nearby local restaurants for family meals — avoid long travel for food with hungry children",
+                  "Room size that comfortably fits parents + children without feeling cramped â€” at least 300 sq ft",
+                  "Hot water supply at all hours â€” children need baths and parents need showers regardless of the time",
+                  "24/7 reception â€” families with young children often have unpredictable schedules, including late arrivals",
+                  "Secure premises with CCTV and single entry point â€” peace of mind when children are in the building",
+                  "Flexibility on check-in/check-out times â€” young children make schedules unpredictable",
+                  "Nearby local restaurants for family meals â€” avoid long travel for food with hungry children",
                 ].map((point, i) => (
                   <div key={i} className="flex items-start gap-3 card-luxury rounded-xl p-3">
                     <CheckCircle2 className="w-4 h-4 text-gold-400 flex-shrink-0 mt-0.5" />
@@ -269,11 +269,11 @@ export default function BestFamilyGuestHousePage() {
               </div>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                  <p className="text-xs font-bold text-emerald-400 mb-1">7+ Nights — 14% Off</p>
+                  <p className="text-xs font-bold text-emerald-400 mb-1">7+ Nights â€” 14% Off</p>
                   <p className="text-xs text-muted-foreground">Ideal for extended family trips or business stays. Applied automatically at checkout.</p>
                 </div>
                 <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                  <p className="text-xs font-bold text-blue-400 mb-1">Children Under 5 — Free</p>
+                  <p className="text-xs font-bold text-blue-400 mb-1">Children Under 5 â€” Free</p>
                   <p className="text-xs text-muted-foreground">Young children stay completely free in parents&apos; room. Extra bedding provided at no charge.</p>
                 </div>
               </div>
@@ -282,9 +282,9 @@ export default function BestFamilyGuestHousePage() {
             <section id="attractions">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Best Chakwal Attractions for Families</h2>
               <div className="relative h-48 rounded-2xl overflow-hidden mb-5">
-                <Image src="/images/blogs/sacred-pond-katas-raj-chakwal.webp" alt="Kallar Kahar Lake Chakwal family scenic tourist destination Punjab Pakistan" fill className="object-cover" />
+                <Image src="/images/blogs/sacred-pond-katas-raj-chakwal.jpg" alt="Kallar Kahar Lake Chakwal family scenic tourist destination Punjab Pakistan" fill className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-4">
-                  <p className="text-xs text-muted-foreground italic">Kallar Kahar Lake — boat rides are a favourite with children</p>
+                  <p className="text-xs text-muted-foreground italic">Kallar Kahar Lake â€” boat rides are a favourite with children</p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -295,7 +295,7 @@ export default function BestFamilyGuestHousePage() {
                       <span className="text-xs text-gold-400 flex-shrink-0">{a.time}</span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">{a.desc}</p>
-                    <p className="text-xs text-emerald-400">✓ {a.tip}</p>
+                    <p className="text-xs text-emerald-400">âœ“ {a.tip}</p>
                   </div>
                 ))}
               </div>
@@ -305,12 +305,12 @@ export default function BestFamilyGuestHousePage() {
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Family Travel Tips for Chakwal</h2>
               <ul className="space-y-3">
                 {[
-                  "Book your family room at least 3–4 days in advance, especially during Eid holidays and school vacations — family rooms are limited and fill up fast.",
+                  "Book your family room at least 3â€“4 days in advance, especially during Eid holidays and school vacations â€” family rooms are limited and fill up fast.",
                   "Carry each family member's CNIC (or B-form for children). Guest house registration requires family documentation for all guests.",
-                  "For children under 12, avoid Tilla Jogian — the hike is steep and not suitable for young kids. Kallar Kahar and Katas Raj are much more family-friendly.",
-                  "Bring a packed lunch and water for day trips to Katas Raj — there are no restaurants or shops inside the temple complex.",
+                  "For children under 12, avoid Tilla Jogian â€” the hike is steep and not suitable for young kids. Kallar Kahar and Katas Raj are much more family-friendly.",
+                  "Bring a packed lunch and water for day trips to Katas Raj â€” there are no restaurants or shops inside the temple complex.",
                   "If travelling with infants, call ahead to request a cot or extra mattress so it is ready when you arrive.",
-                  "Most local restaurants in Chakwal do not have high chairs — bring a portable booster seat if your child needs one.",
+                  "Most local restaurants in Chakwal do not have high chairs â€” bring a portable booster seat if your child needs one.",
                   "WhatsApp the guest house before arrival to confirm your room is ready and get precise directions for GPS navigation.",
                 ].map((tip, i) => (
                   <li key={i} className="flex items-start gap-3 card-luxury rounded-xl p-4 list-none">
@@ -343,9 +343,9 @@ export default function BestFamilyGuestHousePage() {
                 {[1,2,3,4,5].map(i => <Star key={i} className="w-5 h-5 text-gold-400 fill-gold-400" />)}
               </div>
               <h2 className="text-2xl font-bold font-serif text-foreground mb-2">Book Your Family Room in Chakwal</h2>
-              <p className="text-muted-foreground text-sm mb-2">5.0 Google Rating · 20+ Verified Reviews · Trusted by Hundreds of Families</p>
+              <p className="text-muted-foreground text-sm mb-2">5.0 Google Rating Â· 20+ Verified Reviews Â· Trusted by Hundreds of Families</p>
               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Chakwal Grand Guest House — the most trusted family accommodation in Chakwal Punjab. Spacious rooms, 24/7 service, free WiFi. No advance payment — pay cash on arrival.
+                Chakwal Grand Guest House â€” the most trusted family accommodation in Chakwal Punjab. Spacious rooms, 24/7 service, free WiFi. No advance payment â€” pay cash on arrival.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
@@ -356,7 +356,7 @@ export default function BestFamilyGuestHousePage() {
                 </a>
               </div>
               <p className="text-xs text-muted-foreground mt-4">
-                Also see: <Link href="/blog/places-to-visit-chakwal" className="text-gold-400 hover:underline">Places to visit in Chakwal</Link> · <Link href="/blog/chakwal-travel-guide" className="text-gold-400 hover:underline">Chakwal travel guide</Link>
+                Also see: <Link href="/blog/places-to-visit-chakwal" className="text-gold-400 hover:underline">Places to visit in Chakwal</Link> Â· <Link href="/blog/chakwal-travel-guide" className="text-gold-400 hover:underline">Chakwal travel guide</Link>
               </p>
             </section>
 
