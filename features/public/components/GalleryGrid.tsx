@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, ZoomIn, ImageOff } from "lucide-react";
 import { cn } from "@/utils";
 
 interface GalleryImage {
@@ -85,7 +85,21 @@ export function GalleryGrid({ images }: Props) {
               alt={img.altText}
               className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
+              onError={(e) => {
+                const t = e.currentTarget;
+                t.style.display = "none";
+                const placeholder = t.nextElementSibling as HTMLElement | null;
+                if (placeholder) placeholder.style.display = "flex";
+              }}
             />
+            {/* Broken-URL placeholder — hidden by default */}
+            <div
+              className="w-full aspect-square items-center justify-center flex-col gap-2 text-muted-foreground/40 hidden"
+              aria-hidden
+            >
+              <ImageOff className="w-8 h-8" />
+              <span className="text-[10px]">Image unavailable</span>
+            </div>
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
               <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -134,7 +148,16 @@ export function GalleryGrid({ images }: Props) {
               src={filtered[lightbox].url}
               alt={filtered[lightbox].altText}
               className="max-h-[85vh] max-w-full object-contain rounded-xl shadow-2xl"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                const el = document.getElementById("lightbox-broken");
+                if (el) el.style.display = "flex";
+              }}
             />
+            <div id="lightbox-broken" className="w-64 h-48 items-center justify-center flex-col gap-3 text-white/30 hidden">
+              <ImageOff className="w-12 h-12" />
+              <p className="text-sm">Image could not be loaded</p>
+            </div>
             <div className="text-center mt-3">
               <p className="text-white font-semibold">{filtered[lightbox].roomName}</p>
               <p className="text-white/60 text-sm">{lightbox + 1} / {filtered.length}</p>

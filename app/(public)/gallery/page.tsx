@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 3600; // Re-generate at most once per hour
+export const revalidate = 60; // Re-generate at most once per minute
 
 async function getGalleryImages() {
   const rooms = await prisma.room.findMany({
