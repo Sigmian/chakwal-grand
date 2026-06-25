@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     title:       "Chakwal Grand Guest House | Best Accommodation in Chakwal Punjab",
     description: "AC rooms, family suites & VIP rooms from PKR 2,000/night. Free WiFi, 24/7 service. Book your stay online at Chakwal Grand Guest House.",
     url:         siteConfig.url,
-    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`, width: 1200, height: 630, alt: "Chakwal Grand Guest House â€” Premium Accommodation in Chakwal Punjab" }],
+    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal Grand Guest House â€” Premium Accommodation in Chakwal Punjab" }],
   },
 };
 
@@ -35,7 +35,7 @@ const LOCAL_BUSINESS_SCHEMA = {
   "url":         siteConfig.url,
   "telephone":   siteConfig.phoneE164,
   "priceRange":  "PKR 2,000 - PKR 5,000",
-  "image":       `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.jpg`,
+  "image":       `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`,
   "address": {
     "@type":           "PostalAddress",
     "addressLocality": "Chakwal",
