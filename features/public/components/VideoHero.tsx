@@ -38,11 +38,12 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
         ref={videoRef}
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${loaded ? "opacity-100" : "opacity-0"}`}
         src="/videos/hero.mp4"
+        poster="/images/blogs/chakwal-travel-mountains-punjab.jpg"
         autoPlay
         muted
         loop
         playsInline
-        preload="metadata"
+        preload="none"
         onCanPlay={() => setLoaded(true)}
       />
 
