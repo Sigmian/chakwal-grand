@@ -4,25 +4,15 @@ const nextConfig = {
   // ─── Image Optimization ───────────────────────
   images: {
     remotePatterns: [
+      // Allow any https image URL — needed for room images added via URL in admin
       {
         protocol: "https",
-        hostname: "*.s3.*.amazonaws.com",
+        hostname: "**",
       },
+      // http fallback for local/dev images
       {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-      {
-        protocol: "https",
-        hostname: "plus.unsplash.com",
-      },
-      {
-        protocol: "https",
-        hostname: "ui-avatars.com",
+        protocol: "http",
+        hostname: "**",
       },
     ],
     formats: ["image/avif", "image/webp"],
