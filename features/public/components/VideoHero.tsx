@@ -33,7 +33,7 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* â”€â”€ Video Background â”€â”€ */}
+      {/* ── Video Background ── */}
       <video
         ref={videoRef}
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${loaded ? "opacity-100" : "opacity-0"}`}
@@ -63,13 +63,13 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
       <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-gold-500/5 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-gold-500/8 rounded-full blur-2xl animate-pulse delay-1000" />
 
-      {/* â”€â”€ Content â”€â”€ */}
+      {/* ── Content ── */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
         <div className="max-w-3xl">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gold-400 bg-gold-500/10 border border-gold-500/30 px-4 py-2 rounded-full mb-8 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse" />
-            Chakwal Â· Kallar Kahar Â· Sargodha
+            Chakwal · Kallar Kahar · Sargodha
           </div>
 
           {/* Headline */}
@@ -107,7 +107,7 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
               href="/book"
               className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all hover:-translate-y-0.5 text-base"
             >
-              Book Your Room â€” Free
+              Book Your Room — Free
               <ChevronRight className="w-5 h-5" />
             </Link>
             <Link
@@ -117,7 +117,7 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
               View All Rooms
             </Link>
             <a
-              href={`${siteConfig.social.whatsappUrl}?text=Hi%2C%20I%27d%20like%20to%20book%20a%20room%20at%20Chakwal%20Grand%20Guest%20House`}
+              href={`${siteConfig.social.whatsappUrl}?text=${encodeURIComponent("Hi, I'd like to book a room at Chakwal Guest House")}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-[#25D366]/20 backdrop-blur-sm border border-[#25D366]/40 text-[#25D366] font-semibold rounded-xl hover:bg-[#25D366]/30 transition-colors text-base"
@@ -130,7 +130,7 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
           <div className="flex flex-wrap gap-8">
             {[
               { num: totalGuests ?? 500,        decimals: 0, suffix: "+", label: "Happy Guests"   },
-              { num: avgRating ?? 4.8,          decimals: 1, suffix: "â˜…", label: "Average Rating" },
+              { num: avgRating ?? 4.8,          decimals: 1, suffix: "★", label: "Average Rating" },
               { num: branches.length || 3,      decimals: 0, suffix: "",  label: "Prime Locations" },
               { text: "24/7",                                             label: "Support"         },
             ].map((s) => (

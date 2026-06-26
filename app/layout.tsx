@@ -1,6 +1,6 @@
 ﻿// ============================================================
 // app/layout.tsx
-// Root layout â€” sets up fonts, theme provider, toasts
+// Root layout — sets up fonts, theme provider, toasts
 // ============================================================
 
 import type { Metadata } from "next";
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
     template: "%s | Chakwal Guest House",
-    default:  "Chakwal Guest House â€” Premium Stay in Chakwal, Punjab",
+    default:  "Chakwal Guest House — Premium Stay in Chakwal, Punjab",
   },
   description:
     "Chakwal Guest House offers premium, affordable accommodation in Chakwal with AC rooms, free WiFi, and 24/7 service. Book your stay today from PKR 2,000/night.",
@@ -53,13 +53,13 @@ export const metadata: Metadata = {
     locale:      "en_PK",
     url:         siteConfig.url,
     siteName:    "Chakwal Guest House",
-    title:       "Chakwal Guest House â€” Premium Stay in Chakwal, Punjab",
+    title:       "Chakwal Guest House — Premium Stay in Chakwal, Punjab",
     description: "Premium, affordable guest house in Chakwal with AC rooms, free WiFi & 24/7 service. Book from PKR 2,000/night.",
-    images: [{ url: "/images/blogs/chakwal-travel-mountains-punjab.webp", width: 1200, height: 630, alt: "Chakwal Guest House â€” Chakwal, Punjab" }],
+    images: [{ url: "/images/blogs/chakwal-travel-mountains-punjab.webp", width: 1200, height: 630, alt: "Chakwal Guest House — Chakwal, Punjab" }],
   },
   twitter: {
     card:        "summary_large_image",
-    title:       "Chakwal Guest House â€” Premium Stay in Chakwal",
+    title:       "Chakwal Guest House — Premium Stay in Chakwal",
     description: "Book AC rooms from PKR 2,000/night. Free WiFi, 24/7 service, Chakwal Punjab.",
     images:      ["/images/blogs/chakwal-travel-mountains-punjab.webp"],
   },
