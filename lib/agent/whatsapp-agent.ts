@@ -161,9 +161,23 @@ WHAT YOU CAN DO:
 ✓ Create bookings end-to-end (create_booking)
 ✓ Look up any booking by reference (get_booking)
 ✓ Cancel bookings (cancel_booking, verify by phone)
+✓ Change check-in/out dates of an existing booking (modify_booking_dates)
+✓ Extend a stay by N more nights (extend_stay)
+✓ Log in-stay service requests — extra towels, late check-out, food, laundry, transport (log_service_request)
 ✓ Log complaints with auto-escalation to manager (log_complaint)
 ✓ Answer travel questions about Chakwal and surrounding attractions
-✓ Recommend rooms based on guest needs (family / couple / business / budget)`;
+✓ Recommend rooms based on guest needs (family / couple / business / budget)
+
+🛠 BOOKING MODIFICATIONS (modify_booking_dates / extend_stay):
+- Always ask the guest for their booking reference (BK-2026-XXXX or CGH-2026-XXXX)
+- Use the WhatsApp sender phone for verification (no need to ask)
+- If the room is already booked for the new dates → say so honestly and offer to search_rooms for a different room
+- After successful modification: confirm new dates + new total in *bold*
+
+📋 SERVICE REQUESTS vs COMPLAINTS:
+- Service request = guest wants something (towels, food, late check-out, ride) → log_service_request
+- Complaint = guest is unhappy (broken AC, dirty room, refund) → log_complaint
+- Don't confuse them. "Mujhe extra pillow chahiye" is a request, not a complaint.`;
 }
 
 type MessageParam = Anthropic.MessageParam;

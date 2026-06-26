@@ -60,6 +60,9 @@ export type Permission =
   | "reviews:read"
   | "reviews:approve"
   | "reviews:delete"
+  // Complaints
+  | "complaints:read"
+  | "complaints:update"
   // Analytics
   | "analytics:branch"
   | "analytics:company"
@@ -97,6 +100,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "staff:read", "staff:view", "staff:manage", "staff:create", "staff:update", "staff:delete",
     "staff:view_salaries",
     "reviews:read", "reviews:approve", "reviews:delete",
+    "complaints:read", "complaints:update",
     "analytics:branch", "analytics:company",
     "settings:company", "settings:branch", "settings:users",
     "cms:read", "cms:update",
@@ -116,6 +120,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "finance:read", "finance:expenses:create", "finance:reports:export",
     "staff:read", "staff:view", "staff:manage",
     "reviews:read", "reviews:approve",
+    "complaints:read", "complaints:update",
     "analytics:branch",
     "settings:branch",
     "cms:read",
@@ -130,6 +135,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "customers:read", "customers:create", "customers:update",
     "inventory:read", "inventory:pos_sell",
     "reviews:read",
+    "complaints:read",
     "housekeeping:read",
     "offers:read",
   ],

@@ -134,6 +134,16 @@ export const DASHBOARD_NAV: NavItem[] = [
     ],
   },
   {
+    label: "Complaints",
+    href:  "/complaints",
+    icon:  "AlertCircle",
+    requiredRoles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.BRANCH_MANAGER,
+      UserRole.RECEPTIONIST,
+    ],
+  },
+  {
     label: "Promo Codes",
     href:  "/offers",
     icon:  "Tag",
