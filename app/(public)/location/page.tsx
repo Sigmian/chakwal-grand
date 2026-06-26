@@ -35,7 +35,7 @@ const LOCATION_SCHEMA = {
     "latitude":  "32.9318",
     "longitude": "72.8560",
   },
-  "hasMap": "https://maps.google.com/?q=Chakwal+Grand+Guest+House+Chakwal+Punjab",
+  "hasMap": siteConfig.social.googleBusinessUrl,
 };
 
 const BRANCHES = [

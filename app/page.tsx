@@ -16,28 +16,42 @@ import { getPublicBranches, getPublicReviews, getPublicRooms } from "@/server/ac
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Chakwal Guest House | Best Accommodation in Chakwal Punjab",
-  description: "Welcome to Chakwal Guest House — the premier destination for travelers in Chakwal, Punjab. AC rooms, family suites, free WiFi & 24/7 room service from PKR 2,000/night. Book online instantly.",
+  title: "Chakwal Guest House | Best Guest House in Chakwal",
+  description: siteConfig.description,
   alternates: { canonical: siteConfig.url },
   openGraph: {
-    title:       "Chakwal Guest House | Best Accommodation in Chakwal Punjab",
-    description: "AC rooms, family suites & VIP rooms from PKR 2,000/night. Free WiFi, 24/7 service. Book your stay online at Chakwal Guest House.",
+    title:       "Chakwal Guest House | Best Guest House in Chakwal",
+    description: siteConfig.description,
     url:         siteConfig.url,
-    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal Guest House — Premium Accommodation in Chakwal Punjab" }],
+    siteName:    siteConfig.name,
+    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal Guest House — Clean, comfortable rooms in Chakwal, Punjab" }],
+  },
+  twitter: {
+    card:        "summary_large_image",
+    title:       "Chakwal Guest House | Best Guest House in Chakwal",
+    description: siteConfig.description,
+    images:      [`${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`],
   },
 };
 
 const LOCAL_BUSINESS_SCHEMA = {
   "@context":    "https://schema.org",
-  "@type":       "LodgingBusiness",
+  "@type":       ["LodgingBusiness", "Hotel"],
+  "@id":         `${siteConfig.url}#hotel`,
   "name":        "Chakwal Guest House",
-  "description": "Premium guest house in Chakwal, Punjab offering AC rooms, family suites and VIP accommodation with free WiFi and 24/7 service.",
+  "alternateName": "CGH",
+  "brand":       { "@type": "Brand", "name": "Chakwal Guest House" },
+  "description": siteConfig.description,
+  "slogan":      siteConfig.tagline,
   "url":         siteConfig.url,
   "telephone":   siteConfig.phoneE164,
+  "email":       siteConfig.email,
   "priceRange":  "PKR 2,000 - PKR 5,000",
   "image":       `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`,
+  "logo":        `${siteConfig.url}/images/logo.png`,
   "address": {
     "@type":           "PostalAddress",
+    "streetAddress":   siteConfig.branches[0].address,
     "addressLocality": "Chakwal",
     "addressRegion":   "Punjab",
     "addressCountry":  "PK",
@@ -59,8 +73,34 @@ const LOCAL_BUSINESS_SCHEMA = {
   "currenciesAccepted": "PKR",
   "paymentAccepted":    "Cash",
   "openingHours": "Mo-Su 00:00-23:59",
-  "hasMap": "https://maps.google.com/?q=Chakwal+Grand+Guest+House+Chakwal",
-  "sameAs": [siteConfig.url],
+  "hasMap": siteConfig.social.googleBusinessUrl,
+  "sameAs": [
+    siteConfig.url,
+    siteConfig.social.facebookUrl,
+    siteConfig.social.googleBusinessUrl,
+  ],
+};
+
+const ORGANIZATION_SCHEMA = {
+  "@context":    "https://schema.org",
+  "@type":       "Organization",
+  "@id":         `${siteConfig.url}#organization`,
+  "name":        "Chakwal Guest House",
+  "alternateName": "CGH",
+  "url":         siteConfig.url,
+  "logo":        `${siteConfig.url}/images/logo.png`,
+  "description": siteConfig.description,
+  "contactPoint": {
+    "@type":      "ContactPoint",
+    "telephone":  siteConfig.phoneE164,
+    "contactType": "Reservations",
+    "areaServed": "PK",
+    "availableLanguage": ["en", "ur"],
+  },
+  "sameAs": [
+    siteConfig.social.facebookUrl,
+    siteConfig.social.googleBusinessUrl,
+  ],
 };
 
 const FAQ_SCHEMA = {
@@ -150,6 +190,7 @@ export default async function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_SCHEMA) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_SCHEMA) }} />
       {reviewSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewSchema) }} />}
       <PublicNavbar />
