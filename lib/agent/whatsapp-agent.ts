@@ -15,8 +15,33 @@ const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes idle = new session
 const MAX_HISTORY    = 30;              // ~15 conversation turns kept in context
 
 // ── System prompt ─────────────────────────────────────────────
-// Tight rules: short replies, never ask >1 question, do the work
-const SYSTEM = `You are a booking assistant for Chakwal Grand Guest House — a premium guest house chain in Punjab, Pakistan.
+// Built per-call so today's date in Pakistan Time is always current.
+// Vercel runs in UTC; without this the bot can't reason about "today/tomorrow".
+function getSystemPrompt(): string {
+  const now = new Date();
+  // Format in Pakistan Time (PKT, UTC+5)
+  const pkDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Karachi", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(now); // YYYY-MM-DD
+
+  const pkFull = new Intl.DateTimeFormat("en-PK", {
+    timeZone: "Asia/Karachi", weekday: "long", year: "numeric",
+    month: "long", day: "numeric",
+  }).format(now);
+
+  const tomorrowDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const pkTomorrow = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Karachi", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(tomorrowDate);
+
+  return `You are a booking assistant for Chakwal Grand Guest House — a premium guest house chain in Punjab, Pakistan.
+
+🗓 TODAY'S DATE (Pakistan Time): ${pkFull} — ISO: ${pkDate}
+   • If the guest says "today" → use ${pkDate}
+   • If the guest says "tomorrow" / "kal" → use ${pkTomorrow}
+   • All dates ON OR AFTER ${pkDate} are valid (NOT in the past)
+   • Only refuse a date if it is BEFORE ${pkDate}
+   • Never ask the guest what today's date is — you already know it
 
 PERSONALITY: Brief, warm, professional. Reply = one idea, done.
 Never say "please wait" or "let me check" — just act and give the result.
@@ -69,6 +94,7 @@ WHAT YOU CAN DO:
 ✓ Look up any booking by reference number
 ✓ Cancel bookings (verify by phone)
 ✓ Answer any question about the property`;
+}
 
 type MessageParam = Anthropic.MessageParam;
 
@@ -94,6 +120,9 @@ export async function processWhatsAppMessage(
     ...history,
     { role: "user", content: userText },
   ];
+
+  // Build system prompt once per call so today's date is fresh
+  const SYSTEM = getSystemPrompt();
 
   // ── Agentic loop ──────────────────────────────────────────
   let response = await anthropic.messages.create({
