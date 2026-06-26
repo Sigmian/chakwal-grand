@@ -13,6 +13,41 @@ import { BookingStatus } from "@/types";
 
 export const AGENT_TOOLS: Anthropic.Tool[] = [
   {
+    name: "lookup_customer",
+    description:
+      "Look up a returning customer by their WhatsApp phone number. Call this on the FIRST message of every new session " +
+      "to greet returning guests by name and skip re-asking for their details. " +
+      "Returns name, total visits, preferred room type, VIP status, and last visit date if found.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        phone: {
+          type: "string",
+          description: "Guest WhatsApp phone (the sender — use the number this conversation is from)",
+        },
+      },
+      required: ["phone"],
+    },
+  },
+  {
+    name: "log_complaint",
+    description:
+      "Log a customer complaint to the admin dashboard. Call this WHENEVER a guest expresses dissatisfaction " +
+      "(broken AC, dirty room, rude staff, refund request, late check-in, missed booking, anything negative). " +
+      "Triggers escalation notification to the manager for HIGH severity.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        guest_phone: { type: "string", description: "Sender's WhatsApp number" },
+        text:        { type: "string", description: "Full description of the complaint in the guest's own words (summarize if very long)" },
+        severity:    { type: "string", enum: ["LOW", "MEDIUM", "HIGH"], description: "LOW=minor inconvenience, MEDIUM=service issue, HIGH=refund/health/safety/threatened bad review" },
+        booking_ref: { type: "string", description: "Booking ref if available (optional)" },
+        guest_name:  { type: "string", description: "Guest name if known (optional)" },
+      },
+      required: ["guest_phone", "text", "severity"],
+    },
+  },
+  {
     name: "search_rooms",
     description:
       "Find available rooms for given dates. Returns id, name, type, price, capacity, branch. " +
@@ -87,12 +122,87 @@ export async function executeAgentTool(
   input: Record<string, unknown>,
 ): Promise<unknown> {
   switch (toolName) {
-    case "search_rooms":   return searchRooms(input);
-    case "create_booking": return createBookingTool(input);
-    case "get_booking":    return getBookingTool(input);
-    case "cancel_booking": return cancelBookingTool(input);
-    default:               return { error: "Unknown tool: " + toolName };
+    case "lookup_customer": return lookupCustomerTool(input);
+    case "log_complaint":   return logComplaintTool(input);
+    case "search_rooms":    return searchRooms(input);
+    case "create_booking":  return createBookingTool(input);
+    case "get_booking":     return getBookingTool(input);
+    case "cancel_booking":  return cancelBookingTool(input);
+    default:                return { error: "Unknown tool: " + toolName };
   }
+}
+
+// Normalize phone for comparison: strip non-digits, take last 10
+function normalizePhone(p: string): string {
+  return p.replace(/\D/g, "").slice(-10);
+}
+
+async function lookupCustomerTool(input: Record<string, unknown>) {
+  const phone = input.phone as string;
+  if (!phone) return { found: false };
+
+  const last10 = normalizePhone(phone);
+  // Find by last 10 digits match (handles +92 vs 0334 vs 92 formats)
+  const customers = await prisma.customer.findMany({
+    where: { phone: { contains: last10 } },
+    include: {
+      bookings: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { bookingRef: true, checkInDate: true, status: true, room: { select: { name: true } } },
+      },
+    },
+    take: 5,
+  });
+
+  const match = customers.find(c => normalizePhone(c.phone) === last10);
+  if (!match) return { found: false };
+
+  return {
+    found: true,
+    name:              match.name,
+    email:             match.email,
+    cnic:              match.cnic,
+    totalVisits:       match.totalVisits,
+    loyaltyTier:       match.loyaltyTier,
+    isVIP:             match.isVIP,
+    preferredRoomType: match.preferredRoomType,
+    specialRequests:   match.specialRequests,
+    lastVisitAt:       match.lastVisitAt?.toISOString().split("T")[0] ?? null,
+    lastBooking:       match.bookings[0] ?? null,
+  };
+}
+
+async function logComplaintTool(input: Record<string, unknown>) {
+  const text     = (input.text as string)?.trim();
+  const phone    = (input.guest_phone as string) ?? "";
+  const severity = ((input.severity as string) ?? "MEDIUM").toUpperCase();
+
+  if (!text || !phone) {
+    return { success: false, error: "Missing complaint text or phone" };
+  }
+  if (!["LOW", "MEDIUM", "HIGH"].includes(severity)) {
+    return { success: false, error: "Invalid severity" };
+  }
+
+  const complaint = await prisma.complaint.create({
+    data: {
+      bookingRef:  (input.booking_ref as string) || null,
+      guestPhone:  phone,
+      guestName:   (input.guest_name  as string) || null,
+      text,
+      severity,
+      source:      "whatsapp",
+      status:      "OPEN",
+    },
+  });
+
+  return {
+    success:    true,
+    complaintId: complaint.id,
+    severity,
+    escalated:  severity === "HIGH",
+  };
 }
 
 // ── Implementations ───────────────────────────────────────────
