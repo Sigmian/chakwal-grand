@@ -121,7 +121,7 @@ enum InRoomOrderStatus {
 
 model Company {
   id          String   @id @default(cuid())
-  name        String   // "Chakwal Grand Guest House"
+  name        String   // "Chakwal Guest House"
   tagline     String?
   logo        String?  // S3/Cloudinary URL
   website     String?

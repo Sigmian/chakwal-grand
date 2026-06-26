@@ -6,11 +6,11 @@ import { Reveal } from "@/features/public/components/Reveal";
 
 export const metadata: Metadata = {
   title: "Location & Directions — Chakwal, Punjab",
-  description: "Find Chakwal Grand Guest House easily. Located near District Courts, Talagang Road, Chakwal. Also branches in Kallar Kahar & Sargodha. Get directions, map & contact details.",
-  keywords: ["Chakwal Grand Guest House location", "guest house near Chakwal city", "how to reach Chakwal Grand", "Talagang Road Chakwal guest house", "accommodation near Katas Raj"],
+  description: "Find Chakwal Guest House easily. Located near District Courts, Talagang Road, Chakwal. Also branches in Kallar Kahar & Sargodha. Get directions, map & contact details.",
+  keywords: ["Chakwal Guest House location", "guest house near Chakwal city", "how to reach Chakwal Guest House", "Talagang Road Chakwal guest house", "accommodation near Katas Raj"],
   alternates: { canonical: `${siteConfig.url}/location` },
   openGraph: {
-    title: "Location | Chakwal Grand Guest House — Near District Courts, Chakwal",
+    title: "Location | Chakwal Guest House — Near District Courts, Chakwal",
     description: "We are located near District Courts, Talagang Road, Chakwal. Easy access from Rawalpindi, Islamabad, and Lahore via GT Road.",
     url: `${siteConfig.url}/location`,
   },
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const LOCATION_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "LodgingBusiness",
-  "name": "Chakwal Grand Guest House",
+  "name": "Chakwal Guest House",
   "url": siteConfig.url,
   "telephone": "+92-334-7742767",
   "address": {
@@ -82,7 +82,7 @@ export default function LocationPage() {
               Our Locations in Punjab
             </h1>
             <p className="text-lg text-muted-foreground">
-              Chakwal Grand Guest House has 3 branches across Punjab — in Chakwal, Kallar Kahar,
+              Chakwal Guest House has 3 branches across Punjab — in Chakwal, Kallar Kahar,
               and Sargodha. All locations are easily accessible and centrally located.
             </p>
           </div>
@@ -94,7 +94,7 @@ export default function LocationPage() {
             <Reveal>
               <div className="rounded-2xl overflow-hidden border border-gold-500/20 shadow-card-lg">
                 <iframe
-                  title="Chakwal Grand Guest House location map"
+                  title="Chakwal Guest House location map"
                   src={siteConfig.mapEmbed}
                   width="100%"
                   height="420"

@@ -1,5 +1,5 @@
 // ============================================================
-// Chakwal Grand — Service Worker
+// Chakwal Guest House — Service Worker
 // Handles background push notifications
 // ============================================================
 
@@ -10,10 +10,10 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "Chakwal Grand", body: event.data.text() };
+    payload = { title: "Chakwal Guest House", body: event.data.text() };
   }
 
-  const { title = "Chakwal Grand", body = "", icon, tag, data } = payload;
+  const { title = "Chakwal Guest House", body = "", icon, tag, data } = payload;
 
   const showNotification = self.registration.showNotification(title, {
     body,

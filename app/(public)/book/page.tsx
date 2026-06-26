@@ -7,11 +7,11 @@ import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Book a Room",
-  description: "Book your room at Chakwal Grand Guest House. Check availability and confirm your booking in minutes.",
+  description: "Book your room at Chakwal Guest House. Check availability and confirm your booking in minutes.",
   alternates: { canonical: `${siteConfig.url}/book` },
   openGraph: {
-    title:       "Book a Room | Chakwal Grand Guest House",
-    description: "Reserve your room at Chakwal Grand Guest House. Instant confirmation, free cancellation up to 24 hours.",
+    title:       "Book a Room | Chakwal Guest House",
+    description: "Reserve your room at Chakwal Guest House. Instant confirmation, free cancellation up to 24 hours.",
     url:         `${siteConfig.url}/book`,
   },
 };

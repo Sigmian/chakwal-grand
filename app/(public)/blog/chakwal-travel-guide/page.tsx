@@ -31,8 +31,8 @@ const ARTICLE_SCHEMA = {
   "url": `${siteConfig.url}/blog/chakwal-travel-guide`,
   "datePublished": "2025-02-01",
   "dateModified": "2025-06-01",
-  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
-  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
+  "author": { "@type": "Organization", "name": "Chakwal Guest House", "url": siteConfig.url },
+  "publisher": { "@type": "Organization", "name": "Chakwal Guest House", "url": siteConfig.url },
 };
 
 const FAQ_SCHEMA = {
@@ -207,10 +207,10 @@ export default function ChakwalTravelGuidePage() {
             <section id="stay">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Where to Stay in Chakwal</h2>
               <div className="relative h-48 rounded-2xl overflow-hidden mb-5">
-                <Image src="/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg" alt="Clean comfortable AC room Chakwal Grand Guest House Punjab Pakistan" fill className="object-cover" />
+                <Image src="/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg" alt="Clean comfortable AC room Chakwal Guest House Punjab Pakistan" fill className="object-cover" />
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                For accommodation in Chakwal, <strong className="text-foreground">Chakwal Grand Guest House</strong> is the most popular and trusted option â€” rated 5.0 stars on Google with 20+ verified reviews. It has 3 branches across the district: Chakwal city, Kallar Kahar, and Sargodha.
+                For accommodation in Chakwal, <strong className="text-foreground">Chakwal Guest House</strong> is the most popular and trusted option â€” rated 5.0 stars on Google with 20+ verified reviews. It has 3 branches across the district: Chakwal city, Kallar Kahar, and Sargodha.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                 {[
@@ -288,7 +288,7 @@ export default function ChakwalTravelGuidePage() {
                   {
                     day: "Day 1 â€” Chakwal City + Katas Raj",
                     schedule: [
-                      { time: "7:00 AM", activity: "Check-in at Chakwal Grand Guest House, freshen up" },
+                      { time: "7:00 AM", activity: "Check-in at Chakwal Guest House, freshen up" },
                       { time: "8:00 AM", activity: "Quick breakfast at city dhaba (nihari + naan)" },
                       { time: "9:00 AM", activity: "Drive to Katas Raj Temples (40 km, 45 min)" },
                       { time: "10:00 AM â€“ 1:00 PM", activity: "Explore Katas Raj â€” temples, sacred pond, architecture photography" },
@@ -371,7 +371,7 @@ export default function ChakwalTravelGuidePage() {
             <section className="card-luxury rounded-2xl p-8 text-center border border-gold-500/20">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Ready to Plan Your Chakwal Trip?</h2>
               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Book your stay at Chakwal Grand Guest House â€” clean rooms, 24/7 service, free WiFi, and the warmest hospitality in Chakwal. No advance payment required.
+                Book your stay at Chakwal Guest House â€” clean rooms, 24/7 service, free WiFi, and the warmest hospitality in Chakwal. No advance payment required.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">

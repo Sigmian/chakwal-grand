@@ -69,7 +69,7 @@ export async function sendBookingWhatsApp(payload: BookingWhatsAppPayload): Prom
 
   const message =
     `السلام علیکم ${payload.guestName}! 🌟\n\n` +
-    `✅ *Booking Confirmed — Chakwal Grand Guest House*\n\n` +
+    `✅ *Booking Confirmed — Chakwal Guest House*\n\n` +
     `📋 *Booking Ref:* ${payload.bookingRef}\n` +
     `🏨 *Room:* ${payload.roomName}\n` +
     `📍 *Branch:* ${payload.branchName}\n` +
@@ -83,7 +83,7 @@ export async function sendBookingWhatsApp(payload: BookingWhatsAppPayload): Prom
     `• Call us: ${siteConfig.phone}\n\n` +
     `🗺️ *Location:* ${mapsUrl}\n\n` +
     `📄 *View Booking:* ${payload.confirmationUrl}\n\n` +
-    `جزاک اللہ خیراً — Chakwal Grand Team`;
+    `جزاک اللہ خیراً — Chakwal Guest House Team`;
 
   const body = {
     messaging_product: "whatsapp",

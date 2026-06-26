@@ -6,17 +6,17 @@ import { ArrowRight, Star, Users, ChevronRight, CheckCircle2, Phone } from "luci
 
 export const metadata: Metadata = {
   title: "Best Family Guest House in Chakwal 2025 â€” Family Rooms, Rates & Booking",
-  description: "Looking for a family guest house in Chakwal? Chakwal Grand Guest House offers spacious family rooms for 4â€“6 guests, kids-friendly facilities, free WiFi, and 24/7 service from PKR 2,500/night. Book now, pay on arrival.",
+  description: "Looking for a family guest house in Chakwal? Chakwal Guest House offers spacious family rooms for 4â€“6 guests, kids-friendly facilities, free WiFi, and 24/7 service from PKR 2,500/night. Book now, pay on arrival.",
   keywords: [
     "family guest house Chakwal", "best family hotel Chakwal", "family rooms Chakwal",
     "Chakwal family accommodation", "family trip Chakwal", "family stay Chakwal Punjab",
-    "Chakwal Grand Guest House family", "kids friendly hotel Chakwal",
+    "Chakwal Guest House family", "kids friendly hotel Chakwal",
     "family room Chakwal price", "cheap family hotel Chakwal",
   ],
   alternates: { canonical: `${siteConfig.url}/blog/best-family-guest-house-chakwal` },
   openGraph: {
     title: "Best Family Guest House in Chakwal 2025 â€” Family Rooms & Rates",
-    description: "Spacious family rooms, 24/7 service, free WiFi. Chakwal Grand Guest House â€” the top choice for families visiting Chakwal.",
+    description: "Spacious family rooms, 24/7 service, free WiFi. Chakwal Guest House â€” the top choice for families visiting Chakwal.",
     url: `${siteConfig.url}/blog/best-family-guest-house-chakwal`,
     images: [{ url: `${siteConfig.url}/images/rooms/suite-room-chakwal-grand-guest-house.jpg`, width: 1200, height: 630, alt: "Family guest house room Chakwal clean comfortable" }],
   },
@@ -31,19 +31,19 @@ const ARTICLE_SCHEMA = {
   "url": `${siteConfig.url}/blog/best-family-guest-house-chakwal`,
   "datePublished": "2025-03-01",
   "dateModified": "2025-06-01",
-  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
-  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
+  "author": { "@type": "Organization", "name": "Chakwal Guest House", "url": siteConfig.url },
+  "publisher": { "@type": "Organization", "name": "Chakwal Guest House", "url": siteConfig.url },
 };
 
 const FAQ_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
-    { "@type": "Question", "name": "Is there a family guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes â€” Chakwal Grand Guest House has dedicated family rooms accommodating 4 adults + 2 children from PKR 2,500/night. They also have apartment suites with kitchenettes ideal for families staying multiple nights." } },
-    { "@type": "Question", "name": "What is the best hotel for families in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Grand Guest House is the top-rated family accommodation in Chakwal, with a 5.0 Google rating. It offers spacious family rooms, 24/7 reception, hot water, and free WiFi." } },
-    { "@type": "Question", "name": "How much does a family room cost in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Family rooms at Chakwal Grand Guest House start from PKR 2,500/night for non-AC, and PKR 3,500/night for AC family rooms. Apartment suites start from PKR 4,500/night. No advance payment required." } },
-    { "@type": "Question", "name": "Are children allowed at guest houses in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes â€” children are welcome at Chakwal Grand Guest House. Children under 5 stay free. Family rooms comfortably accommodate parents and children together with extra bedding available." } },
-    { "@type": "Question", "name": "Is Chakwal safe for family travel?", "acceptedAnswer": { "@type": "Answer", "text": "Yes â€” Chakwal is considered one of the safer cities in Punjab for family travel. It is a military community with a strong law-and-order environment. Chakwal Grand Guest House has CCTV and 24/7 staff for guest safety." } },
+    { "@type": "Question", "name": "Is there a family guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes â€” Chakwal Guest House has dedicated family rooms accommodating 4 adults + 2 children from PKR 2,500/night. They also have apartment suites with kitchenettes ideal for families staying multiple nights." } },
+    { "@type": "Question", "name": "What is the best hotel for families in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House is the top-rated family accommodation in Chakwal, with a 5.0 Google rating. It offers spacious family rooms, 24/7 reception, hot water, and free WiFi." } },
+    { "@type": "Question", "name": "How much does a family room cost in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Family rooms at Chakwal Guest House start from PKR 2,500/night for non-AC, and PKR 3,500/night for AC family rooms. Apartment suites start from PKR 4,500/night. No advance payment required." } },
+    { "@type": "Question", "name": "Are children allowed at guest houses in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes â€” children are welcome at Chakwal Guest House. Children under 5 stay free. Family rooms comfortably accommodate parents and children together with extra bedding available." } },
+    { "@type": "Question", "name": "Is Chakwal safe for family travel?", "acceptedAnswer": { "@type": "Answer", "text": "Yes â€” Chakwal is considered one of the safer cities in Punjab for family travel. It is a military community with a strong law-and-order environment. Chakwal Guest House has CCTV and 24/7 staff for guest safety." } },
   ],
 };
 
@@ -52,21 +52,21 @@ const ROOM_TYPES = [
     name: "Family Room (Non-AC)", price: "PKR 2,500/night",
     capacity: "4 Adults + 2 Children", best: "Budget family trips",
     image: "/images/rooms/classic-room-chakwal-grand-guest-house.jpg",
-    imageAlt: "Family room non-AC Chakwal Grand Guest House Pakistan clean comfortable",
+    imageAlt: "Family room non-AC Chakwal Guest House Pakistan clean comfortable",
     features: ["Spacious layout", "Sitting area with chairs", "Hot water 24/7", "TV cable", "Extra bedding on request", "Attached bathroom"],
   },
   {
     name: "Family Room (AC)", price: "PKR 3,500/night",
     capacity: "4 Adults + 2 Children", best: "Summer/hot weather visits",
     image: "/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg",
-    imageAlt: "Family room air conditioned Chakwal Grand Guest House Pakistan clean",
+    imageAlt: "Family room air conditioned Chakwal Guest House Pakistan clean",
     features: ["Air conditioning 12 hrs/day", "Spacious layout", "Hot water 24/7", "TV cable", "Free WiFi", "Attached bathroom"],
   },
   {
     name: "Apartment Suite (AC)", price: "PKR 4,500/night",
     capacity: "4â€“6 Adults", best: "Extended stays, large families",
     image: "/images/rooms/premium-room-chakwal-grand-guest-house.jpg",
-    imageAlt: "Apartment suite Chakwal Grand Guest House kitchenette living area family stay",
+    imageAlt: "Apartment suite Chakwal Guest House kitchenette living area family stay",
     features: ["Kitchenette (basic cooking)", "Separate living room", "Air conditioning", "Mini fridge", "Free WiFi", "Premium linen"],
   },
 ];
@@ -95,7 +95,7 @@ export default function BestFamilyGuestHousePage() {
 
       {/* Hero */}
       <div className="relative h-[50vh] min-h-[350px] w-full overflow-hidden">
-        <Image src="/images/rooms/suite-room-chakwal-grand-guest-house.jpg" alt="Best family guest house suite room Chakwal Grand Guest House Punjab Pakistan" fill className="object-cover" priority />
+        <Image src="/images/rooms/suite-room-chakwal-grand-guest-house.jpg" alt="Best family guest house suite room Chakwal Guest House Punjab Pakistan" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 max-w-4xl mx-auto">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -194,7 +194,7 @@ export default function BestFamilyGuestHousePage() {
             </section>
 
             <section id="rooms">
-              <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Family Room Options at Chakwal Grand</h2>
+              <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Family Room Options at Chakwal Guest House</h2>
               <div className="space-y-6">
                 {ROOM_TYPES.map(r => (
                   <div key={r.name} className="card-luxury rounded-2xl overflow-hidden">
@@ -345,7 +345,7 @@ export default function BestFamilyGuestHousePage() {
               <h2 className="text-2xl font-bold font-serif text-foreground mb-2">Book Your Family Room in Chakwal</h2>
               <p className="text-muted-foreground text-sm mb-2">5.0 Google Rating Â· 20+ Verified Reviews Â· Trusted by Hundreds of Families</p>
               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Chakwal Grand Guest House â€” the most trusted family accommodation in Chakwal Punjab. Spacious rooms, 24/7 service, free WiFi. No advance payment â€” pay cash on arrival.
+                Chakwal Guest House â€” the most trusted family accommodation in Chakwal Punjab. Spacious rooms, 24/7 service, free WiFi. No advance payment â€” pay cash on arrival.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">

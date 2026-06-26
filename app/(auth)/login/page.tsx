@@ -76,11 +76,11 @@ export default function LoginPage() {
             {/* Logo */}
             <div className="flex items-center gap-3 mb-8">
               <div className="w-11 h-11 rounded-xl bg-gold-gradient flex items-center justify-center shadow-gold-sm">
-                <span className="text-background font-bold font-serif text-lg">CG</span>
+                <span className="text-background font-bold font-serif text-lg">CGH</span>
               </div>
               <div>
                 <h1 className="text-xl font-bold font-serif text-foreground leading-tight">
-                  Chakwal Grand
+                  Chakwal Guest House
                 </h1>
                 <p className="text-xs text-muted-foreground">Management Portal</p>
               </div>
@@ -195,7 +195,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground mt-6">
-          © {new Date().getFullYear()} Chakwal Grand Guest House. All rights reserved.
+          © {new Date().getFullYear()} Chakwal Guest House. All rights reserved.
         </p>
       </motion.div>
     </div>

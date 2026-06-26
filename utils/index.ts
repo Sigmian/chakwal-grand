@@ -287,7 +287,7 @@ export function buildBookingWhatsAppMessage(params: {
   total: number;
 }): string {
   return (
-    `🏨 *Chakwal Grand Guest House*\n\n` +
+    `🏨 *Chakwal Guest House*\n\n` +
     `Booking Confirmation\n` +
     `----------------------------\n` +
     `Ref: *${params.bookingRef}*\n` +

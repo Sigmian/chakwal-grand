@@ -76,7 +76,7 @@ export function DashboardSidebar({ user }: Props) {
       )}>
         <Image
           src="/images/logo.png"
-          alt="Chakwal Grand Guest House"
+          alt="Chakwal Guest House"
           width={36}
           height={36}
           className="rounded-xl flex-shrink-0 shadow-gold-sm"
@@ -84,7 +84,7 @@ export function DashboardSidebar({ user }: Props) {
         {!collapsed && (
           <div className="min-w-0">
             <p className="font-bold text-sm text-foreground font-serif leading-tight truncate">
-              Chakwal Grand
+              Chakwal Guest House
             </p>
             <p className="text-2xs text-muted-foreground truncate">Management Portal</p>
           </div>

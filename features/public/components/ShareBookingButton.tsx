@@ -18,8 +18,8 @@ export function ShareBookingButton({ bookingRef, shareToken }: Props) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Booking ${bookingRef} — Chakwal Grand Guest House`,
-          text: `View my booking confirmation at Chakwal Grand Guest House (Ref: ${bookingRef})`,
+          title: `Booking ${bookingRef} — Chakwal Guest House`,
+          text: `View my booking confirmation at Chakwal Guest House (Ref: ${bookingRef})`,
           url: shareUrl,
         });
         return;

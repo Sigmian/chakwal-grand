@@ -3,7 +3,7 @@ import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: `Terms of Use | ${siteConfig.name}`,
-  description: "Terms and conditions for staying at Chakwal Grand Guest House in Chakwal, Punjab, Pakistan.",
+  description: "Terms and conditions for staying at Chakwal Guest House in Chakwal, Punjab, Pakistan.",
   alternates: { canonical: `${siteConfig.url}/terms` },
 };
 
@@ -59,13 +59,13 @@ export default function TermsPage() {
               <li>Guests are expected to maintain decorum and respect other guests and staff.</li>
               <li>Noise should be kept to a minimum after 11:00 PM.</li>
               <li>Damage to property will be charged to the guest.</li>
-              <li>Chakwal Grand reserves the right to refuse service to anyone who violates our policies.</li>
+              <li>Chakwal Guest House reserves the right to refuse service to anyone who violates our policies.</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-foreground mb-3">6. Liability</h2>
-            <p className="text-sm">Chakwal Grand Guest House is not liable for loss of personal belongings. Guests are advised to keep valuables secure. We are not responsible for circumstances beyond our control (power outages, weather events, etc.).</p>
+            <p className="text-sm">Chakwal Guest House is not liable for loss of personal belongings. Guests are advised to keep valuables secure. We are not responsible for circumstances beyond our control (power outages, weather events, etc.).</p>
           </section>
 
           <section>

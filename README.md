@@ -1,4 +1,4 @@
-# 🏨 Chakwal Grand — Multi-Branch Hospitality Management Platform
+# 🏨 Chakwal Guest House — Multi-Branch Hospitality Management Platform
 
 > Production-ready guest house management system built for scale.
 > One codebase. Unlimited branches. Full business operating system.

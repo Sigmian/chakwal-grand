@@ -115,7 +115,7 @@ export function FAQSection() {
           <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">FAQ</p>
           <h2 className="text-3xl sm:text-4xl font-bold font-serif text-foreground mb-4">Frequently Asked Questions</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Everything you need to know about staying at Chakwal Grand. Can't find your answer?
+            Everything you need to know about staying at Chakwal Guest House. Can't find your answer?
             Ask our AI assistant or call us directly.
           </p>
         </div>

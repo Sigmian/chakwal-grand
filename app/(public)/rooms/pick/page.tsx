@@ -3,7 +3,7 @@ import { getPublicBranches } from "@/server/actions/public";
 import { RoomPicker } from "@/features/public/components/RoomPicker";
 
 export const metadata: Metadata = {
-  title: "Choose Your Room | Chakwal Grand Guest House",
+  title: "Choose Your Room | Chakwal Guest House",
   description: "Pick your preferred room by floor — see live availability for your dates.",
 };
 

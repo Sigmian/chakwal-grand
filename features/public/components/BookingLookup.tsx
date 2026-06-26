@@ -12,7 +12,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   PENDING:      { label: "Pending Confirmation", color: "text-amber-400",  bg: "bg-amber-500/10 border-amber-500/20",  icon: Clock,         desc: "Your booking is received. We'll confirm within 30 minutes via phone." },
   CONFIRMED:    { label: "Confirmed",            color: "text-emerald-400",bg: "bg-emerald-500/10 border-emerald-500/20",icon: CheckCircle2,  desc: "Your booking is confirmed! Please arrive by 2:00 PM on your check-in date." },
   CHECKED_IN:   { label: "Currently Checked In", color: "text-blue-400",   bg: "bg-blue-500/10 border-blue-500/20",    icon: CheckCircle2,  desc: "Welcome! You are currently checked in. Enjoy your stay." },
-  CHECKED_OUT:  { label: "Checked Out",          color: "text-muted-foreground", bg: "bg-surface-elevated border-border", icon: CheckCircle2, desc: "We hope you enjoyed your stay at Chakwal Grand! Visit us again soon." },
+  CHECKED_OUT:  { label: "Checked Out",          color: "text-muted-foreground", bg: "bg-surface-elevated border-border", icon: CheckCircle2, desc: "We hope you enjoyed your stay at Chakwal Guest House! Visit us again soon." },
   CANCELLED:    { label: "Cancelled",            color: "text-red-400",    bg: "bg-red-500/10 border-red-500/20",      icon: XCircle,       desc: "This booking has been cancelled. Contact us if this was a mistake." },
 };
 
@@ -60,7 +60,7 @@ export function BookingLookup() {
 
       // Header
       doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.setTextColor(...dark);
-      doc.text("Chakwal Grand Guest House", 20, y);
+      doc.text("Chakwal Guest House", 20, y);
       doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...gray);
       doc.text(`${b.branchName}  ·  Tel: ${b.branchPhone ?? siteConfig.phone}  ·  ${siteConfig.url.replace("https://", "")}`, 20, y + 6);
 
@@ -161,7 +161,7 @@ export function BookingLookup() {
       doc.rect(0, pageH - 20, W, 20, "F");
       doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(255, 255, 255);
       doc.text("Check-in: 2:00 PM  ·  Check-out: 12:00 PM  ·  CNIC required at check-in", W / 2, pageH - 12, { align: "center" });
-      doc.text(`Thank you for choosing Chakwal Grand Guest House  ·  ${siteConfig.url.replace("https://", "")}`, W / 2, pageH - 6,  { align: "center" });
+      doc.text(`Thank you for choosing Chakwal Guest House  ·  ${siteConfig.url.replace("https://", "")}`, W / 2, pageH - 6,  { align: "center" });
 
       doc.save(`Receipt-${b.bookingRef}.pdf`);
     } catch (err) {

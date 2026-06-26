@@ -116,7 +116,7 @@ export function BookingInvoice({ invoice }: Props) {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.setTextColor(...dark);
-      doc.text("Chakwal Grand Guest House", 20, y);
+      doc.text("Chakwal Guest House", 20, y);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
@@ -268,7 +268,7 @@ export function BookingInvoice({ invoice }: Props) {
       doc.setFontSize(8);
       doc.setTextColor(255, 255, 255);
       doc.text("Payment: Cash · CNIC required at check-in", W / 2, doc.internal.pageSize.getHeight() - 12, { align: "center" });
-      doc.text("Thank you for choosing Chakwal Grand Guest House!", W / 2, doc.internal.pageSize.getHeight() - 6, { align: "center" });
+      doc.text("Thank you for choosing Chakwal Guest House!", W / 2, doc.internal.pageSize.getHeight() - 6, { align: "center" });
 
       doc.save(`Invoice-${invoice.bookingRef}.pdf`);
     } catch (err) {
@@ -308,7 +308,7 @@ export function BookingInvoice({ invoice }: Props) {
       <div ref={ref} className="page" style={{ display: "none" }}>
         <div className="header">
           <div className="logo-area">
-            <h1>Chakwal Grand Guest House</h1>
+            <h1>Chakwal Guest House</h1>
             <p>{invoice.branchName}{invoice.branchAddress ? ` · ${invoice.branchAddress}` : ""}</p>
             <p>Tel: {siteConfig.phone}  |  {siteConfig.url.replace("https://", "")}</p>
           </div>
@@ -402,7 +402,7 @@ export function BookingInvoice({ invoice }: Props) {
 
         <div className="footer">
           <p>Payment: <strong>Cash</strong> · CNIC required at check-in</p>
-          <p style={{ marginTop: "6px" }}>Thank you for choosing <strong>Chakwal Grand Guest House</strong> — we look forward to your stay!</p>
+          <p style={{ marginTop: "6px" }}>Thank you for choosing <strong>Chakwal Guest House</strong> — we look forward to your stay!</p>
           <p style={{ marginTop: "6px" }}>{siteConfig.url.replace("https://", "")} · WhatsApp: {siteConfig.phone}</p>
         </div>
       </div>

@@ -16,7 +16,7 @@ async function main() {
 
   // ─── 1. Fix company phone & address ──────────────────────
   const company = await prisma.company.updateMany({
-    where: { name: "Chakwal Grand Guest House" },
+    where: { name: "Chakwal Guest House" },
     data: {
       phone:    "0334-7742767",
       whatsapp: "923347742767",

@@ -32,8 +32,8 @@ const ARTICLE_SCHEMA = {
   "url": `${siteConfig.url}/blog/katas-raj-temples-visitor-guide`,
   "datePublished": "2025-01-10",
   "dateModified": "2025-06-01",
-  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
-  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url, "logo": { "@type": "ImageObject", "url": `${siteConfig.url}/images/logo.png` } },
+  "author": { "@type": "Organization", "name": "Chakwal Guest House", "url": siteConfig.url },
+  "publisher": { "@type": "Organization", "name": "Chakwal Guest House", "url": siteConfig.url, "logo": { "@type": "ImageObject", "url": `${siteConfig.url}/images/logo.png` } },
   "mainEntityOfPage": { "@type": "WebPage", "@id": `${siteConfig.url}/blog/katas-raj-temples-visitor-guide` },
 };
 
@@ -46,7 +46,7 @@ const FAQ_SCHEMA = {
     { "@type": "Question", "name": "How far is Katas Raj from Rawalpindi/Islamabad?", "acceptedAnswer": { "@type": "Answer", "text": "Katas Raj is approximately 120â€“130 km from Rawalpindi and Islamabad. The journey takes about 2 hours via the M-2 motorway and Kallar Kahar interchange." } },
     { "@type": "Question", "name": "What is the best time to visit Katas Raj Temples?", "acceptedAnswer": { "@type": "Answer", "text": "The best time to visit is October to March when the weather is cool and pleasant. Visit early morning (7â€“9 AM) for the best photography light and fewer crowds." } },
     { "@type": "Question", "name": "How old are the Katas Raj Temples?", "acceptedAnswer": { "@type": "Answer", "text": "The Katas Raj Temple complex dates back to the 7thâ€“10th centuries CE during the Hindu Shahi period, though some structures have origins going back 2,500â€“5,000 years. The site is mentioned in the ancient Hindu epic Mahabharata." } },
-    { "@type": "Question", "name": "Where to stay near Katas Raj Temples?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Grand Guest House in Chakwal city is the most convenient accommodation for visiting Katas Raj, located just 40 km away. Rooms start from PKR 2,000/night." } },
+    { "@type": "Question", "name": "Where to stay near Katas Raj Temples?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House in Chakwal city is the most convenient accommodation for visiting Katas Raj, located just 40 km away. Rooms start from PKR 2,000/night." } },
     { "@type": "Question", "name": "Is Katas Raj open all week?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, Katas Raj Temples are open every day of the week from sunrise to sunset. There are no fixed closing days." } },
   ],
 };
@@ -336,7 +336,7 @@ export default function KatasRajPage() {
                   { name: "Kallar Kahar Lake", dist: "12 km", desc: "Beautiful natural saline lake surrounded by Salt Range hills. Ideal for boating and photography. Home to peacocks and migratory birds." },
                   { name: "Choa Saidanshah Town", dist: "3 km", desc: "Charming hill town with fresh natural springs, a weekly bazaar, local restaurants for lunch, and the shrine of Hazrat Saidan Shah." },
                   { name: "Malot Fort (Molat Fort)", dist: "15 km", desc: "12th-century red sandstone fort built by the Janjua emperor. One of Pakistan's most photogenic historic forts." },
-                  { name: "Chakwal City", dist: "40 km", desc: "District headquarters with hotels, restaurants, banks, and the nearest quality accommodation (Chakwal Grand Guest House)." },
+                  { name: "Chakwal City", dist: "40 km", desc: "District headquarters with hotels, restaurants, banks, and the nearest quality accommodation (Chakwal Guest House)." },
                   { name: "Khewra Salt Mine", dist: "50 km", desc: "One of the world's largest salt mines â€” an underground complex with stunning pink Himalayan salt walls, open to tourists." },
                 ].map(a => (
                   <div key={a.name} className="card-luxury rounded-xl p-4 flex items-start justify-between gap-4">
@@ -354,15 +354,15 @@ export default function KatasRajPage() {
             <section id="stay">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-5">Where to Stay Near Katas Raj</h2>
               <div className="relative h-52 rounded-2xl overflow-hidden mb-5">
-                <Image src="/images/rooms/executive-room-chakwal-grand-guest-house.jpg" alt="Executive room Chakwal Grand Guest House near Katas Raj temples" fill className="object-cover" />
+                <Image src="/images/rooms/executive-room-chakwal-grand-guest-house.jpg" alt="Executive room Chakwal Guest House near Katas Raj temples" fill className="object-cover" />
               </div>
               <p className="text-muted-foreground leading-relaxed mb-5">
-                There is no quality accommodation directly in Katas or Choa Saidanshah. <strong className="text-foreground">Chakwal city (40 km away)</strong> is the best base for visiting Katas Raj, with Chakwal Grand Guest House being the most recommended option for tourists.
+                There is no quality accommodation directly in Katas or Choa Saidanshah. <strong className="text-foreground">Chakwal city (40 km away)</strong> is the best base for visiting Katas Raj, with Chakwal Guest House being the most recommended option for tourists.
               </p>
               <div className="card-luxury rounded-2xl p-6 border border-gold-500/20">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div>
-                    <h3 className="font-bold text-foreground text-lg">Chakwal Grand Guest House</h3>
+                    <h3 className="font-bold text-foreground text-lg">Chakwal Guest House</h3>
                     <p className="text-xs text-muted-foreground">Near District Courts, Talagang Road, Chakwal</p>
                     <div className="flex items-center gap-1 mt-1">
                       {[1,2,3,4,5].map(i => <Star key={i} className="w-3 h-3 text-gold-400 fill-gold-400" />)}
@@ -409,7 +409,7 @@ export default function KatasRajPage() {
             <section className="card-luxury rounded-2xl p-8 text-center border border-gold-500/20">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Planning to Visit Katas Raj?</h2>
               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Stay at Chakwal Grand Guest House â€” just 40 km from Katas Raj Temples. Clean rooms, free WiFi, 24/7 service, and no advance payment required. The most trusted accommodation in Chakwal district.
+                Stay at Chakwal Guest House â€” just 40 km from Katas Raj Temples. Clean rooms, free WiFi, 24/7 service, and no advance payment required. The most trusted accommodation in Chakwal district.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">

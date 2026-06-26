@@ -36,7 +36,7 @@ export function GuestLoginForm() {
         <div className="w-16 h-16 rounded-2xl bg-gold-gradient flex items-center justify-center shadow-gold-lg mb-4">
           <Hotel className="w-8 h-8 text-background" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Chakwal Grand</h1>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Chakwal Guest House</h1>
         <p className="text-sm text-muted-foreground mt-1">Guest Portal</p>
       </div>
 

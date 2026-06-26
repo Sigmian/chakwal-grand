@@ -19,7 +19,7 @@ interface Props { params: { ref: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
-    title: `Booking ${params.ref} — Chakwal Grand`,
+    title: `Booking ${params.ref} — Chakwal Guest House`,
     robots: { index: false, follow: false },
     alternates: { canonical: `${siteConfig.url}/booking-confirmation/${params.ref}` },
   };
@@ -303,7 +303,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
                   Write a Google Review
                 </a>
                 <a
-                  href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(`السلام علیکم! I just left a Google review for Chakwal Grand Guest House. My booking ref is ${booking.bookingRef}. Please apply my 10% cashback discount on my next booking. JazakAllah!`)}`}
+                  href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(`السلام علیکم! I just left a Google review for Chakwal Guest House. My booking ref is ${booking.bookingRef}. Please apply my 10% cashback discount on my next booking. JazakAllah!`)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-sm font-semibold rounded-xl hover:bg-[#25D366]/25 transition-colors"

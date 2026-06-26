@@ -10,7 +10,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding Chakwal Grand database...\n");
+  console.log("🌱 Seeding Chakwal Guest House database...\n");
 
   // ─── 1. Company ───────────────────────────────────────────
   const company = await prisma.company.upsert({
@@ -22,7 +22,7 @@ async function main() {
     },
     create: {
       id:       "company-001",
-      name:     "Chakwal Grand Guest House",
+      name:     "Chakwal Guest House",
       tagline:  "Experience Comfort & Peace in the Heart of Punjab",
       email:    "info@chakwalgrand.pk",
       phone:    "0334-7742767",
@@ -179,7 +179,7 @@ async function main() {
   ]);
 
   // ─── 4. Rooms ─────────────────────────────────────────────
-  // Actual layout of Chakwal Grand Guest House:
+  // Actual layout of Chakwal Guest House:
   //   Ground (floor 0): G01 — Apartment (AC optional, staff applies extra charge)
   //   Floor 1 (floor 1): 101 — Executive Non-AC (left) | 102 — Executive AC (left) | 103 — Executive AC (right)
   //   Floor 2 (floor 2): 201 — Family Room (left)     | 202 — Family (right)        | 203 — Classic (right)

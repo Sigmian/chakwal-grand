@@ -1,7 +1,7 @@
 // Centralised public-facing business constants.
 // Import this in any component that needs business info.
 export const siteConfig = {
-  name:        "Chakwal Grand Guest House",
+  name:        "Chakwal Guest House",
   tagline:     "Premium Guest House Chain",
   url:         "https://www.staychakwal.de",
   phone:       "0334-7742767",

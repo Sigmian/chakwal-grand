@@ -43,7 +43,7 @@ export function FeaturedRooms({ rooms }: { rooms: Room[] }) {
       {rooms.map((room, i) => {
         const cover  = room.images.find(img => img.isCover) ?? room.images[0];
         const imgSrc = cover?.url ?? TYPE_FALLBACK_IMG[room.type] ?? DEFAULT_IMG;
-        const imgAlt = cover?.altText ?? `${TYPE_LABEL[room.type] ?? room.type} room at Chakwal Grand Guest House`;
+        const imgAlt = cover?.altText ?? `${TYPE_LABEL[room.type] ?? room.type} room at Chakwal Guest House`;
         const Icon   = TYPE_ICON[room.type] ?? BedDouble;
 
         return (

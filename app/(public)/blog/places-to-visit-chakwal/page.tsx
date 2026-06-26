@@ -31,8 +31,8 @@ const ARTICLE_SCHEMA = {
   "url": `${siteConfig.url}/blog/places-to-visit-chakwal`,
   "datePublished": "2025-01-15",
   "dateModified": "2025-06-01",
-  "author": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
-  "publisher": { "@type": "Organization", "name": "Chakwal Grand Guest House", "url": siteConfig.url },
+  "author": { "@type": "Organization", "name": "Chakwal Guest House", "url": siteConfig.url },
+  "publisher": { "@type": "Organization", "name": "Chakwal Guest House", "url": siteConfig.url },
 };
 
 const FAQ_SCHEMA = {
@@ -243,7 +243,7 @@ export default function PlacesToVisitPage() {
           </div>
           <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Planning a Trip to Chakwal?</h2>
           <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-            Stay at Chakwal Grand Guest House â€” the most trusted accommodation in Chakwal district. AC rooms, family suites, free WiFi from PKR 2,000/night. Pay cash on arrival, no advance payment required.
+            Stay at Chakwal Guest House â€” the most trusted accommodation in Chakwal district. AC rooms, family suites, free WiFi from PKR 2,000/night. Pay cash on arrival, no advance payment required.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">

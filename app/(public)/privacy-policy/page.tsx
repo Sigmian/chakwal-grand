@@ -3,7 +3,7 @@ import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: `Privacy Policy | ${siteConfig.name}`,
-  description: "Privacy policy for Chakwal Grand Guest House. Learn how we collect and protect your personal information.",
+  description: "Privacy policy for Chakwal Guest House. Learn how we collect and protect your personal information.",
   alternates: { canonical: `${siteConfig.url}/privacy-policy` },
 };
 
@@ -65,7 +65,7 @@ export default function PrivacyPolicyPage() {
 
           <section>
             <h2 className="text-xl font-bold text-foreground mb-3">7. Contact</h2>
-            <p className="text-sm">For privacy-related inquiries, contact Chakwal Grand Guest House at <a href="mailto:chakwalguesthouse@gmail.com" className="text-gold-400 hover:underline">chakwalguesthouse@gmail.com</a> or visit us at Near District Courts, Talagang Road, Chakwal, Punjab, Pakistan.</p>
+            <p className="text-sm">For privacy-related inquiries, contact Chakwal Guest House at <a href="mailto:chakwalguesthouse@gmail.com" className="text-gold-400 hover:underline">chakwalguesthouse@gmail.com</a> or visit us at Near District Courts, Talagang Road, Chakwal, Punjab, Pakistan.</p>
           </section>
         </div>
       </div>

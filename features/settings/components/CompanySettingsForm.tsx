@@ -73,7 +73,7 @@ export function CompanySettingsForm({ company }: Props) {
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <FieldGroup label="Company Name" icon={Building2}>
-          <Input value={form.name} onChange={set("name")} placeholder="Chakwal Grand Guest House" />
+          <Input value={form.name} onChange={set("name")} placeholder="Chakwal Guest House" />
         </FieldGroup>
         <FieldGroup label="Tagline" icon={Globe}>
           <Input value={form.tagline} onChange={set("tagline")} placeholder="Luxury stays in Pakistan" />

@@ -3,7 +3,7 @@ import { fontFamily } from "tailwindcss/defaultTheme";
 import tailwindAnimate from "tailwindcss-animate";
 
 /**
- * Tailwind CSS configuration for Chakwal Grand.
+ * Tailwind CSS configuration for Chakwal Guest House.
  *
  * Design System:
  * - Primary: Deep gold palette (luxury brand identity)

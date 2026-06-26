@@ -34,7 +34,7 @@ function getSystemPrompt(): string {
     timeZone: "Asia/Karachi", year: "numeric", month: "2-digit", day: "2-digit",
   }).format(tomorrowDate);
 
-  return `You are a booking assistant for Chakwal Grand Guest House — a premium guest house chain in Punjab, Pakistan.
+  return `You are a booking assistant for Chakwal Guest House — a premium guest house chain in Punjab, Pakistan.
 
 🗓 TODAY'S DATE (Pakistan Time): ${pkFull} — ISO: ${pkDate}
    • If the guest says "today" → use ${pkDate}

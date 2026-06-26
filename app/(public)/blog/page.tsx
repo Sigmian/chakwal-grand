@@ -26,8 +26,8 @@ const BLOGS = [
   },
   {
     slug:    "best-family-guest-house-chakwal",
-    title:   "Best Family Guest House in Chakwal â€” Why Families Choose Chakwal Grand",
-    excerpt: "Looking for a safe, spacious, and affordable family guest house in Chakwal? Here is why thousands of families choose Chakwal Grand for their stays in Punjab.",
+    title:   "Best Family Guest House in Chakwal â€” Why Families Choose Chakwal Guest House",
+    excerpt: "Looking for a safe, spacious, and affordable family guest house in Chakwal? Here is why thousands of families choose Chakwal Guest House for their stays in Punjab.",
     date:    "2025-01-20",
     tag:     "Accommodation",
   },
@@ -48,7 +48,7 @@ const BLOGS = [
   {
     slug:    "where-to-stay-chakwal",
     title:   "Where to Stay in Chakwal â€” Best Guest Houses & Hotels 2025",
-    excerpt: "A comprehensive guide to the best accommodation options in Chakwal â€” from budget rooms to executive suites. Find out why Chakwal Grand is the top-rated guest house in the city.",
+    excerpt: "A comprehensive guide to the best accommodation options in Chakwal â€” from budget rooms to executive suites. Find out why Chakwal Guest House is the top-rated guest house in the city.",
     date:    "2025-02-20",
     tag:     "Accommodation",
   },

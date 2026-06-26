@@ -7,11 +7,11 @@ import { Reveal } from "@/features/public/components/Reveal";
 
 export const metadata: Metadata = {
   title: `Contact Us — Call & WhatsApp ${siteConfig.phone}`,
-  description: `Contact Chakwal Grand Guest House for room bookings, inquiries, and reservations. Call or WhatsApp ${siteConfig.phone}. Located in Chakwal, Kallar Kahar & Sargodha, Punjab.`,
-  keywords: ["contact Chakwal Grand Guest House", "Chakwal guest house phone number", "book guest house Chakwal", "Chakwal accommodation contact"],
+  description: `Contact Chakwal Guest House for room bookings, inquiries, and reservations. Call or WhatsApp ${siteConfig.phone}. Located in Chakwal, Kallar Kahar & Sargodha, Punjab.`,
+  keywords: ["contact Chakwal Guest House", "Chakwal guest house phone number", "book guest house Chakwal", "Chakwal accommodation contact"],
   alternates: { canonical: `${siteConfig.url}/contact` },
   openGraph: {
-    title: `Contact Chakwal Grand Guest House | ${siteConfig.phone}`,
+    title: `Contact Chakwal Guest House | ${siteConfig.phone}`,
     description: `Get in touch for room bookings and inquiries. Call or WhatsApp ${siteConfig.phone}. Multiple locations in Punjab.`,
     url: `${siteConfig.url}/contact`,
   },
@@ -20,11 +20,11 @@ export const metadata: Metadata = {
 const CONTACT_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "ContactPage",
-  "name": "Contact Chakwal Grand Guest House",
+  "name": "Contact Chakwal Guest House",
   "url": `${siteConfig.url}/contact`,
   "mainEntity": {
     "@type": "LodgingBusiness",
-    "name": "Chakwal Grand Guest House",
+    "name": "Chakwal Guest House",
     "telephone": "+92-334-7742767",
     "email": "chakwalguesthouse@gmail.com",
     "url": siteConfig.url,
@@ -70,7 +70,7 @@ export default function ContactPage() {
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-4">Get In Touch</p>
             <h1 className="text-4xl sm:text-5xl font-bold font-serif text-foreground mb-6">
-              Contact Chakwal Grand<br />Guest House
+              Contact Chakwal<br />Guest House
             </h1>
             <p className="text-lg text-muted-foreground">
               For room bookings, availability queries, or any assistance — we are available 24/7.

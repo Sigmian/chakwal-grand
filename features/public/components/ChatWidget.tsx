@@ -20,7 +20,7 @@ const SUGGESTIONS = [
 
 const WELCOME: Message = {
   role: "assistant",
-  content: "Assalam o Alaikum! 👋 I'm Zara, your booking assistant at Chakwal Grand. I can help you with room rates, availability, and booking. What would you like to know?",
+  content: "Assalam o Alaikum! 👋 I'm Zara, your booking assistant at Chakwal Guest House. I can help you with room rates, availability, and booking. What would you like to know?",
   ts: Date.now(),
 };
 
@@ -124,7 +124,7 @@ export function ChatWidget() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-background text-sm leading-tight">Zara — AI Assistant</p>
-              <p className="text-background/70 text-[10px]">Chakwal Grand · Typically replies instantly</p>
+              <p className="text-background/70 text-[10px]">Chakwal Guest House · Typically replies instantly</p>
             </div>
             <div className="flex items-center gap-2">
               <a href={`tel:${siteConfig.phoneE164}`}

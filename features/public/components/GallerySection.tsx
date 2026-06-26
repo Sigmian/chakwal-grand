@@ -7,43 +7,43 @@ import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 const GALLERY = [
   {
     src:   "/gallery/room1.jpg.jpeg",
-    alt:   "Romantic Suite with Premium Decor — Chakwal Grand Guest House",
+    alt:   "Romantic Suite with Premium Decor — Chakwal Guest House",
     label: "Romantic Suite",
     tag:   "Couples Special",
   },
   {
     src:   "/gallery/corridor.jpeg",
-    alt:   "Premium Corridor with Golden LED Lighting — Chakwal Grand",
+    alt:   "Premium Corridor with Golden LED Lighting — Chakwal Guest House",
     label: "Premium Corridor",
     tag:   "Interior",
   },
   {
     src:   "/gallery/ac-room.jpeg",
-    alt:   "Air Conditioned Room with Gree T3 AC — Chakwal Grand Guest House",
+    alt:   "Air Conditioned Room with Gree T3 AC — Chakwal Guest House",
     label: "AC Deluxe Room",
     tag:   "Comfort",
   },
   {
     src:   "/gallery/locker.jpeg",
-    alt:   "Secure Locker Facility — Your Belongings Safe at Chakwal Grand",
+    alt:   "Secure Locker Facility — Your Belongings Safe at Chakwal Guest House",
     label: "Secure Storage",
     tag:   "Amenity",
   },
   {
     src:   "/gallery/bedroom.jpeg",
-    alt:   "Standard King Bedroom — Clean, Spacious Stay at Chakwal Grand",
+    alt:   "Standard King Bedroom — Clean, Spacious Stay at Chakwal Guest House",
     label: "King Bedroom",
     tag:   "Standard",
   },
   {
     src:   "/gallery/room4.jpeg",
-    alt:   "Deluxe Room — Chakwal Grand Guest House",
+    alt:   "Deluxe Room — Chakwal Guest House",
     label: "Deluxe Room",
     tag:   "Deluxe",
   },
   {
     src:   "/gallery/room5.jpeg",
-    alt:   "Premium Room — Chakwal Grand Guest House",
+    alt:   "Premium Room — Chakwal Guest House",
     label: "Premium Room",
     tag:   "Premium",
   },
@@ -65,7 +65,7 @@ export function GallerySection() {
             Experience the <span className="text-transparent bg-clip-text bg-gold-gradient">Ambiance</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto text-sm">
-            Every corner of Chakwal Grand is designed with comfort, elegance, and your well-being in mind.
+            Every corner of Chakwal Guest House is designed with comfort, elegance, and your well-being in mind.
           </p>
         </div>
 

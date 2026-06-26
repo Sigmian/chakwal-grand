@@ -8,11 +8,11 @@ import { getActiveAnnouncement } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: { default: "Chakwal Grand Guest House | Best Stay in Chakwal Punjab", template: "%s | Chakwal Grand Guest House" },
-  description: "Stay at Chakwal Grand Guest House — the most trusted accommodation in Chakwal, Punjab. AC rooms, family suites & VIP rooms from PKR 2,000/night. Online booking available.",
+  title: { default: "Chakwal Guest House | Best Stay in Chakwal Punjab", template: "%s | Chakwal Guest House" },
+  description: "Stay at Chakwal Guest House — the most trusted accommodation in Chakwal, Punjab. AC rooms, family suites & VIP rooms from PKR 2,000/night. Online booking available.",
   keywords: [
     "guest house Chakwal", "hotel Chakwal", "accommodation Chakwal", "room booking Chakwal",
-    "family rooms Chakwal", "AC rooms Chakwal", "cheap stay Chakwal", "Chakwal Grand",
+    "family rooms Chakwal", "AC rooms Chakwal", "cheap stay Chakwal", "Chakwal Guest House",
     "best hotel Chakwal Punjab", "overnight stay Chakwal", "CGH Chakwal",
   ],
 };

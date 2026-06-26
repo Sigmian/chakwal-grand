@@ -6,13 +6,13 @@ import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Photo Gallery",
-  description: "Browse our photo gallery â€” elegant rooms, cosy interiors, and beautiful facilities at Chakwal Grand Guest House.",
+  description: "Browse our photo gallery â€” elegant rooms, cosy interiors, and beautiful facilities at Chakwal Guest House.",
   alternates: { canonical: `${siteConfig.url}/gallery` },
   openGraph: {
-    title:       "Photo Gallery | Chakwal Grand Guest House",
-    description: "Elegant rooms and beautiful facilities â€” browse photos of Chakwal Grand Guest House.",
+    title:       "Photo Gallery | Chakwal Guest House",
+    description: "Elegant rooms and beautiful facilities â€” browse photos of Chakwal Guest House.",
     url:         `${siteConfig.url}/gallery`,
-    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal Grand Guest House photo gallery" }],
+    images:      [{ url: `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`, width: 1200, height: 630, alt: "Chakwal Guest House photo gallery" }],
   },
 };
 
@@ -58,7 +58,7 @@ export default async function GalleryPage() {
             Photo Gallery
           </h1>
           <p className="text-muted-foreground max-w-lg mx-auto">
-            Explore our beautifully appointed rooms and facilities at Chakwal Grand Guest House.
+            Explore our beautifully appointed rooms and facilities at Chakwal Guest House.
           </p>
         </div>
 

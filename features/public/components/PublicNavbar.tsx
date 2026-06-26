@@ -45,14 +45,14 @@ export function PublicNavbar() {
           <Link href="/" className="flex items-center gap-3 group">
             <Image
               src="/images/logo.png"
-              alt="Chakwal Grand Guest House"
+              alt="Chakwal Guest House"
               width={48}
               height={48}
               className="rounded-xl shadow-gold-sm group-hover:shadow-gold-md transition-shadow"
               priority
             />
             <div>
-              <p className="font-bold font-serif text-foreground leading-tight text-base">Chakwal Grand</p>
+              <p className="font-bold font-serif text-foreground leading-tight text-base">Chakwal</p>
               <p className="text-[10px] text-muted-foreground tracking-widest uppercase">Guest House</p>
             </div>
           </Link>

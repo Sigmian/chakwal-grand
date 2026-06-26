@@ -7,11 +7,11 @@ import { CountUp } from "@/features/public/components/CountUp";
 
 export const metadata: Metadata = {
   title: "About Us — Best Stay in Chakwal",
-  description: "Learn about Chakwal Grand Guest House — Chakwal's most trusted guest house with 3 locations across Punjab. Affordable luxury, family-friendly, 24/7 service since establishment.",
-  keywords: ["about Chakwal Grand Guest House", "best guest house Chakwal", "trusted guest house Pakistan", "family guest house Chakwal Punjab"],
+  description: "Learn about Chakwal Guest House — Chakwal's most trusted guest house with 3 locations across Punjab. Affordable luxury, family-friendly, 24/7 service since establishment.",
+  keywords: ["about Chakwal Guest House", "best guest house Chakwal", "trusted guest house Pakistan", "family guest house Chakwal Punjab"],
   alternates: { canonical: `${siteConfig.url}/about` },
   openGraph: {
-    title: "About Chakwal Grand Guest House | Best Guest House in Chakwal",
+    title: "About Chakwal Guest House | Best Guest House in Chakwal",
     description: "Chakwal's most trusted guest house chain with branches in Chakwal, Kallar Kahar, and Sargodha. Family-friendly, affordable, 24/7 service.",
     url: `${siteConfig.url}/about`,
   },
@@ -20,12 +20,12 @@ export const metadata: Metadata = {
 const ABOUT_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
-  "name": "About Chakwal Grand Guest House",
+  "name": "About Chakwal Guest House",
   "url": `${siteConfig.url}/about`,
-  "description": "Chakwal Grand Guest House is the premier accommodation provider in Chakwal, Punjab with branches in Chakwal, Kallar Kahar, and Sargodha.",
+  "description": "Chakwal Guest House is the premier accommodation provider in Chakwal, Punjab with branches in Chakwal, Kallar Kahar, and Sargodha.",
   "mainEntity": {
     "@type": "LodgingBusiness",
-    "name": "Chakwal Grand Guest House",
+    "name": "Chakwal Guest House",
     "telephone": "+92-334-7742767",
     "url": siteConfig.url,
     "address": {
@@ -64,7 +64,7 @@ export default function AboutPage() {
               Chakwal&apos;s Most Trusted<br />Guest House
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              Chakwal Grand Guest House was established with one mission: to provide clean, safe, and affordable
+              Chakwal Guest House was established with one mission: to provide clean, safe, and affordable
               accommodation for travelers across Punjab. From solo businessmen to families visiting Katas Raj Temples
               and Kallar Kahar Lake, we have been the preferred choice for thousands of guests.
             </p>
@@ -81,7 +81,7 @@ export default function AboutPage() {
                   Premium Accommodation in Chakwal, Punjab
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Chakwal Grand Guest House is a chain of premium guest houses operating across Punjab, Pakistan.
+                  Chakwal Guest House is a chain of premium guest houses operating across Punjab, Pakistan.
                   We offer rooms ranging from classic budget rooms to fully air-conditioned executive suites and
                   family apartments — all at honest, transparent prices with no hidden charges.
                 </p>
@@ -179,7 +179,7 @@ export default function AboutPage() {
         <section className="py-16 bg-surface-elevated">
           <div className="max-w-2xl mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold font-serif text-foreground mb-4">Ready to Book Your Stay?</h2>
-            <p className="text-muted-foreground mb-8">Join thousands of satisfied guests who chose Chakwal Grand for their stay in Punjab.</p>
+            <p className="text-muted-foreground mb-8">Join thousands of satisfied guests who chose Chakwal Guest House for their stay in Punjab.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/book" className="px-8 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
                 Book a Room

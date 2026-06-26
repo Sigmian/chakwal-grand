@@ -50,7 +50,7 @@ export const env = {
 
   // Business
   WHATSAPP_NUMBER: optionalEnv("WHATSAPP_NUMBER", "923001234567"),
-  COMPANY_NAME:    optionalEnv("COMPANY_NAME", "Chakwal Grand Guest House"),
+  COMPANY_NAME:    optionalEnv("COMPANY_NAME", "Chakwal Guest House"),
 
   // Feature flags
   ENABLE_ONLINE_PAYMENTS: optionalEnv("ENABLE_ONLINE_PAYMENTS", "false") === "true",
