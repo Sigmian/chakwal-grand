@@ -7,6 +7,34 @@
 import prisma from "@/lib/db/prisma";
 import { getSystemPrompt, runAgentLoop, type MessageParam } from "./core";
 
+// Normalise to E.164-ish digits only for storage
+function toE164Digits(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("92") && digits.length === 12) return digits;
+  if (digits.startsWith("0") && digits.length === 11)  return "92" + digits.slice(1);
+  return digits;
+}
+
+// Save unknown WhatsApp numbers immediately on first contact
+// so they appear in the phone directory even if they never book.
+async function ensureContactSaved(fromPhone: string): Promise<void> {
+  const e164 = toE164Digits(fromPhone);
+  const existing = await prisma.customer.findFirst({
+    where: { phone: { contains: e164.slice(-10) } },
+    select: { id: true },
+  });
+  if (existing) return; // already in directory
+
+  await prisma.customer.create({
+    data: {
+      phone:     e164,
+      name:      "WhatsApp Contact",   // placeholder until Zara learns their name
+      companyId: "company-001",
+    },
+  });
+  console.log(`[Directory] New contact saved: ${e164}`);
+}
+
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes idle = new session
 const MAX_HISTORY    = 30;              // ~15 conversation turns in context
 
@@ -14,6 +42,11 @@ export async function processWhatsAppMessage(
   fromPhone: string,
   userText: string,
 ): Promise<string> {
+  // Save contact to directory on very first message (fire-and-forget)
+  ensureContactSaved(fromPhone).catch(err =>
+    console.error("[Directory] Failed to save contact:", err),
+  );
+
   // Load session — reset if idle > 30 min
   const session = await prisma.whatsAppSession.findUnique({
     where: { phone: fromPhone },
