@@ -143,9 +143,7 @@ async function processInBackground(body: Record<string, unknown>) {
       if (media?.id) {
         try {
           text = await transcribeAudio(media.id);
-          // Reply in voice only for short messages (~10 sec ≈ 25 words)
-          const wordCount = text.trim().split(/\s+/).length;
-          replyWithVoice = wordCount <= 25;
+          replyWithVoice = false; // always reply with text
         } catch (err) {
           console.error("[WhatsApp Voice Transcribe Error]", err);
           await sendReply(from, "Voice message samajh nahi aaya, maafi chahti hoon. Dobara bhejein ya text mein likhein.");
