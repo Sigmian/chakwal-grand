@@ -148,9 +148,28 @@ async function processInBackground(body: Record<string, unknown>) {
           return;
         }
       }
+    } else if (msg.type === "image") {
+      if (!process.env.OPENAI_API_KEY) {
+        await sendReply(from, "Ji, photo abhi nahi dekh sakti. Please text mein describe karein, main zaroor help karungi!");
+        return;
+      }
+      const media = msg.image as { id: string; caption?: string } | undefined;
+      if (media?.id) {
+        try {
+          const description = await analyzeImage(media.id);
+          const caption = media.caption?.trim();
+          text = caption
+            ? `[Guest ne photo bheji hai. Photo mein: ${description}. Guest ka caption: "${caption}"]`
+            : `[Guest ne photo bheji hai. Photo mein: ${description}]`;
+        } catch (err) {
+          console.error("[WhatsApp Image Analysis Error]", err);
+          await sendReply(from, "Ji, photo dekh nahi payi, maafi chahti hoon. Kya aap text mein bata sakti hain kya masla hai?");
+          return;
+        }
+      }
     } else {
-      // Image, document, sticker, location etc.
-      await sendReply(from, "Ji, please send a text or voice message and I'll help you right away.");
+      // Document, sticker, location etc.
+      await sendReply(from, "Ji, please text ya photo bhejein — main zaroor help karungi!");
       return;
     }
 
@@ -253,4 +272,70 @@ async function transcribeAudio(mediaId: string): Promise<string> {
   }
   const { text } = await sttRes.json() as { text: string };
   return text.trim();
+}
+
+// ── Photo analysis via OpenAI Vision (GPT-4o mini) ────────────
+// Guest sends a photo of a complaint (broken AC, dirty room, etc.)
+// We describe it so Zara can respond and log it appropriately.
+// Cost: ~$0.001 per image (GPT-4o mini vision)
+async function analyzeImage(mediaId: string): Promise<string> {
+  const token  = clean(process.env.WHATSAPP_API_TOKEN);
+  const openai = clean(process.env.OPENAI_API_KEY);
+  if (!token)  throw new Error("Missing WHATSAPP_API_TOKEN");
+  if (!openai) throw new Error("Missing OPENAI_API_KEY — needed for image analysis");
+
+  // 1) Resolve media URL from Meta
+  const metaRes = await fetch(`https://graph.facebook.com/v19.0/${mediaId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!metaRes.ok) throw new Error(`Meta media lookup failed: ${metaRes.status}`);
+  const metaJson = await metaRes.json() as { url?: string; mime_type?: string };
+  if (!metaJson.url) throw new Error("Meta returned no media URL");
+
+  // 2) Download image bytes
+  const imgRes = await fetch(metaJson.url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!imgRes.ok) throw new Error(`Image download failed: ${imgRes.status}`);
+  const imgBuf  = await imgRes.arrayBuffer();
+  const base64  = Buffer.from(imgBuf).toString("base64");
+  const mimeType = metaJson.mime_type ?? "image/jpeg";
+
+  // 3) Send to GPT-4o mini vision
+  const visionRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    method:  "POST",
+    headers: {
+      Authorization:  `Bearer ${openai}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      max_tokens: 300,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "You are analyzing a photo sent by a hotel guest via WhatsApp. Describe what you see in 1-2 sentences, focusing on any visible problems, damage, cleanliness issues, or maintenance needs. If it looks like a normal photo with no issues, say so briefly. Be factual and concise.",
+            },
+            {
+              type: "image_url",
+              image_url: { url: `data:${mimeType};base64,${base64}` },
+            },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!visionRes.ok) {
+    const err = await visionRes.text();
+    throw new Error(`OpenAI Vision failed ${visionRes.status}: ${err}`);
+  }
+
+  const visionJson = await visionRes.json() as {
+    choices: { message: { content: string } }[];
+  };
+  return visionJson.choices[0]?.message?.content?.trim() ?? "Image received but could not be analyzed.";
 }
