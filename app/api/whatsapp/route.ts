@@ -130,6 +130,7 @@ async function processInBackground(body: Record<string, unknown>) {
 
     // Extract user text
     let text: string | undefined;
+    let replyWithVoice = false; // mirrors guest — voice in, voice out
 
     if (msg.type === "text") {
       text = (msg.text as Record<string, string>)?.body?.trim();
@@ -142,6 +143,7 @@ async function processInBackground(body: Record<string, unknown>) {
       if (media?.id) {
         try {
           text = await transcribeAudio(media.id);
+          replyWithVoice = true; // guest sent voice → reply in voice
         } catch (err) {
           console.error("[WhatsApp Voice Transcribe Error]", err);
           await sendReply(from, "Voice message samajh nahi aaya, maafi chahti hoon. Dobara bhejein ya text mein likhein.");
@@ -188,7 +190,17 @@ async function processInBackground(body: Record<string, unknown>) {
         "Please thodi der mein dobara try karein ya call karein: 0334-7742767";
     }
 
-    await sendReply(from, reply);
+    if (replyWithVoice && process.env.OPENAI_API_KEY) {
+      try {
+        await sendVoiceReply(from, reply);
+      } catch (err) {
+        console.error("[WhatsApp Voice Reply Error]", err);
+        // fallback to text if TTS fails
+        await sendReply(from, reply);
+      }
+    } else {
+      await sendReply(from, reply);
+    }
 
   } catch (err) {
     console.error("[WhatsApp Webhook Error]", err);
@@ -272,6 +284,90 @@ async function transcribeAudio(mediaId: string): Promise<string> {
   }
   const { text } = await sttRes.json() as { text: string };
   return text.trim();
+}
+
+// ── Voice reply via OpenAI TTS + WhatsApp Media API ──────────
+// Guest sends voice → Zara replies in voice (nova voice, warm female)
+// Cost: ~$0.015 per 1000 chars (~PKR 0.50 per average reply)
+async function sendVoiceReply(to: string, text: string): Promise<void> {
+  const token   = clean(process.env.WHATSAPP_API_TOKEN);
+  const phoneId = clean(process.env.WHATSAPP_PHONE_NUMBER_ID);
+  const openai  = clean(process.env.OPENAI_API_KEY);
+  if (!token || !phoneId || !openai) throw new Error("Missing env vars for voice reply");
+
+  // Strip markdown bold (*text*) — sounds bad in TTS
+  const cleanText = text.replace(/\*/g, "").replace(/_/g, "").trim();
+
+  // 1) Generate audio with OpenAI TTS
+  const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
+    method:  "POST",
+    headers: {
+      Authorization:  `Bearer ${openai}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "tts-1",
+      voice: "nova",       // warm, professional female voice
+      input: cleanText,
+      response_format: "mp3",
+    }),
+  });
+  if (!ttsRes.ok) {
+    const err = await ttsRes.text();
+    throw new Error(`OpenAI TTS failed ${ttsRes.status}: ${err}`);
+  }
+  const audioBuf = await ttsRes.arrayBuffer();
+
+  // 2) Upload audio to WhatsApp Media API to get a media_id
+  const formData = new FormData();
+  formData.append("messaging_product", "whatsapp");
+  formData.append("type", "audio/mpeg");
+  formData.append("file", new Blob([audioBuf], { type: "audio/mpeg" }), "reply.mp3");
+
+  const uploadRes = await fetch(
+    `https://graph.facebook.com/v19.0/${phoneId}/media`,
+    {
+      method:  "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body:    formData,
+    },
+  );
+  if (!uploadRes.ok) {
+    const err = await uploadRes.text();
+    throw new Error(`WhatsApp media upload failed ${uploadRes.status}: ${err}`);
+  }
+  const { id: mediaId } = await uploadRes.json() as { id: string };
+
+  // 3) Send audio message using the uploaded media_id
+  const msgRes = await fetch(
+    `https://graph.facebook.com/v19.0/${phoneId}/messages`,
+    {
+      method:  "POST",
+      headers: {
+        Authorization:  `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to:   toE164(to),
+        type: "audio",
+        audio: { id: mediaId },
+      }),
+    },
+  );
+  if (!msgRes.ok) {
+    const err = await msgRes.text();
+    throw new Error(`WhatsApp audio send failed ${msgRes.status}: ${err}`);
+  }
+}
+
+// ── Phone normaliser (local copy for this file) ───────────────
+function toE164(phone: string): string {
+  const digits = phone.replace(/[\s\-().+]/g, "");
+  if (digits.startsWith("03") && digits.length === 11) return "92" + digits.slice(1);
+  if (digits.startsWith("92") && digits.length === 12) return digits;
+  if (digits.length === 10) return "92" + digits;
+  return digits;
 }
 
 // ── Photo analysis via OpenAI Vision (GPT-4o mini) ────────────
