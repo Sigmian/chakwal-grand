@@ -169,6 +169,10 @@ export const DASHBOARD_NAV: NavItem[] = [
       UserRole.SUPER_ADMIN,
       UserRole.BRANCH_MANAGER,
     ],
+    children: [
+      { label: "General",      href: "/settings" },
+      { label: "Zara AI",      href: "/settings/zara" },
+    ],
   },
 ];
 

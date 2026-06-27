@@ -106,3 +106,65 @@ export async function sendBookingWhatsApp(payload: BookingWhatsAppPayload): Prom
     throw new Error(`WhatsApp API error ${res.status}: ${err}`);
   }
 }
+
+// Send a single image message. `link` must be a public HTTPS URL.
+// WhatsApp rejects non-HTTPS or localhost URLs.
+export async function sendWhatsAppImage(
+  toPhone: string,
+  imageUrl: string,
+  caption?: string,
+): Promise<void> {
+  const token   = process.env.WHATSAPP_API_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneId) return;
+
+  const res = await fetch(`${WHATSAPP_API_URL}/${phoneId}/messages`, {
+    method:  "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type":  "application/json",
+    },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to:   toE164(toPhone),
+      type: "image",
+      image: {
+        link:    imageUrl,
+        caption: caption ?? "",
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`WhatsApp image send error ${res.status}: ${err}`);
+  }
+}
+
+// Send up to `maxImages` images sequentially with a small gap between each
+// so WhatsApp delivers them in order.
+export async function sendWhatsAppImages(
+  toPhone: string,
+  images: { url: string; caption?: string }[],
+  maxImages = 3,
+): Promise<{ sent: number }> {
+  const token   = process.env.WHATSAPP_API_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneId) return { sent: 0 };
+
+  const toSend = images.slice(0, maxImages);
+  let sent = 0;
+
+  for (const img of toSend) {
+    try {
+      await sendWhatsAppImage(toPhone, img.url, img.caption);
+      sent++;
+      // Small delay so Meta delivers in order
+      if (sent < toSend.length) await new Promise(r => setTimeout(r, 400));
+    } catch (err) {
+      console.error("[WhatsApp] Image send failed:", err);
+    }
+  }
+
+  return { sent };
+}

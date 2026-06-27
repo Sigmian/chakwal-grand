@@ -7,7 +7,114 @@ import type Anthropic from "@anthropic-ai/sdk";
 import prisma from "@/lib/db/prisma";
 import { createPublicBooking, getBookingByRef } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
-import { BookingStatus } from "@/types";
+import { BookingStatus, RoomType } from "@/types";
+import { sendPushToAllStaff } from "@/lib/push/send";
+import { sendWhatsAppImages } from "@/lib/whatsapp/send";
+
+// ── Owner alert with retry ────────────────────────────────────
+// Retries up to 3 times with exponential backoff (2s, 4s, 8s).
+// A single fire-and-forget fetch means a 5-second Meta blip loses
+// a HIGH complaint alert forever — this ensures delivery.
+const cleanEnv = (s: string | undefined) =>
+  s ? s.replace(/^﻿/, "").replace(/[​-‍﻿]/g, "").trim() : undefined;
+
+async function sendOwnerAlertWithRetry(
+  message: string,
+  attempt = 1,
+): Promise<void> {
+  const token   = cleanEnv(process.env.WHATSAPP_API_TOKEN);
+  const phoneId = cleanEnv(process.env.WHATSAPP_PHONE_NUMBER_ID);
+
+  if (!token || !phoneId) {
+    console.warn("[Owner Alert] WHATSAPP_API_TOKEN or WHATSAPP_PHONE_NUMBER_ID not set — skipping");
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v19.0/${phoneId}/messages`,
+      {
+        method:  "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to:   siteConfig.whatsapp,
+          type: "text",
+          text: { body: message, preview_url: false },
+        }),
+      },
+    );
+
+    if (res.ok) {
+      console.log(`[Owner Alert] Delivered on attempt ${attempt}`);
+      return;
+    }
+
+    const errBody = await res.text();
+    throw new Error(`Meta ${res.status}: ${errBody}`);
+
+  } catch (err) {
+    if (attempt >= 3) {
+      console.error(`[Owner Alert] Failed after ${attempt} attempts:`, err);
+      throw err;
+    }
+    const delayMs = 2000 * Math.pow(2, attempt - 1); // 2s, 4s, 8s
+    console.warn(`[Owner Alert] Attempt ${attempt} failed — retrying in ${delayMs}ms`, err);
+    await new Promise(r => setTimeout(r, delayMs));
+    return sendOwnerAlertWithRetry(message, attempt + 1);
+  }
+}
+
+// ── Customer memory helpers ───────────────────────────────────
+// Bot-learned preferences are stored as JSON inside Customer.notes.
+// Human notes written by staff are stored in Customer.specialRequests.
+// The JSON structure is additive — new facts are merged in, never erased.
+
+type PreferredLanguage = "roman_urdu" | "english" | "urdu_script" | "mixed";
+
+interface BotMemory {
+  preferences:       string[];          // "prefers ground floor", "vegetarian"
+  avoidances:        string[];          // "no top floor", "sensitive to noise"
+  occasions:         string[];          // "honeymoon 2024-06", "family eid trip"
+  preferredLanguage: PreferredLanguage | null; // detected from their messages
+  lastUpdated:       string;            // ISO date
+}
+
+const EMPTY_MEMORY: BotMemory = {
+  preferences: [], avoidances: [], occasions: [],
+  preferredLanguage: null, lastUpdated: "",
+};
+
+function parseBotMemory(notes: string | null | undefined): BotMemory {
+  if (!notes) return { ...EMPTY_MEMORY };
+  try {
+    const parsed = JSON.parse(notes);
+    if (typeof parsed === "object" && parsed !== null && "preferences" in parsed) {
+      // Backfill preferredLanguage for records saved before this field existed
+      return { ...EMPTY_MEMORY, ...parsed } as BotMemory;
+    }
+    // Plain-text human note — preserve it as a preference entry
+    return { ...EMPTY_MEMORY, preferences: [notes] };
+  } catch {
+    return { ...EMPTY_MEMORY, preferences: notes ? [notes] : [] };
+  }
+}
+
+function serializeBotMemory(mem: BotMemory): string {
+  return JSON.stringify({ ...mem, lastUpdated: new Date().toISOString().split("T")[0] });
+}
+
+function mergeMemory(existing: BotMemory, patch: Partial<BotMemory>): BotMemory {
+  const dedup = (arr: string[]) => [...new Set(arr.map(s => s.toLowerCase().trim()))];
+  return {
+    preferences:       dedup([...existing.preferences, ...(patch.preferences ?? [])]),
+    avoidances:        dedup([...existing.avoidances,  ...(patch.avoidances  ?? [])]),
+    occasions:         dedup([...existing.occasions,   ...(patch.occasions   ?? [])]),
+    // Language: only update if a new value is provided; keep existing otherwise
+    preferredLanguage: patch.preferredLanguage ?? existing.preferredLanguage,
+    lastUpdated:       new Date().toISOString().split("T")[0],
+  };
+}
 
 // ── Tool schemas (sent to Claude) ────────────────────────────
 
@@ -67,10 +174,48 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "send_room_images",
+    description:
+      "Send room or property photos to the guest on WhatsApp. " +
+      "Call this when a guest asks to see pictures, photos, or images of a room, room type, or branch. " +
+      "Sends up to 3 cover photos directly into the WhatsApp chat. " +
+      "Only works in WhatsApp mode — pass the guest's WhatsApp phone number. " +
+      "Call search_rooms first if you need a room_id.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        to_phone:    { type: "string",  description: "Guest WhatsApp phone number to send images to" },
+        room_id:     { type: "string",  description: "Specific room ID — use when guest asked about one room (from search_rooms)" },
+        room_type:   { type: "string",  description: "Room type to show (STANDARD, DELUXE, FAMILY, VIP, SUITE) — use when no specific room chosen yet" },
+        branch_city: { type: "string",  description: "Filter by branch city (Chakwal, Kallar Kahar, Sargodha) — optional" },
+      },
+      required: ["to_phone"],
+    },
+  },
+  {
+    name: "validate_coupon",
+    description:
+      "Validate a promo or discount code BEFORE creating a booking. Call this when a guest mentions a code. " +
+      "Also call it proactively when a guest qualifies for WELCOME15 (first-time visitor — no prior bookings). " +
+      "Returns discount amount and a human-friendly label if valid, or a clear error if not.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        code:         { type: "string",  description: "Coupon/promo code the guest wants to use (e.g. WELCOME15, WEEKLY14)" },
+        guest_phone:  { type: "string",  description: "Guest WhatsApp phone — needed for first-time-only validation" },
+        nights:       { type: "number",  description: "Number of nights they plan to stay" },
+        base_amount:  { type: "number",  description: "Total price BEFORE discount (nights × price per night)" },
+      },
+      required: ["code", "guest_phone", "nights", "base_amount"],
+    },
+  },
+  {
     name: "create_booking",
     description:
-      "Create a booking once you have ALL fields. " +
-      "Use room_id and branch_id from search_rooms. Returns booking ref and total amount.",
+      "Create a booking once you have ALL required fields. " +
+      "Use room_id and branch_id from search_rooms. " +
+      "If the guest has a validated coupon code, pass it in coupon_code — the discount will be applied automatically. " +
+      "Returns booking ref and total amount (after discount).",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -82,6 +227,7 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
         branch_id:        { type: "string", description: "Branch ID from search_rooms" },
         adults:           { type: "number", description: "Number of adults" },
         children:         { type: "number", description: "Number of children (default 0)" },
+        coupon_code:      { type: "string", description: "Validated promo/coupon code to apply (optional — from validate_coupon)" },
         special_requests: { type: "string", description: "Special requests (optional)" },
       },
       required: [
@@ -160,6 +306,51 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
       required: ["guest_phone", "request_text"],
     },
   },
+  {
+    name: "update_customer_memory",
+    description:
+      "Save something you learned about this guest so future conversations remember it. " +
+      "Call this silently (no need to tell the guest) whenever you discover a preference, " +
+      "avoidance, or special occasion. Examples: guest says 'ground floor please', " +
+      "'we are vegetarian', 'always book family room', 'coming for our honeymoon'. " +
+      "Also call after a successful create_booking to record the room type they chose. " +
+      "Do NOT call this for one-time requests — only for things worth remembering forever.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        guest_phone: {
+          type: "string",
+          description: "Guest WhatsApp phone (the sender's number)",
+        },
+        preferred_room_type: {
+          type: "string",
+          enum: ["STANDARD", "DELUXE", "FAMILY", "VIP", "SUITE"],
+          description: "Update preferred room type if guest has shown a clear preference",
+        },
+        preferences: {
+          type: "array",
+          items: { type: "string" },
+          description: "New things to remember — short phrases, e.g. ['prefers ground floor', 'vegetarian', 'travels with family of 4']",
+        },
+        avoidances: {
+          type: "array",
+          items: { type: "string" },
+          description: "Things the guest wants to avoid — e.g. ['no top floor', 'noise sensitive']",
+        },
+        occasions: {
+          type: "array",
+          items: { type: "string" },
+          description: "Special occasions mentioned — e.g. ['honeymoon June 2026', 'anniversary trip']",
+        },
+        preferred_language: {
+          type: "string",
+          enum: ["roman_urdu", "english", "urdu_script", "mixed"],
+          description: "The language this guest clearly prefers to communicate in. Detect from their first few messages and save once — do not update every turn.",
+        },
+      },
+      required: ["guest_phone"],
+    },
+  },
 ];
 
 // ── Tool router ───────────────────────────────────────────────
@@ -169,21 +360,25 @@ export async function executeAgentTool(
   input: Record<string, unknown>,
 ): Promise<unknown> {
   switch (toolName) {
-    case "lookup_customer":      return lookupCustomerTool(input);
-    case "log_complaint":        return logComplaintTool(input);
-    case "log_service_request":  return logServiceRequestTool(input);
-    case "search_rooms":         return searchRooms(input);
-    case "create_booking":       return createBookingTool(input);
-    case "get_booking":          return getBookingTool(input);
-    case "cancel_booking":       return cancelBookingTool(input);
-    case "modify_booking_dates": return modifyBookingDatesTool(input);
-    case "extend_stay":          return extendStayTool(input);
-    default:                     return { error: "Unknown tool: " + toolName };
+    case "lookup_customer":        return lookupCustomerTool(input);
+    case "log_complaint":          return logComplaintTool(input);
+    case "log_service_request":    return logServiceRequestTool(input);
+    case "search_rooms":           return searchRooms(input);
+    case "send_room_images":        return sendRoomImagesTool(input);
+    case "validate_coupon":        return validateCouponTool(input);
+    case "create_booking":         return createBookingTool(input);
+    case "get_booking":            return getBookingTool(input);
+    case "cancel_booking":         return cancelBookingTool(input);
+    case "modify_booking_dates":   return modifyBookingDatesTool(input);
+    case "extend_stay":            return extendStayTool(input);
+    case "update_customer_memory": return updateCustomerMemoryTool(input);
+    default:                       return { error: "Unknown tool: " + toolName };
   }
 }
 
-// Normalize phone for comparison: strip non-digits, take last 10
-function normalizePhone(p: string): string {
+// Normalize phone for comparison: strip non-digits, take last 10.
+// Exported so callers outside this module share the same logic.
+export function normalizePhone(p: string): string {
   return p.replace(/\D/g, "").slice(-10);
 }
 
@@ -208,6 +403,9 @@ async function lookupCustomerTool(input: Record<string, unknown>) {
   const match = customers.find(c => normalizePhone(c.phone) === last10);
   if (!match) return { found: false };
 
+  // Parse bot-learned memory stored as JSON in the notes field
+  const memory = parseBotMemory(match.notes);
+
   return {
     found: true,
     name:              match.name,
@@ -218,6 +416,12 @@ async function lookupCustomerTool(input: Record<string, unknown>) {
     isVIP:             match.isVIP,
     preferredRoomType: match.preferredRoomType,
     specialRequests:   match.specialRequests,
+    // Structured memory the bot has learned over time
+    learnedPreferences: memory.preferences,
+    learnedAvoidances:  memory.avoidances,
+    knownOccasions:     memory.occasions,
+    preferredLanguage:  memory.preferredLanguage,
+    memoryLastUpdated:  memory.lastUpdated || null,
     lastVisitAt:       match.lastVisitAt?.toISOString().split("T")[0] ?? null,
     lastBooking:       match.bookings[0] ?? null,
   };
@@ -268,11 +472,39 @@ async function logComplaintTool(input: Record<string, unknown>) {
     },
   });
 
+  const escalated = severity === "HIGH";
+  const guestLabel = (input.guest_name as string) || phone;
+
+  // ── A1: Real escalation — notify staff immediately ─────────
+  // Push notification to all staff browsers
+  sendPushToAllStaff({
+    title: escalated
+      ? `🚨 HIGH Complaint — ${guestLabel}`
+      : `New Complaint — ${guestLabel}`,
+    body:  text.slice(0, 120),
+    data:  { url: "/complaints" },
+  }).catch((err) => console.error("[Push Error]", err));
+
+  // HIGH severity: also WhatsApp the owner directly with retry
+  if (escalated) {
+    const alertMsg =
+      `🚨 *HIGH Severity Complaint*\n\n` +
+      `Guest: ${guestLabel}\n` +
+      `Phone: ${phone}\n` +
+      (complaint.bookingRef ? `Booking: ${complaint.bookingRef}\n` : "") +
+      `\n"${text.slice(0, 300)}"\n\n` +
+      `Action needed immediately. View: ${siteConfig.url}/complaints`;
+
+    sendOwnerAlertWithRetry(alertMsg).catch((err) =>
+      console.error("[Owner WhatsApp Alert Failed after retries]", err),
+    );
+  }
+
   return {
     success:    true,
     complaintId: complaint.id,
     severity,
-    escalated:  severity === "HIGH",
+    escalated,
   };
 }
 
@@ -336,26 +568,186 @@ async function searchRooms(input: Record<string, unknown>) {
   };
 }
 
+async function sendRoomImagesTool(input: Record<string, unknown>) {
+  const toPhone   = (input.to_phone    as string)?.trim();
+  const roomId    = (input.room_id     as string)?.trim();
+  const roomType  = (input.room_type   as string)?.trim().toUpperCase();
+  const city      = (input.branch_city as string)?.trim();
+
+  if (!toPhone) return { success: false, error: "to_phone is required" };
+
+  // Build the image query — prefer specific room, fallback to type/city
+  type ImageWithRoom = {
+    url: string;
+    altText: string | null;
+    room: { name: string; type: string; pricePerNight: unknown; branch: { city: string } };
+  };
+
+  let images: ImageWithRoom[] = [];
+
+  if (roomId) {
+    images = await prisma.roomImage.findMany({
+      where:   { roomId, isCover: true },
+      take:    3,
+      orderBy: { sortOrder: "asc" },
+      select:  {
+        url: true, altText: true,
+        room: { select: { name: true, type: true, pricePerNight: true, branch: { select: { city: true } } } },
+      },
+    });
+    // If no cover images marked, fall back to any images for this room
+    if (images.length === 0) {
+      images = await prisma.roomImage.findMany({
+        where:   { roomId },
+        take:    3,
+        orderBy: { sortOrder: "asc" },
+        select:  {
+          url: true, altText: true,
+          room: { select: { name: true, type: true, pricePerNight: true, branch: { select: { city: true } } } },
+        },
+      }) as ImageWithRoom[];
+    }
+  } else {
+    images = await prisma.roomImage.findMany({
+      where: {
+        isCover: true,
+        room: {
+          isActive: true,
+          status:   { not: "BLOCKED" },
+          ...(roomType ? { type: roomType as RoomType } : {}),
+          ...(city     ? { branch: { city: { contains: city, mode: "insensitive" as const } } } : {}),
+        },
+      },
+      take:    3,
+      orderBy: { sortOrder: "asc" },
+      select:  {
+        url: true, altText: true,
+        room: { select: { name: true, type: true, pricePerNight: true, branch: { select: { city: true } } } },
+      },
+    });
+  }
+
+  if (images.length === 0) {
+    return { success: false, error: "No images found for that room/type." };
+  }
+
+  const toSend = images.map(img => ({
+    url:     img.url,
+    caption: `${img.room.name} — PKR ${Number(img.room.pricePerNight).toLocaleString("en-PK")}/night (${img.room.branch.city})`,
+  }));
+
+  const { sent } = await sendWhatsAppImages(toPhone, toSend, 3);
+
+  return {
+    success:    sent > 0,
+    sent,
+    total:      images.length,
+    roomNames:  [...new Set(images.map(i => i.room.name))],
+  };
+}
+
+async function validateCouponTool(input: Record<string, unknown>) {
+  const code        = (input.code        as string)?.trim().toUpperCase();
+  const phone       = (input.guest_phone as string)?.trim();
+  const nights      = Number(input.nights      ?? 0);
+  const baseAmount  = Number(input.base_amount ?? 0);
+
+  if (!code)  return { valid: false, error: "Coupon code missing." };
+  if (!phone) return { valid: false, error: "Guest phone required to validate." };
+
+  const offer = await prisma.offer.findFirst({
+    where: {
+      code,
+      isActive:  true,
+      startsAt:  { lte: new Date() },
+      expiresAt: { gte: new Date() },
+    },
+  });
+
+  if (!offer) return { valid: false, error: "Yeh code valid nahi hai ya expire ho gaya." };
+
+  if (offer.minNights && nights < offer.minNights) {
+    return {
+      valid: false,
+      error: `Yeh code ${offer.minNights} ya zyada raatein chahta hai. Aap ki booking sirf ${nights} raat ki hai.`,
+    };
+  }
+
+  if (offer.maxUses && offer.usedCount >= offer.maxUses) {
+    return { valid: false, error: "Yeh promo code ka limit poora ho gaya." };
+  }
+
+  // First-time-only check: guest must have NO prior completed/active bookings
+  if (offer.firstTimeOnly) {
+    const last10 = normalizePhone(phone);
+    const customers = await prisma.customer.findMany({
+      where: { phone: { contains: last10 } },
+      take: 5,
+    });
+    const customer = customers.find(c => normalizePhone(c.phone) === last10);
+
+    if (customer) {
+      const priorBooking = await prisma.booking.findFirst({
+        where: {
+          customerId: customer.id,
+          status: { in: ["PENDING", "CONFIRMED", "CHECKED_IN", "CHECKED_OUT"] },
+        },
+        select: { id: true },
+      });
+
+      if (priorBooking) {
+        return {
+          valid: false,
+          error: "WELCOME15 sirf pehli baar aane walay mehmanon ke liye hai. Aap already hamari family mein hain! Koi aur code check karein ya humse poochein.",
+        };
+      }
+    }
+  }
+
+  const discountAmount =
+    offer.discountType === "PERCENTAGE"
+      ? Math.round((baseAmount * Number(offer.discountValue)) / 100)
+      : Math.min(Number(offer.discountValue), baseAmount);
+
+  const discountLabel =
+    offer.discountType === "PERCENTAGE"
+      ? `${Number(offer.discountValue)}% off`
+      : `PKR ${Number(offer.discountValue).toLocaleString()} off`;
+
+  return {
+    valid:          true,
+    code,
+    offerName:      offer.name,
+    discountLabel,
+    discountAmount,
+    finalAmount:    Math.max(0, baseAmount - discountAmount),
+    firstTimeOnly:  offer.firstTimeOnly,
+  };
+}
+
 async function createBookingTool(input: Record<string, unknown>) {
   const result = await createPublicBooking({
-    roomId:    input.room_id      as string,
-    branchId:  input.branch_id    as string,
-    checkIn:   input.check_in     as string,
-    checkOut:  input.check_out    as string,
-    adults:    input.adults       as number,
-    children: (input.children     as number) ?? 0,
-    name:      input.guest_name   as string,
-    phone:     input.guest_phone  as string,
-    notes:    (input.special_requests as string) || undefined,
+    roomId:     input.room_id      as string,
+    branchId:   input.branch_id    as string,
+    checkIn:    input.check_in     as string,
+    checkOut:   input.check_out    as string,
+    adults:     input.adults       as number,
+    children:  (input.children     as number) ?? 0,
+    name:       input.guest_name   as string,
+    phone:      input.guest_phone  as string,
+    promoCode: (input.coupon_code  as string) || undefined,
+    notes:     (input.special_requests as string) || undefined,
   });
 
   if (!result.success) return { success: false, error: result.error };
 
-  // createPublicBooking returns: { success, bookingId, ref, shareToken, discountAmount }
-  const ref = (result as { ref: string }).ref;
+  const ref            = (result as { ref: string }).ref;
+  const discountAmount = (result as { discountAmount: number }).discountAmount ?? 0;
   return {
     success:         true,
     bookingRef:      ref,
+    discountApplied: discountAmount > 0,
+    discountAmount,
     confirmationUrl: `${siteConfig.url}/booking-confirmation/${ref}`,
   };
 }
@@ -390,9 +782,7 @@ async function cancelBookingTool(input: Record<string, unknown>) {
 
   if (!booking) return { success: false, error: "Booking not found." };
 
-  // Verify phone — match last 10 digits
-  const last10 = (s: string) => s.replace(/\D/g, "").slice(-10);
-  if (last10(phone) !== last10(booking.customer.phone)) {
+  if (normalizePhone(phone) !== normalizePhone(booking.customer.phone)) {
     return { success: false, error: "Phone number does not match booking records. Cannot cancel." };
   }
 
@@ -414,7 +804,7 @@ async function cancelBookingTool(input: Record<string, unknown>) {
 // ── Booking modification helpers ──────────────────────────────
 
 const verifyPhone = (input: string, stored: string) =>
-  input.replace(/\D/g, "").slice(-10) === stored.replace(/\D/g, "").slice(-10);
+  normalizePhone(input) === normalizePhone(stored);
 
 async function modifyBookingDatesTool(input: Record<string, unknown>) {
   const ref       = input.booking_ref  as string;
@@ -538,5 +928,56 @@ async function extendStayTool(input: Record<string, unknown>) {
     newCheckOut:    newCheckOut.toISOString().split("T")[0],
     newNights,
     newTotal,
+  };
+}
+
+// ── Customer memory ───────────────────────────────────────────
+
+async function updateCustomerMemoryTool(input: Record<string, unknown>) {
+  const phone = (input.guest_phone as string)?.trim();
+  if (!phone) return { success: false, error: "guest_phone is required" };
+
+  const last10 = normalizePhone(phone);
+  const customers = await prisma.customer.findMany({
+    where: { phone: { contains: last10 } },
+    take: 5,
+  });
+  const customer = customers.find(c => normalizePhone(c.phone) === last10);
+  if (!customer) {
+    // Guest not yet in DB — will be created when they book. Nothing to persist yet.
+    return { success: false, reason: "customer_not_found" };
+  }
+
+  const existing = parseBotMemory(customer.notes);
+
+  const patch: Partial<BotMemory> = {
+    preferences:       (input.preferences       as string[] | undefined) ?? [],
+    avoidances:        (input.avoidances         as string[] | undefined) ?? [],
+    occasions:         (input.occasions          as string[] | undefined) ?? [],
+    preferredLanguage: (input.preferred_language as PreferredLanguage | undefined) ?? null,
+  };
+
+  const merged = mergeMemory(existing, patch);
+
+  const updateData: Record<string, unknown> = {
+    notes: serializeBotMemory(merged),
+  };
+
+  // Also update the structured preferredRoomType field if provided
+  const rtype = input.preferred_room_type as string | undefined;
+  const validTypes: string[] = Object.values(RoomType);
+  if (rtype && validTypes.includes(rtype)) {
+    updateData.preferredRoomType = rtype as RoomType;
+  }
+
+  await prisma.customer.update({
+    where: { id: customer.id },
+    data:  updateData,
+  });
+
+  return {
+    success:     true,
+    customerId:  customer.id,
+    savedMemory: merged,
   };
 }

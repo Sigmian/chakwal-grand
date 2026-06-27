@@ -7,8 +7,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { processWhatsAppMessage } from "@/lib/agent/whatsapp-agent";
+import { checkRateLimit } from "@/lib/agent/rate-limiter";
 
 export const maxDuration = 60; // Vercel: allow up to 60s for AI processing
+
+// ── BOM / zero-width char cleaner ────────────────────────────
+// PowerShell pipe adds a UTF-8 BOM that breaks HTTP headers.
+const clean = (s: string | undefined) =>
+  s ? s.replace(/^﻿/, "").replace(/[​-‍﻿]/g, "").trim() : s;
 
 // ── Webhook verification ──────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -27,6 +33,17 @@ export async function GET(req: NextRequest) {
   return new Response("Forbidden", { status: 403 });
 }
 
+// ── In-memory dedup + coalesce ────────────────────────────────
+// Dedup:    prevents double-processing when Meta retries the same message
+// Coalesce: short buffer prevents race condition when two messages arrive
+//           within milliseconds of each other (same session, concurrent writes)
+const processedIds  = new Set<string>();           // message IDs seen this process lifetime
+const pendingTimers = new Map<string, ReturnType<typeof setTimeout>>(); // phone → timer
+
+// Clean up old message IDs periodically so the Set doesn't grow forever.
+// Meta retries within ~30 seconds, so 5-minute memory is sufficient.
+setInterval(() => { processedIds.clear(); }, 5 * 60 * 1000);
+
 // ── Incoming message handler ──────────────────────────────────
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
@@ -41,6 +58,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "ok" });
   }
 
+  // ── A1: Ack Meta immediately ──────────────────────────────
+  // Return 200 right away so Meta doesn't retry (it waits ~5s then retries).
+  // We kick off processing as a floating Promise — Vercel keeps the function
+  // alive as long as work is in flight even after the response is sent.
+  processInBackground(body).catch((err) => {
+    console.error("[WhatsApp Background Error]", err);
+  });
+
+  return NextResponse.json({ status: "ok" });
+}
+
+// ── Background processor ──────────────────────────────────────
+async function processInBackground(body: Record<string, unknown>) {
   try {
     const entry   = (body.entry   as unknown[])?.[0] as Record<string, unknown>;
     const changes = (entry?.changes as unknown[])?.[0] as Record<string, unknown>;
@@ -48,54 +78,107 @@ export async function POST(req: NextRequest) {
     const msgs    = value?.messages as Array<Record<string, unknown>>;
 
     // Ignore status updates (delivered/read receipts)
-    if (!msgs?.length) return NextResponse.json({ status: "ok" });
+    if (!msgs?.length) return;
 
-    const msg  = msgs[0];
+    const msg = msgs[0];
+
+    // ── A5: Use the real Meta-verified sender phone ───────────
+    // `msg.from` is set by Meta's infrastructure — not user-supplied.
+    // This is the authoritative sender phone for all identity checks.
     const from = msg.from as string;
-    if (!from) return NextResponse.json({ status: "ok" });
+    if (!from) return;
 
-    // Extract user text — from text message OR transcribed voice/audio note
+    // ── A6: Per-phone rate limiting ───────────────────────────
+    const rateResult = checkRateLimit(from);
+    if (!rateResult.allowed) {
+      if (rateResult.hard) {
+        // Silently drop — the sender is clearly abusing the bot
+        console.warn(`[WhatsApp RateLimit Hard] ${from} — dropping message silently`);
+        return;
+      }
+      // Soft limit — reply once with a polite notice
+      const minutesLeft = Math.ceil(rateResult.retryAfterMs / 60_000);
+      await sendReply(
+        from,
+        `Apka bohot saare messages aa rahe hain. Thodi der ke liye ruk jaein — approximately ${minutesLeft} minute baad dobara try karein. Shukriya! 🙏`,
+      );
+      return;
+    }
+
+    // ── A3: Idempotency — dedupe by WhatsApp message ID ──────
+    const msgId = msg.id as string | undefined;
+    if (msgId) {
+      if (processedIds.has(msgId)) {
+        console.log(`[WhatsApp Dedup] Skipping already-processed message ${msgId}`);
+        return;
+      }
+      processedIds.add(msgId);
+    }
+
+    // ── A4: Coalesce rapid messages (50ms debounce) ───────────
+    // If multiple messages arrive from the same number in quick succession,
+    // cancel the previous timer and wait — we process only the latest text.
+    // This prevents concurrent DB writes that would overwrite the session.
+    await new Promise<void>((resolve) => {
+      if (pendingTimers.has(from)) {
+        clearTimeout(pendingTimers.get(from)!);
+      }
+      const t = setTimeout(() => {
+        pendingTimers.delete(from);
+        resolve();
+      }, 50);
+      pendingTimers.set(from, t);
+    });
+
+    // Extract user text
     let text: string | undefined;
 
     if (msg.type === "text") {
       text = (msg.text as Record<string, string>)?.body?.trim();
     } else if (msg.type === "audio" || msg.type === "voice") {
-      // WhatsApp voice notes & audio attachments
+      if (!process.env.OPENAI_API_KEY) {
+        await sendReply(from, "Voice messages abhi available nahi hain. Please text mein likhein, main zaroor help karungi!");
+        return;
+      }
       const media = (msg.audio ?? msg.voice) as { id: string } | undefined;
       if (media?.id) {
         try {
           text = await transcribeAudio(media.id);
         } catch (err) {
           console.error("[WhatsApp Voice Transcribe Error]", err);
-          await sendReply(from, "Voice message samajh nahi aaya. Please send as text or try again.");
-          return NextResponse.json({ status: "ok" });
+          await sendReply(from, "Voice message samajh nahi aaya, maafi chahti hoon. Dobara bhejein ya text mein likhein.");
+          return;
         }
       }
     } else {
-      // Image, document, sticker, location etc. — politely ask for text
+      // Image, document, sticker, location etc.
       await sendReply(from, "Ji, please send a text or voice message and I'll help you right away.");
-      return NextResponse.json({ status: "ok" });
+      return;
     }
 
-    if (!text) return NextResponse.json({ status: "ok" });
+    if (!text) return;
 
-    // Process synchronously — Haiku is fast (~1-2s), well within Meta's 5s window
-    const reply = await processWhatsAppMessage(from, text);
+    // ── A2: Graceful crash fallback ───────────────────────────
+    // Any uncaught error inside processWhatsAppMessage gets a polite reply
+    // instead of leaving the guest with silence.
+    let reply: string;
+    try {
+      reply = await processWhatsAppMessage(from, text);
+    } catch (err) {
+      console.error("[WhatsApp Agent Error]", err);
+      reply =
+        "Maafi chahta hoon, abhi technical issue aa rahi hai. " +
+        "Please thodi der mein dobara try karein ya call karein: 0334-7742767";
+    }
+
     await sendReply(from, reply);
 
   } catch (err) {
     console.error("[WhatsApp Webhook Error]", err);
   }
-
-  return NextResponse.json({ status: "ok" });
 }
 
 // ── Send reply via Meta Cloud API ─────────────────────────────
-// Strip BOM, zero-width chars, and whitespace — env values pasted via
-// some shells (PowerShell pipe) carry a UTF-8 BOM that breaks HTTP headers.
-const clean = (s: string | undefined) =>
-  s ? s.replace(/^﻿/, "").replace(/[​-‍﻿]/g, "").trim() : s;
-
 async function sendReply(to: string, text: string): Promise<void> {
   const phoneId = clean(process.env.WHATSAPP_PHONE_NUMBER_ID);
   const token   = clean(process.env.WHATSAPP_API_TOKEN);
@@ -159,8 +242,7 @@ async function transcribeAudio(mediaId: string): Promise<string> {
     "voice.ogg",
   );
   form.append("model", "whisper-1");
-  // Hint: prefer Urdu/English/Punjabi — but auto-detect within these
-  form.append("language", ""); // empty = auto-detect
+  form.append("language", ""); // empty = auto-detect (Urdu/English/Punjabi)
 
   const sttRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",

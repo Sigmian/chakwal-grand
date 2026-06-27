@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import prisma from "@/lib/db/prisma";
 import { sendPushToBranch } from "@/lib/push/send";
-import { sendBookingWhatsApp } from "@/lib/whatsapp/send";
+import { sendBookingConfirmed } from "@/lib/whatsapp/templates";
 import { siteConfig } from "@/config/site";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -102,8 +102,9 @@ export async function validatePromoCode(
   code: string,
   nights: number,
   baseAmount: number,
+  guestPhone?: string,
 ): Promise<
-  | { valid: true;  discountAmount: number; discountLabel: string; offerName: string }
+  | { valid: true;  discountAmount: number; discountLabel: string; offerName: string; firstTimeOnly: boolean }
   | { valid: false; error: string }
 > {
   const upper = code.trim().toUpperCase();
@@ -126,6 +127,27 @@ export async function validatePromoCode(
   if (offer.maxUses && offer.usedCount >= offer.maxUses)
     return { valid: false, error: "This promo code has reached its usage limit." };
 
+  // First-time-only: guest must have no prior bookings
+  if (offer.firstTimeOnly && guestPhone) {
+    const normalised = guestPhone.replace(/\D/g, "").slice(-10);
+    const customers  = await prisma.customer.findMany({
+      where: { phone: { contains: normalised } },
+      take:  5,
+    });
+    const customer = customers.find(c => c.phone.replace(/\D/g, "").slice(-10) === normalised);
+    if (customer) {
+      const prior = await prisma.booking.findFirst({
+        where: {
+          customerId: customer.id,
+          status: { in: ["PENDING", "CONFIRMED", "CHECKED_IN", "CHECKED_OUT"] },
+        },
+        select: { id: true },
+      });
+      if (prior)
+        return { valid: false, error: "This code is only for first-time guests." };
+    }
+  }
+
   const discountAmount =
     offer.discountType === "PERCENTAGE"
       ? Math.round((baseAmount * Number(offer.discountValue)) / 100)
@@ -140,7 +162,8 @@ export async function validatePromoCode(
     valid: true,
     discountAmount,
     discountLabel,
-    offerName: offer.name,
+    offerName:     offer.name,
+    firstTimeOnly: offer.firstTimeOnly,
   };
 }
 
@@ -294,9 +317,31 @@ export async function createPublicBooking(input: {
       },
     });
     if (offer) {
-      const eligible   = !offer.minNights || nights >= offer.minNights;
-      const hasCapacity = !offer.maxUses || offer.usedCount < offer.maxUses;
-      if (eligible && hasCapacity) {
+      const eligible    = !offer.minNights || nights >= offer.minNights;
+      const hasCapacity = !offer.maxUses    || offer.usedCount < offer.maxUses;
+
+      // First-time-only check at booking creation (second gate after validate_coupon)
+      let firstTimeEligible = true;
+      if (offer.firstTimeOnly) {
+        const normalised = input.phone.replace(/\D/g, "").slice(-10);
+        const existing   = await prisma.customer.findMany({
+          where: { phone: { contains: normalised } },
+          take:  5,
+        });
+        const existingCustomer = existing.find(c => c.phone.replace(/\D/g, "").slice(-10) === normalised);
+        if (existingCustomer) {
+          const prior = await prisma.booking.findFirst({
+            where: {
+              customerId: existingCustomer.id,
+              status: { in: ["PENDING", "CONFIRMED", "CHECKED_IN", "CHECKED_OUT"] },
+            },
+            select: { id: true },
+          });
+          if (prior) firstTimeEligible = false;
+        }
+      }
+
+      if (eligible && hasCapacity && firstTimeEligible) {
         discountAmount = offer.discountType === "PERCENTAGE"
           ? (baseAmount * Number(offer.discountValue)) / 100
           : Number(offer.discountValue);
@@ -364,25 +409,17 @@ export async function createPublicBooking(input: {
     data:  { url: "/dashboard/bookings" },
   }).catch(() => {/* ignore push errors */});
 
-  // Send WhatsApp confirmation to guest (non-blocking — never fails the booking)
-  const branchCity = room.branch?.city ?? "";
-  const branchAddress =
-    siteConfig.branches.find((b) =>
-      b.city.toLowerCase() === branchCity.toLowerCase()
-    )?.address ?? siteConfig.branches[0].address;
-
-  sendBookingWhatsApp({
-    phone:           input.phone,
-    guestName:       input.name,
-    bookingRef:      ref,
-    roomName:        room.name,
-    branchName:      room.branch?.name ?? "Chakwal",
-    checkInDate:     ci,
-    checkOutDate:    co,
+  // Send WhatsApp booking confirmation template (non-blocking — never fails the booking)
+  sendBookingConfirmed({
+    phone:       input.phone,
+    guestName:   input.name,
+    bookingRef:  ref,
+    roomName:    room.name,
+    branchName:  room.branch?.name ?? "Chakwal",
+    checkIn:     ci.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
+    checkOut:    co.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
     nights,
     totalAmount,
-    branchAddress,
-    confirmationUrl: `${siteConfig.url}/booking-confirmation/${ref}`,
   }).catch((err) => console.error("[WhatsApp]", err));
 
   return { success: true, bookingId: booking.id, ref, shareToken, discountAmount };

@@ -575,6 +575,9 @@ model Offer {
   maxUses       Int?
   usedCount     Int      @default(0)
 
+  // Restrictions
+  firstTimeOnly Boolean  @default(false) // Only valid for customers with no previous bookings
+
   // Validity
   startsAt      DateTime
   expiresAt     DateTime

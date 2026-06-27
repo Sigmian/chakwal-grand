@@ -70,6 +70,7 @@ export type Permission =
   | "settings:company"
   | "settings:branch"
   | "settings:users"
+  | "settings:ai"
   // CMS
   | "cms:read"
   | "cms:update"
@@ -102,7 +103,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "reviews:read", "reviews:approve", "reviews:delete",
     "complaints:read", "complaints:update",
     "analytics:branch", "analytics:company",
-    "settings:company", "settings:branch", "settings:users",
+    "settings:company", "settings:branch", "settings:users", "settings:ai",
     "cms:read", "cms:update",
     "housekeeping:read", "housekeeping:update",
     "offers:read", "offers:create", "offers:update", "offers:delete",
