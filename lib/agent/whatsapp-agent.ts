@@ -26,12 +26,9 @@ export async function processWhatsAppMessage(
     ? []
     : (session.messages as unknown as MessageParam[]).slice(-MAX_HISTORY);
 
-  // Inject sender phone on first turn so tools like lookup_customer
-  // and log_complaint always have the authoritative number without asking.
-  const isFirstTurn = history.length === 0;
-  const userTurn    = isFirstTurn
-    ? `[Sender WhatsApp phone: +${fromPhone}]\n${userText}`
-    : userText;
+  // Inject sender phone on every turn so tools like lookup_customer,
+  // log_complaint, and send_room_images always have the authoritative number.
+  const userTurn = `[Sender WhatsApp phone: +${fromPhone}]\n${userText}`;
 
   const messages: MessageParam[] = [
     ...history,
