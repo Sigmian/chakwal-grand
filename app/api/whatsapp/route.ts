@@ -58,11 +58,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: "ok" });
   }
 
-  // ── A1: Ack Meta immediately ──────────────────────────────
-  // Return 200 right away so Meta doesn't retry (it waits ~5s then retries).
-  // We kick off processing as a floating Promise — Vercel keeps the function
-  // alive as long as work is in flight even after the response is sent.
-  processInBackground(body).catch((err) => {
+  // Process synchronously — Meta waits up to 20s before retrying.
+  // Fire-and-forget was unreliable on Vercel serverless (function killed after response).
+  await processInBackground(body).catch((err) => {
     console.error("[WhatsApp Background Error]", err);
   });
 
