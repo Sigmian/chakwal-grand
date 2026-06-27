@@ -96,9 +96,8 @@ export const DEFAULT_KNOWLEDGE: ZaraKnowledge = {
   googleReviewIncentive: "Google review dene pe agla stay 10% sasta",
 
   branches: [
-    { name: "Chakwal (Main)",  city: "Chakwal",      address: "Near District Courts, Talagang Road, Chakwal" },
-    { name: "Kallar Kahar",    city: "Kallar Kahar", address: "Lake View Road, Near Salt Mine, Kallar Kahar" },
-    { name: "Sargodha",        city: "Sargodha",     address: "University Road, Near Peoples Colony, Sargodha" },
+    { name: "Main Branch",         city: "Chakwal", address: "Near District Courts, Talagang Road, Chakwal" },
+    { name: "Madina Town Branch",  city: "Chakwal", address: "Madina Town, Chakwal" },
   ],
 
   promotions: [
@@ -108,7 +107,7 @@ export const DEFAULT_KNOWLEDGE: ZaraKnowledge = {
 
   attractions: [
     { name: "Katas Raj Temples",  distanceKm: 40, description: "Qadeem Hindu pilgrimage site, free entry, subah best. ~1 ghanta drive." },
-    { name: "Kallar Kahar Lake",  distanceKm: 40, description: "Namkeen jheel, bandaron ka mela, picnic ke liye mashoor. Hamari 2nd branch bhi wahan hai." },
+    { name: "Kallar Kahar Lake",  distanceKm: 40, description: "Namkeen jheel, bandaron ka mela, picnic ke liye mashoor. ~50 min drive." },
     { name: "Khewra Salt Mine",   distanceKm: 70, description: "Duniya ki 2nd largest salt mine. Tour PKR 500, andar namak ki masjid bhi hai. ~1.5 ghante." },
     { name: "Tilla Jogian",       distanceKm: 60, description: "Pahadon mein qadeem temple, hiking aur panoramic views." },
     { name: "Pharwala Fort",      distanceKm: 50, description: "Mughal zamane ka qila, historical visit." },

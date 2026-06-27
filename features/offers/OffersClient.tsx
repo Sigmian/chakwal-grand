@@ -17,18 +17,23 @@ interface Offer {
   startsAt: string;
   expiresAt: string;
   createdAt: string;
+  branchId: string | null;
+  branch: { id: string; name: string } | null;
 }
 
-interface Props { offers: Offer[] }
+interface Props {
+  offers: Offer[];
+  branches: { id: string; name: string }[];
+}
 
-export function OffersClient({ offers: initial }: Props) {
+export function OffersClient({ offers: initial, branches }: Props) {
   const [offers, setOffers] = useState(initial);
   const [showForm, setShowForm] = useState(false);
   const [copied, setCopied]     = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [form, setForm] = useState({
     name: "", code: "", discountType: "PERCENTAGE", discountValue: "10",
-    minNights: "", maxUses: "",
+    minNights: "", maxUses: "", branchId: "",
     expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
   });
 
@@ -48,11 +53,21 @@ export function OffersClient({ offers: initial }: Props) {
         minNights:     form.minNights ? parseInt(form.minNights) : undefined,
         maxUses:       form.maxUses ? parseInt(form.maxUses) : undefined,
         expiresAt:     new Date(form.expiresAt),
+        branchId:      form.branchId || undefined,
       });
       if (res.success && res.offer) {
-        setOffers(prev => [{ ...res.offer!, discountValue: Number(res.offer!.discountValue), startsAt: res.offer!.startsAt.toISOString(), expiresAt: res.offer!.expiresAt.toISOString(), createdAt: res.offer!.createdAt.toISOString() }, ...prev]);
+        const o = res.offer!;
+        setOffers(prev => [{
+          ...o,
+          discountValue: Number(o.discountValue),
+          startsAt:  o.startsAt.toISOString(),
+          expiresAt: o.expiresAt.toISOString(),
+          createdAt: o.createdAt.toISOString(),
+          branchId:  o.branchId ?? null,
+          branch:    branches.find(b => b.id === o.branchId) ?? null,
+        }, ...prev]);
         setShowForm(false);
-        setForm({ name: "", code: "", discountType: "PERCENTAGE", discountValue: "10", minNights: "", maxUses: "", expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) });
+        setForm({ name: "", code: "", discountType: "PERCENTAGE", discountValue: "10", minNights: "", maxUses: "", branchId: "", expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) });
       }
     });
   };
@@ -72,8 +87,9 @@ export function OffersClient({ offers: initial }: Props) {
     });
   };
 
-  const autoOffers  = offers.filter(o => ["WEEKLY14","MONTHLY40"].includes(o.code ?? ""));
-  const promoOffers = offers.filter(o => !["WEEKLY14","MONTHLY40"].includes(o.code ?? ""));
+  const AUTO_CODES  = ["WEEKLY14", "MONTHLY40", "AUTO_GRANDOPEN50"];
+  const autoOffers  = offers.filter(o => AUTO_CODES.includes(o.code ?? ""));
+  const promoOffers = offers.filter(o => !AUTO_CODES.includes(o.code ?? ""));
 
   return (
     <div className="space-y-8">
@@ -146,7 +162,15 @@ export function OffersClient({ offers: initial }: Props) {
                   placeholder="e.g. 50"
                   className="mt-1 w-full px-3 py-2 text-sm bg-surface-base border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-500/50" />
               </div>
-              <div className="sm:col-span-2">
+              <div>
+                <label className="text-xs text-muted-foreground">Branch (optional)</label>
+                <select value={form.branchId} onChange={e => setForm(f => ({ ...f, branchId: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 text-sm bg-surface-base border border-border rounded-lg text-foreground focus:outline-none focus:border-gold-500/50">
+                  <option value="">All Branches</option>
+                  {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+              <div>
                 <label className="text-xs text-muted-foreground">Expires On</label>
                 <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
                   className="mt-1 w-full px-3 py-2 text-sm bg-surface-base border border-border rounded-lg text-foreground focus:outline-none focus:border-gold-500/50" />
@@ -179,30 +203,47 @@ export function OffersClient({ offers: initial }: Props) {
 }
 
 function AutoDiscountCard({ offer, onToggle }: { offer: Offer; onToggle: (id: string) => void }) {
-  const isWeekly = offer.code === "WEEKLY14";
+  const isWeekly      = offer.code === "WEEKLY14";
+  const isGrandOpen   = offer.code === "AUTO_GRANDOPEN50";
+  const expiry        = new Date(offer.expiresAt);
+  const expired       = expiry < new Date();
+
+  const subtitle = isWeekly
+    ? "7+ nights · Auto-applied globally"
+    : isGrandOpen
+    ? `Grand Opening · Auto-applied${offer.branch ? ` at ${offer.branch.name}` : ""}`
+    : "30+ nights · Auto-applied globally";
+
+  const accentClass = isGrandOpen
+    ? offer.isActive ? "bg-emerald-500/5 border-emerald-500/20" : "bg-surface-elevated border-border"
+    : offer.isActive ? "bg-gold-500/5 border-gold-500/20"     : "bg-surface-elevated border-border";
+
   return (
-    <div className={`rounded-xl p-4 border ${offer.isActive ? "bg-gold-500/5 border-gold-500/20" : "bg-surface-elevated border-border"}`}>
+    <div className={`rounded-xl p-4 border ${accentClass}`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-bold text-foreground">{offer.name}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {isWeekly ? "7+ nights" : "30+ nights"} · Auto-applied
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
         </div>
         <button onClick={() => onToggle(offer.id)} className="text-muted-foreground hover:text-foreground transition-colors mt-0.5">
           {offer.isActive
-            ? <ToggleRight className="w-6 h-6 text-gold-400" />
+            ? <ToggleRight className={`w-6 h-6 ${isGrandOpen ? "text-emerald-400" : "text-gold-400"}`} />
             : <ToggleLeft  className="w-6 h-6" />
           }
         </button>
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        <span className="px-3 py-1 rounded-full bg-gold-500/15 border border-gold-500/30 text-gold-400 text-sm font-bold">
+      <div className="mt-3 flex items-center gap-2 flex-wrap">
+        <span className={`px-3 py-1 rounded-full text-sm font-bold border ${isGrandOpen ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-gold-500/15 border-gold-500/30 text-gold-400"}`}>
           {offer.discountValue}% OFF
         </span>
-        <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${offer.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-surface-base text-muted-foreground"}`}>
-          {offer.isActive ? "Active" : "Paused"}
+        <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${offer.isActive && !expired ? "bg-emerald-500/10 text-emerald-400" : "bg-surface-base text-muted-foreground"}`}>
+          {expired ? "Expired" : offer.isActive ? "Active" : "Paused"}
         </span>
+        {isGrandOpen && !expired && (
+          <span className="text-[10px] text-muted-foreground">
+            Ends {expiry.toLocaleDateString("en-PK", { day: "numeric", month: "short" })}
+          </span>
+        )}
       </div>
       <p className="text-[10px] text-muted-foreground mt-2">Used {offer.usedCount} times</p>
     </div>
@@ -240,6 +281,11 @@ function PromoCodeRow({
           <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${offer.isActive && !expired ? "bg-emerald-500/10 text-emerald-400" : "bg-surface-base text-muted-foreground"}`}>
             {expired ? "Expired" : offer.isActive ? "Active" : "Paused"}
           </span>
+          {offer.branch && (
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              {offer.branch.name}
+            </span>
+          )}
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
           {offer.discountType === "PERCENTAGE" ? `${offer.discountValue}% off` : `PKR ${offer.discountValue} off`}

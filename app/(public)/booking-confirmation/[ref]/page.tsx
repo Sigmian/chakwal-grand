@@ -71,7 +71,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
             Booking Received!
           </h1>
           <p className="text-muted-foreground">
-            We'll call you within 30 minutes to confirm your stay.
+            We&apos;ll call you within 30 minutes to confirm your stay.
           </p>
         </div>
 
@@ -84,7 +84,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
             {booking.bookingRef}
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            Save this number — you'll need it at check-in
+            Save this number — you&apos;ll need it at check-in
           </p>
           <div className="mt-4 flex justify-center">
             <BookingQRCode value={`${siteConfig.url}/my-booking?ref=${booking.bookingRef}`} size={100} />
@@ -281,7 +281,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
               <p className="font-bold text-foreground text-base mb-0.5">Loved your stay? You earn cashback!</p>
               <p className="text-muted-foreground text-xs leading-relaxed mb-4">
                 Leave us a Google review and get <span className="text-gold-400 font-bold">10% cashback</span> on your next booking.
-                Screenshot your review and WhatsApp it to us — we'll apply the discount instantly.
+                Screenshot your review and WhatsApp it to us — we&apos;ll apply the discount instantly.
               </p>
 
               {/* Stars row */}

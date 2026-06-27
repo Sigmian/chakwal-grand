@@ -107,8 +107,15 @@ export async function validatePromoCode(
   | { valid: true;  discountAmount: number; discountLabel: string; offerName: string; firstTimeOnly: boolean }
   | { valid: false; error: string }
 > {
-  const upper = code.trim().toUpperCase();
+  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
+  if (!rateLimit(`promo-validate:${ip}`, 10, 60_000)) {
+    return { valid: false, error: "Too many attempts. Please wait a minute." };
+  }
+
+  const upper = code.trim().toUpperCase().slice(0, 30);
   if (!upper) return { valid: false, error: "Please enter a promo code." };
+  // Block internal auto-apply codes from being entered manually
+  if (upper.startsWith("AUTO_")) return { valid: false, error: "Invalid or expired promo code." };
 
   const offer = await prisma.offer.findFirst({
     where: {
@@ -184,6 +191,22 @@ export async function checkRoomAvailability(
   return !conflict;
 }
 
+// Returns the active Grand Opening offer for a branch (if any)
+export async function getGrandOpeningOffer(branchId: string) {
+  return prisma.offer.findFirst({
+    where: {
+      branchId,
+      code:      "AUTO_GRANDOPEN50",
+      isActive:  true,
+      startsAt:  { lte: new Date() },
+      expiresAt: { gte: new Date() },
+    },
+    select: {
+      id: true, name: true, discountValue: true, discountType: true, expiresAt: true,
+    },
+  });
+}
+
 export async function getAvailableRooms(
   branchId: string,
   checkIn: string,
@@ -203,7 +226,7 @@ export async function getAvailableRooms(
   });
   const takenIds = conflicting.map(b => b.roomId);
 
-  return prisma.room.findMany({
+  const rooms = await prisma.room.findMany({
     where: {
       branchId,
       status: { notIn: ["BLOCKED", "MAINTENANCE"] },
@@ -216,6 +239,46 @@ export async function getAvailableRooms(
     },
     orderBy: { pricePerNight: "asc" },
   });
+
+  // If no rooms found, search the other branch as fallback
+  if (rooms.length === 0) {
+    const allBranches = await prisma.branch.findMany({
+      where: { isActive: true, id: { not: branchId } },
+      select: { id: true, name: true, address: true, city: true },
+    });
+
+    for (const fallbackBranch of allBranches) {
+      const fallbackConflicting = await prisma.booking.findMany({
+        where: {
+          branchId: fallbackBranch.id,
+          status: { in: ["CONFIRMED", "CHECKED_IN", "PENDING"] },
+          AND: [{ checkInDate: { lt: co } }, { checkOutDate: { gt: ci } }],
+        },
+        select: { roomId: true },
+      });
+      const fallbackTakenIds = fallbackConflicting.map(b => b.roomId);
+
+      const fallbackRooms = await prisma.room.findMany({
+        where: {
+          branchId: fallbackBranch.id,
+          status: { notIn: ["BLOCKED", "MAINTENANCE"] },
+          isActive: true,
+          maxAdults: { gte: adults },
+          id: { notIn: fallbackTakenIds },
+        },
+        include: {
+          images: { where: { isCover: true }, take: 1, orderBy: { sortOrder: "asc" } },
+        },
+        orderBy: { pricePerNight: "asc" },
+      });
+
+      if (fallbackRooms.length > 0) {
+        return { rooms: [], fallbackRooms, fallbackBranch };
+      }
+    }
+  }
+
+  return { rooms, fallbackRooms: [], fallbackBranch: null };
 }
 
 // Returns ALL active rooms for a branch, each tagged with isAvailable for the given dates.
@@ -259,6 +322,12 @@ function generateRef(): string {
   return `BK-${new Date().getFullYear()}-${ref}`;
 }
 
+// Sanitise a string field: trim, strip control chars, enforce max length
+function sanitise(val: string | undefined, max: number): string {
+  if (!val) return "";
+  return val.replace(/[ -]/g, "").trim().slice(0, max);
+}
+
 export async function createPublicBooking(input: {
   roomId:              string;
   branchId:            string;
@@ -275,17 +344,39 @@ export async function createPublicBooking(input: {
   estimatedArrival?:   string;
   structuredRequests?: Record<string, boolean | string>;
 }) {
-  const ip = headers().get("x-forwarded-for") ?? "unknown";
+  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
   if (!rateLimit(`public-booking:${ip}`, 5, 60_000)) {
     return { success: false, error: "Too many booking attempts. Please wait a minute." };
   }
 
+  // Sanitise and validate all text inputs before touching the DB
+  const cleanName  = sanitise(input.name,  100);
+  const cleanPhone = sanitise(input.phone,  20).replace(/\s/g, "");
+  const cleanCnic  = sanitise(input.cnic,   20).replace(/[^0-9-]/g, "");
+  const cleanEmail = sanitise(input.email, 120);
+  const cleanNotes = sanitise(input.notes, 500);
+
+  if (!cleanName)  return { success: false, error: "Guest name is required." };
+  if (!cleanPhone || cleanPhone.replace(/\D/g, "").length < 10)
+    return { success: false, error: "A valid phone number is required." };
+  if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail))
+    return { success: false, error: "Please enter a valid email address." };
+
+  // Clamp guests
+  const adults   = Math.min(Math.max(1, Number(input.adults)   || 1), 20);
+  const children = Math.min(Math.max(0, Number(input.children) || 0), 20);
+
   const ci = new Date(input.checkIn);
   const co = new Date(input.checkOut);
 
+  if (isNaN(ci.getTime()) || isNaN(co.getTime()))
+    return { success: false, error: "Invalid dates provided." };
   if (ci >= co) return { success: false, error: "Check-out must be after check-in." };
   if (ci < new Date(new Date().setHours(0, 0, 0, 0)))
     return { success: false, error: "Check-in date cannot be in the past." };
+  const maxNights = 90;
+  const nights = Math.ceil((co.getTime() - ci.getTime()) / 86_400_000);
+  if (nights > maxNights) return { success: false, error: `Maximum booking length is ${maxNights} nights.` };
 
   const available = await checkRoomAvailability(input.roomId, input.checkIn, input.checkOut);
   if (!available)
@@ -297,15 +388,30 @@ export async function createPublicBooking(input: {
   });
   if (!room) return { success: false, error: "Room not found." };
 
-  const nights     = Math.ceil((co.getTime() - ci.getTime()) / 86_400_000);
   const baseAmount = Number(room.pricePerNight) * nights;
 
-  // Determine discount: manual promo code OR auto weekly/monthly
+  // Determine discount: Grand Opening auto-apply → manual code → auto weekly/monthly
   let discountAmount = 0;
   let appliedOfferId: string | null = null;
 
-  const autoCode = nights >= 30 ? "MONTHLY40" : nights >= 7 ? "WEEKLY14" : null;
-  const codeToTry = input.promoCode || autoCode;
+  // Auto-apply Grand Opening 50% for Madina Town (no code needed)
+  const grandOpeningOffer = await prisma.offer.findFirst({
+    where: {
+      branchId:  input.branchId,
+      code:      "AUTO_GRANDOPEN50",
+      isActive:  true,
+      startsAt:  { lte: new Date() },
+      expiresAt: { gte: new Date() },
+    },
+  });
+  if (grandOpeningOffer && (!grandOpeningOffer.maxUses || grandOpeningOffer.usedCount < grandOpeningOffer.maxUses)) {
+    discountAmount = Math.round((baseAmount * Number(grandOpeningOffer.discountValue)) / 100);
+    appliedOfferId = grandOpeningOffer.id;
+    await prisma.offer.update({ where: { id: grandOpeningOffer.id }, data: { usedCount: { increment: 1 } } });
+  }
+
+  const autoCode = !appliedOfferId ? (nights >= 30 ? "MONTHLY40" : nights >= 7 ? "WEEKLY14" : null) : null;
+  const codeToTry = !appliedOfferId ? (input.promoCode || autoCode) : null;
 
   if (codeToTry) {
     const offer = await prisma.offer.findFirst({
@@ -323,7 +429,7 @@ export async function createPublicBooking(input: {
       // First-time-only check at booking creation (second gate after validate_coupon)
       let firstTimeEligible = true;
       if (offer.firstTimeOnly) {
-        const normalised = input.phone.replace(/\D/g, "").slice(-10);
+        const normalised = cleanPhone.replace(/\D/g, "").slice(-10);
         const existing   = await prisma.customer.findMany({
           where: { phone: { contains: normalised } },
           take:  5,
@@ -353,15 +459,15 @@ export async function createPublicBooking(input: {
 
   const totalAmount = Math.max(0, baseAmount - discountAmount);
 
-  let customer = await prisma.customer.findUnique({ where: { phone: input.phone } });
+  let customer = await prisma.customer.findUnique({ where: { phone: cleanPhone } });
   if (!customer) {
     customer = await prisma.customer.create({
       data: {
         companyId: "company-001",
-        name:      input.name,
-        phone:     input.phone,
-        cnic:      input.cnic  || null,
-        email:     input.email || null,
+        name:      cleanName,
+        phone:     cleanPhone,
+        cnic:      cleanCnic  || null,
+        email:     cleanEmail || null,
       },
     });
   }
@@ -382,9 +488,9 @@ export async function createPublicBooking(input: {
       checkInDate:        ci,
       checkOutDate:       co,
       nights,
-      adultCount:         input.adults,
-      childCount:         input.children,
-      guestCount:         input.adults + input.children,
+      adultCount:         adults,
+      childCount:         children,
+      guestCount:         adults + children,
       status:             "PENDING",
       paymentStatus:      "UNPAID",
       baseAmount,
@@ -394,8 +500,8 @@ export async function createPublicBooking(input: {
       totalAmount,
       offerId:            appliedOfferId,
       source:             "website",
-      specialRequests:    input.notes || null,
-      estimatedArrival:   input.estimatedArrival || null,
+      specialRequests:    cleanNotes || null,
+      estimatedArrival:   input.estimatedArrival?.slice(0, 20) || null,
       structuredRequests: input.structuredRequests ?? undefined,
       shareToken,
     },
@@ -404,15 +510,15 @@ export async function createPublicBooking(input: {
   // Fire push notification to all staff in this branch (non-blocking)
   sendPushToBranch(input.branchId, {
     title: "🔔 New Booking Received",
-    body:  `${input.name} booked Room ${room.number} · ${nights} night${nights !== 1 ? "s" : ""} · Ref: ${ref}`,
+    body:  `${cleanName} booked Room ${room.number} · ${nights} night${nights !== 1 ? "s" : ""} · Ref: ${ref}`,
     tag:   "new-booking",
     data:  { url: "/dashboard/bookings" },
   }).catch(() => {/* ignore push errors */});
 
   // Send WhatsApp booking confirmation template (non-blocking — never fails the booking)
   sendBookingConfirmed({
-    phone:       input.phone,
-    guestName:   input.name,
+    phone:       cleanPhone,
+    guestName:   cleanName,
     bookingRef:  ref,
     roomName:    room.name,
     branchName:  room.branch?.name ?? "Chakwal",
@@ -426,12 +532,21 @@ export async function createPublicBooking(input: {
 }
 
 export async function lookupGuestByPhone(phone: string) {
-  const customer = await prisma.customer.findUnique({
-    where: { phone: phone.trim() },
-    select: { name: true, phone: true, email: true, cnic: true },
+  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
+  if (!rateLimit(`guest-lookup:${ip}`, 10, 60_000)) {
+    return { found: false as const };
+  }
+
+  const normalised = phone.trim().replace(/\D/g, "").slice(-10);
+  if (normalised.length < 10) return { found: false as const };
+
+  const customer = await prisma.customer.findFirst({
+    where: { phone: { endsWith: normalised } },
+    select: { name: true, phone: true, email: true },
   });
   if (!customer) return { found: false as const };
-  return { found: true as const, name: customer.name, phone: customer.phone, email: customer.email ?? "", cnic: customer.cnic ?? "" };
+  // Do NOT return CNIC in auto-fill — guests enter it manually for security
+  return { found: true as const, name: customer.name, phone: customer.phone, email: customer.email ?? "", cnic: "" };
 }
 
 export async function lookupBooking(ref: string) {

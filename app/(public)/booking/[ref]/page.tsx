@@ -49,7 +49,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
           </div>
           <h1 className="text-3xl font-bold font-serif text-foreground mb-2">Booking Received!</h1>
           <p className="text-muted-foreground">
-            Thank you, <strong className="text-foreground">{booking.customer?.name}</strong>. We'll confirm your booking via phone within 30 minutes.
+            Thank you, <strong className="text-foreground">{booking.customer?.name}</strong>. We&apos;ll confirm your booking via phone within 30 minutes.
           </p>
         </div>
 

@@ -17,6 +17,7 @@ export default async function GalleryPage() {
     name:   r.name,
     number: r.number,
     type:   r.type,
+    branch: r.branch ? { id: r.branch.id, name: r.branch.name } : undefined,
     images: r.images.map(img => ({
       id:       img.id,
       url:      img.url,

@@ -70,7 +70,7 @@ const FAQS = [
     items: [
       {
         q: "Where are you located?",
-        a: "We have three branches: Main branch in Chakwal (Near Dist. Complex, Talagang Road), Kallar Kahar (Lake View Road, near the lake), and Sargodha (University Road). Each branch has its own dedicated team available 24/7.",
+        a: "We have two branches in Chakwal: Main Branch (Near Dist. Complex, Talagang Road) and Madina Town Branch (Madina Town, Chakwal). Each branch has its own dedicated team available 24/7.",
       },
       {
         q: "Is parking available?",

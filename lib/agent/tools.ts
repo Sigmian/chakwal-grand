@@ -167,7 +167,7 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
         adults:      { type: "number", description: "Number of adults — used to filter by capacity" },
         branch_city: {
           type: "string",
-          description: "Filter by city: Chakwal, Kallar Kahar, or Sargodha (optional)",
+          description: "Filter by branch: 'Main Branch' (Talagang Road) or 'Madina Town Branch' — optional",
         },
       },
       required: [],
@@ -187,7 +187,7 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
         to_phone:    { type: "string",  description: "Guest WhatsApp phone number to send images to" },
         room_id:     { type: "string",  description: "Specific room ID — use when guest asked about one room (from search_rooms)" },
         room_type:   { type: "string",  description: "Room type to show (STANDARD, DELUXE, FAMILY, VIP, SUITE) — use when no specific room chosen yet" },
-        branch_city: { type: "string",  description: "Filter by branch city (Chakwal, Kallar Kahar, Sargodha) — optional" },
+        branch_city: { type: "string",  description: "Filter by branch: 'Main Branch' or 'Madina Town Branch' — optional" },
       },
       required: ["to_phone"],
     },

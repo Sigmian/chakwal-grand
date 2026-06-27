@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Upload, Link2, Trash2, Star, Plus, Loader2, ImageIcon, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Upload, Link2, Trash2, Star, Plus, Loader2, ImageIcon, ChevronDown, ChevronUp, X, SlidersHorizontal } from "lucide-react";
 import { addRoomImages, setRoomCoverImage, deleteRoomImage } from "@/server/actions/rooms";
 import { useImageUpload } from "@/features/shared/hooks/useImageUpload";
 import { cn } from "@/utils";
 
 interface RoomImage { id: string; url: string; altText: string | null; isCover: boolean }
-interface Room      { id: string; name: string; number: string; type: string; images: RoomImage[] }
+interface Room      { id: string; name: string; number: string; type: string; images: RoomImage[]; branch?: { id: string; name: string } }
 interface Props     { rooms: Room[]; canEdit: boolean }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -178,7 +178,18 @@ function RoomSection({ room, canEdit }: { room: Room; canEdit: boolean }) {
 }
 
 export function GalleryManager({ rooms, canEdit }: Props) {
+  const [branchFilter, setBranchFilter] = useState("");
   const totalPhotos = rooms.reduce((s, r) => s + r.images.length, 0);
+
+  const branches = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string }>();
+    rooms.forEach(r => { if (r.branch && !seen.has(r.branch.id)) seen.set(r.branch.id, r.branch); });
+    return [...seen.values()];
+  }, [rooms]);
+
+  const filtered = useMemo(() =>
+    branchFilter ? rooms.filter(r => r.branch?.id === branchFilter) : rooms
+  , [rooms, branchFilter]);
 
   if (rooms.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-12">No rooms found. Add rooms first.</p>;
@@ -186,12 +197,34 @@ export function GalleryManager({ rooms, canEdit }: Props) {
 
   return (
     <div className="space-y-4">
-      {canEdit && (
-        <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl text-sm text-blue-400">
-          <strong>How to add photos:</strong> Expand any room below → click <strong>"Upload Photo"</strong> to upload from your device (requires Cloudinary setup), or <strong>"Add by URL"</strong> to paste any image link — no setup needed.
-        </div>
-      )}
-      {rooms.map(room => (
+      {/* Filter bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        {branches.length > 1 && (
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <select
+              value={branchFilter}
+              onChange={e => setBranchFilter(e.target.value)}
+              className="text-sm bg-surface-elevated border border-border rounded-xl px-3 py-1.5 text-foreground focus:outline-none focus:border-gold-500/50"
+            >
+              <option value="">All Branches ({rooms.length} rooms)</option>
+              {branches.map(b => (
+                <option key={b.id} value={b.id}>
+                  {b.name} ({rooms.filter(r => r.branch?.id === b.id).length} rooms)
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {canEdit && (
+          <p className="text-xs text-muted-foreground">
+            Expand a room → <strong>Upload Photo</strong> or <strong>Add by URL</strong>
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground sm:ml-auto">{totalPhotos} photo{totalPhotos !== 1 ? "s" : ""} total</p>
+      </div>
+
+      {filtered.map(room => (
         <RoomSection key={room.id} room={room} canEdit={canEdit} />
       ))}
     </div>

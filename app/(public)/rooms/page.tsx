@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Building2, ArrowRight } from "lucide-react";
-import { getPublicRooms } from "@/server/actions/public";
+import { getPublicRooms, getGrandOpeningOffer } from "@/server/actions/public";
 import { RoomsClient } from "@/features/public/components/RoomsClient";
 import { siteConfig } from "@/config/site";
 
@@ -20,7 +20,10 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function RoomsPage() {
-  const rooms = await getPublicRooms();
+  const [rooms, grandOpeningOffer] = await Promise.all([
+    getPublicRooms(),
+    getGrandOpeningOffer(siteConfig.branchIds.madinaTown),
+  ]);
 
   return (
     <div className="pt-28 pb-20">
@@ -48,7 +51,14 @@ export default async function RoomsPage() {
 
       {/* Rooms grid with comparison */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <RoomsClient rooms={rooms as any} />
+        <RoomsClient
+          rooms={rooms as any}
+          grandOpeningOffer={grandOpeningOffer ? {
+            branchId: siteConfig.branchIds.madinaTown,
+            discountValue: Number(grandOpeningOffer.discountValue),
+            expiresAt: grandOpeningOffer.expiresAt?.toISOString() ?? "",
+          } : null}
+        />
       </div>
 
       {/* CTA */}

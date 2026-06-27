@@ -8,12 +8,15 @@ import {
   CalendarDays, Users, Building2, BedDouble,
   User, Phone, CreditCard, ChevronRight, ChevronLeft,
   Loader2, AlertCircle, Search, Star, Home, Crown,
-  Snowflake, Sunrise, Moon, Check, Tag, X,
+  Snowflake, Sunrise, Moon, Check, Tag, X, MapPin,
 } from "lucide-react";
 import { getAvailableRooms, createPublicBooking, lookupGuestByPhone, validatePromoCode } from "@/server/actions/public";
+import { useBranchContext } from "@/components/providers/BranchProvider";
+import { siteConfig } from "@/config/site";
 import { cn, formatPKR } from "@/utils";
 
 interface Branch { id: string; name: string; city: string }
+interface GrandOpeningOffer { discountValue: number; expiresAt: string }
 interface Room   {
   id: string; number: string; name: string; type: string;
   pricePerNight: any; maxAdults: number; amenities: string[];
@@ -21,8 +24,8 @@ interface Room   {
   images?: { url: string; isCover: boolean }[];
 }
 
-const today    = new Date().toISOString().split("T")[0];
-const tomorrow = new Date(Date.now() + 86_400_000).toISOString().split("T")[0];
+function getToday()    { return new Date().toISOString().split("T")[0]; }
+function getTomorrow() { return new Date(Date.now() + 86_400_000).toISOString().split("T")[0]; }
 
 const inputCls = "w-full bg-surface-base border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-500/60 focus:ring-1 focus:ring-gold-500/20 transition-all";
 const labelCls = "block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5";
@@ -31,9 +34,10 @@ const TYPE_ICON: Record<string, typeof BedDouble> = {
   STANDARD: BedDouble, DELUXE: Star, SUITE: Home, FAMILY: Users, VIP: Crown,
 };
 
-export function BookingForm({ branches }: { branches: Branch[] }) {
+export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[]; grandOpeningOffer: GrandOpeningOffer | null }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
+  const { selectedBranchId, setSelectedBranch } = useBranchContext();
 
   // If arriving from room picker, roomId is pre-set — skip to step 3 after room loads
   const preselectedRoomId = searchParams.get("roomId");
@@ -41,29 +45,39 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
   const [step, setStep] = useState(preselectedRoomId ? 3 : 1);
   const [isPending, start] = useTransition();
   const [rooms, setRooms]   = useState<Room[]>([]);
+  const [fallbackRooms, setFallbackRooms] = useState<Room[]>([]);
+  const [fallbackBranch, setFallbackBranch] = useState<{ id: string; name: string; address: string; city: string } | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchDone, setSearchDone] = useState(false);
 
-  const [dates, setDates] = useState({
-    branchId: searchParams.get("branchId") || branches[0]?.id || "",
-    checkIn:  searchParams.get("checkIn")  || today,
-    checkOut: searchParams.get("checkOut") || tomorrow,
+  const [dates, setDates] = useState(() => ({
+    branchId: searchParams.get("branchId") || selectedBranchId || branches[0]?.id || "",
+    checkIn:  searchParams.get("checkIn")  || getToday(),
+    checkOut: searchParams.get("checkOut") || getTomorrow(),
     adults:   Number(searchParams.get("adults"))   || 2,
     children: Number(searchParams.get("children")) || 0,
-  });
+  }));
 
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+
+  // Sync branch from context (when user selected from modal) — only if not already set via URL param
+  useEffect(() => {
+    if (selectedBranchId && !searchParams.get("branchId")) {
+      setDates(d => ({ ...d, branchId: selectedBranchId }));
+    }
+  }, [selectedBranchId, searchParams]);
 
   // Auto-load pre-selected room from picker
   useEffect(() => {
     if (!preselectedRoomId) return;
     getAvailableRooms(
       searchParams.get("branchId") || branches[0]?.id || "",
-      searchParams.get("checkIn")  || today,
-      searchParams.get("checkOut") || tomorrow,
+      searchParams.get("checkIn")  || getToday(),
+      searchParams.get("checkOut") || getTomorrow(),
       Number(searchParams.get("adults")) || 2,
     ).then((result) => {
-      const match = (result as Room[]).find((r) => r.id === preselectedRoomId);
+      const { rooms: r } = result as { rooms: Room[]; fallbackRooms: Room[]; fallbackBranch: unknown };
+      const match = r.find((room) => room.id === preselectedRoomId);
       if (match) setSelectedRoom(match);
     }).catch(() => {/* ignore */});
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -161,16 +175,35 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
     }
     setSearching(true);
     setSearchDone(false);
+    setFallbackRooms([]);
+    setFallbackBranch(null);
     try {
       const result = await getAvailableRooms(dates.branchId, dates.checkIn, dates.checkOut, dates.adults);
-      setRooms(result as Room[]);
+      const { rooms: r, fallbackRooms: fb, fallbackBranch: fbb } = result as {
+        rooms: Room[]; fallbackRooms: Room[]; fallbackBranch: { id: string; name: string; address: string; city: string } | null;
+      };
+      setRooms(r);
+      setFallbackRooms(fb);
+      setFallbackBranch(fbb);
       setSearchDone(true);
-      if (result.length > 0) setStep(2);
+      if (r.length > 0) setStep(2);
     } catch {
       toast.error("Failed to search rooms. Please try again.");
     } finally {
       setSearching(false);
     }
+  };
+
+  const switchToFallback = () => {
+    if (!fallbackBranch) return;
+    const branchId = fallbackBranch.id as typeof siteConfig.branchIds[keyof typeof siteConfig.branchIds];
+    setDates(d => ({ ...d, branchId: fallbackBranch.id }));
+    setSelectedBranch(branchId, true);
+    setRooms(fallbackRooms);
+    setFallbackRooms([]);
+    setFallbackBranch(null);
+    setSearchDone(true);
+    setStep(2);
   };
 
   const confirmBooking = () => {
@@ -248,12 +281,12 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
 
             <div>
               <label htmlFor="book-checkin" className={labelCls}>Check-In Date</label>
-              <input id="book-checkin" type="date" value={dates.checkIn} min={today} onChange={setD("checkIn")} className={inputCls} />
+              <input id="book-checkin" type="date" value={dates.checkIn} min={getToday()} onChange={setD("checkIn")} className={inputCls} />
             </div>
 
             <div>
               <label htmlFor="book-checkout" className={labelCls}>Check-Out Date</label>
-              <input id="book-checkout" type="date" value={dates.checkOut} min={dates.checkIn || today} onChange={setD("checkOut")} className={inputCls} />
+              <input id="book-checkout" type="date" value={dates.checkOut} min={dates.checkIn || getToday()} onChange={setD("checkOut")} className={inputCls} />
             </div>
 
             <div>
@@ -287,10 +320,38 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
             )}
           </div>
 
-          {searchDone && rooms.length === 0 && (
+          {searchDone && rooms.length === 0 && fallbackBranch && fallbackRooms.length > 0 && (
+            <div className="mt-5 overflow-hidden rounded-2xl border border-emerald-500/30 bg-emerald-500/5">
+              <div className="px-5 py-4 border-b border-emerald-500/20">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <MapPin className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-400">Great news! We found rooms at another branch</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {branches.find(b => b.id === dates.branchId)?.name ?? "This branch"} is fully booked for your selected dates — but {fallbackRooms.length} room{fallbackRooms.length > 1 ? "s" : ""} {fallbackRooms.length > 1 ? "are" : "is"} available at our <span className="text-foreground font-medium">{fallbackBranch.name}</span>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4">
+                <button
+                  onClick={switchToFallback}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-sm font-semibold rounded-xl transition-all"
+                >
+                  <MapPin className="w-4 h-4" />
+                  View {fallbackRooms.length} Available Room{fallbackRooms.length > 1 ? "s" : ""} at {fallbackBranch.name}
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {searchDone && rooms.length === 0 && !fallbackBranch && (
             <div className="mt-5 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
               <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-400">No rooms available for the selected dates and branch. Try different dates or another branch.</p>
+              <p className="text-sm text-red-400">No rooms available for these dates across all branches. Please try different dates.</p>
             </div>
           )}
 
@@ -322,7 +383,10 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
 
           <div className="space-y-4">
             {rooms.map(room => {
-              const total = Number(room.pricePerNight) * nights;
+              const originalPrice = Number(room.pricePerNight);
+              const isGrandOpening = grandOpeningOffer && dates.branchId === siteConfig.branchIds.madinaTown;
+              const discountedPrice = isGrandOpening ? Math.round(originalPrice * (1 - grandOpeningOffer.discountValue / 100)) : originalPrice;
+              const total = discountedPrice * nights;
               const isSelected = selectedRoom?.id === room.id;
               return (
                 <div
@@ -363,8 +427,13 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-xl font-bold text-gold-400 font-serif">{formatPKR(Number(room.pricePerNight))}</p>
-                      <p className="text-xs text-muted-foreground">/night</p>
+                      {isGrandOpening && (
+                        <p className="text-xs text-muted-foreground line-through">{formatPKR(originalPrice)}</p>
+                      )}
+                      <p className={cn("text-xl font-bold font-serif", isGrandOpening ? "text-emerald-400" : "text-gold-400")}>
+                        {formatPKR(discountedPrice)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">/night{isGrandOpening && <span className="text-emerald-400 ml-1">50% OFF</span>}</p>
                       <p className="text-sm font-semibold text-foreground mt-2">Total: {formatPKR(total)}</p>
                       <p className="text-xs text-muted-foreground">for {nights} night{nights > 1 ? "s" : ""}</p>
                     </div>
@@ -590,39 +659,59 @@ export function BookingForm({ branches }: { branches: Branch[] }) {
                     </div>
                   )}
                   <div className="border-t border-border pt-3 mt-3 space-y-2">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Room rate</span>
-                      <span>{formatPKR(Number(selectedRoom?.pricePerNight ?? 0))} / night</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Subtotal ({nights} night{nights > 1 ? "s" : ""})</span>
-                      <span>{formatPKR(Number(selectedRoom?.pricePerNight ?? 0) * nights)}</span>
-                    </div>
-                    {promoResult && (
-                      <div className="flex justify-between text-xs text-emerald-400">
-                        <span className="flex items-center gap-1">
-                          <Tag className="w-3 h-3" />
-                          Discount ({guest.promoCode.toUpperCase()})
-                        </span>
-                        <span>- {formatPKR(promoResult.discountAmount)}</span>
-                      </div>
-                    )}
-                    <div className={cn(
-                      "flex justify-between items-center pt-2 border-t border-border/60",
-                      promoResult ? "border-emerald-500/20" : ""
-                    )}>
-                      <span className="text-sm font-semibold text-foreground">Total</span>
-                      <div className="text-right">
-                        {promoResult && (
-                          <p className="text-xs text-muted-foreground line-through">
-                            {formatPKR(Number(selectedRoom?.pricePerNight ?? 0) * nights)}
-                          </p>
-                        )}
-                        <span className="font-bold text-gold-400 text-lg font-serif">
-                          {formatPKR(Math.max(0, Number(selectedRoom?.pricePerNight ?? 0) * nights - (promoResult?.discountAmount ?? 0)))}
-                        </span>
-                      </div>
-                    </div>
+                    {/* Price breakdown — account for Grand Opening auto-discount */}
+                    {(() => {
+                      const baseRate      = Number(selectedRoom?.pricePerNight ?? 0);
+                      const baseTotal     = baseRate * nights;
+                      const isGO          = !!(grandOpeningOffer && dates.branchId === siteConfig.branchIds.madinaTown);
+                      const goDiscount    = isGO ? Math.round((baseTotal * grandOpeningOffer!.discountValue) / 100) : 0;
+                      const afterGO       = baseTotal - goDiscount;
+                      const promoDiscount = promoResult?.discountAmount ?? 0;
+                      const finalTotal    = Math.max(0, afterGO - promoDiscount);
+                      const hasDiscount   = goDiscount > 0 || promoDiscount > 0;
+                      return (
+                        <>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>Room rate</span>
+                            <span>{formatPKR(baseRate)} / night</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>Subtotal ({nights} night{nights > 1 ? "s" : ""})</span>
+                            <span>{formatPKR(baseTotal)}</span>
+                          </div>
+                          {isGO && (
+                            <div className="flex justify-between text-xs text-emerald-400">
+                              <span className="flex items-center gap-1">
+                                <Tag className="w-3 h-3" />
+                                Grand Opening 50% OFF
+                              </span>
+                              <span>− {formatPKR(goDiscount)}</span>
+                            </div>
+                          )}
+                          {promoResult && (
+                            <div className="flex justify-between text-xs text-emerald-400">
+                              <span className="flex items-center gap-1">
+                                <Tag className="w-3 h-3" />
+                                {guest.promoCode.toUpperCase()}
+                              </span>
+                              <span>− {formatPKR(promoDiscount)}</span>
+                            </div>
+                          )}
+                          <div className={cn(
+                            "flex justify-between items-center pt-2 border-t border-border/60",
+                            hasDiscount ? "border-emerald-500/20" : ""
+                          )}>
+                            <span className="text-sm font-semibold text-foreground">Total</span>
+                            <div className="text-right">
+                              {hasDiscount && (
+                                <p className="text-xs text-muted-foreground line-through">{formatPKR(baseTotal)}</p>
+                              )}
+                              <span className="font-bold text-gold-400 text-lg font-serif">{formatPKR(finalTotal)}</span>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                     <p className="inline-flex items-center gap-1 text-xs text-emerald-400/90"><Check className="w-3.5 h-3.5" /> Pay in cash on arrival — no online payment</p>
                   </div>
                 </div>

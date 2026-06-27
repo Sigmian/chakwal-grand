@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getPublicBranches } from "@/server/actions/public";
+import { getPublicBranches, getGrandOpeningOffer } from "@/server/actions/public";
 import { BookingForm } from "@/features/public/components/BookingForm";
 import { Loader2, CheckCircle2, Wallet, PhoneCall, BadgePercent } from "lucide-react";
 import { siteConfig } from "@/config/site";
@@ -17,7 +17,10 @@ export const metadata: Metadata = {
 };
 
 export default async function BookPage() {
-  const branches = await getPublicBranches();
+  const [branches, grandOpeningOffer] = await Promise.all([
+    getPublicBranches(),
+    getGrandOpeningOffer(siteConfig.branchIds.madinaTown),
+  ]);
 
   return (
     <div className="pt-28 pb-20">
@@ -54,7 +57,10 @@ export default async function BookPage() {
             <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
           </div>
         }>
-          <BookingForm branches={branches as { id: string; name: string; city: string }[]} />
+          <BookingForm
+            branches={branches as { id: string; name: string; city: string }[]}
+            grandOpeningOffer={grandOpeningOffer ? { discountValue: Number(grandOpeningOffer.discountValue), expiresAt: grandOpeningOffer.expiresAt?.toISOString() ?? "" } : null}
+          />
         </Suspense>
       </div>
     </div>

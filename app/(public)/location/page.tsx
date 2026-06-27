@@ -6,7 +6,7 @@ import { Reveal } from "@/features/public/components/Reveal";
 
 export const metadata: Metadata = {
   title: "Location & Directions — Chakwal, Punjab",
-  description: "Find Chakwal Guest House easily. Located near District Courts, Talagang Road, Chakwal. Also branches in Kallar Kahar & Sargodha. Get directions, map & contact details.",
+  description: "Find Chakwal Guest House easily. Two locations in Chakwal — Main Branch near District Courts & Madina Town Branch. Get directions, map & contact details.",
   keywords: ["Chakwal Guest House location", "guest house near Chakwal city", "how to reach Chakwal Guest House", "Talagang Road Chakwal guest house", "accommodation near Katas Raj"],
   alternates: { canonical: `${siteConfig.url}/location` },
   openGraph: {
@@ -40,25 +40,20 @@ const LOCATION_SCHEMA = {
 
 const BRANCHES = [
   {
-    name:        "Chakwal — Main Branch",
+    name:        "Main Branch — Near District Courts",
     address:     "Near District Courts, Talagang Road, Chakwal",
-    description: "Our flagship location in the heart of Chakwal city, easily accessible from the main GT Road and city center.",
+    description: "Our flagship location in the heart of Chakwal city, easily accessible from the main GT Road and city center. Trusted by thousands of guests since our founding.",
     distance:    "2 km from Chakwal Bus Stand",
     mapUrl:      "https://maps.google.com/?q=Near+District+Courts+Talagang+Road+Chakwal+Punjab",
+    label:       "Flagship",
   },
   {
-    name:        "Kallar Kahar Branch",
-    address:     "Lake View Road, Near Salt Mine, Kallar Kahar, Chakwal",
-    description: "Perfect for visitors to Kallar Kahar Lake, Salt Range, and Katas Raj Temples. Scenic lakeside location.",
-    distance:    "500m from Kallar Kahar Lake",
-    mapUrl:      "https://maps.google.com/?q=Kallar+Kahar+Lake+View+Road+Chakwal",
-  },
-  {
-    name:        "Sargodha Branch",
-    address:     "University Road, Near Peoples Colony, Sargodha",
-    description: "Conveniently located near Sargodha University and the main commercial area of Sargodha city.",
-    distance:    "Near Sargodha University",
-    mapUrl:      "https://maps.google.com/?q=University+Road+Near+Peoples+Colony+Sargodha",
+    name:        "Madina Town Branch — New Location",
+    address:     "Madina Town, Chakwal",
+    description: "Our brand-new Madina Town branch featuring spacious rooms, a private apartment with lawn and garage, and modern standard rooms. Perfect for families and extended stays.",
+    distance:    "Madina Town, Chakwal",
+    mapUrl:      "https://maps.google.com/?q=Madina+Town+Chakwal+Punjab",
+    label:       "New — Grand Opening",
   },
 ];
 
@@ -79,11 +74,11 @@ export default function LocationPage() {
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-4">Find Us</p>
             <h1 className="text-4xl sm:text-5xl font-bold font-serif text-foreground mb-6">
-              Our Locations in Punjab
+              Our Two Locations in Chakwal
             </h1>
             <p className="text-lg text-muted-foreground">
-              Chakwal Guest House has 3 branches across Punjab — in Chakwal, Kallar Kahar,
-              and Sargodha. All locations are easily accessible and centrally located.
+              Chakwal Guest House has two locations in Chakwal — our Main Branch near
+              District Courts and our new Madina Town Branch. Both are easily accessible.
             </p>
           </div>
         </section>
@@ -138,7 +133,14 @@ export default function LocationPage() {
                       <span className="text-background font-bold text-sm">{i + 1}</span>
                     </div>
                     <div>
-                      <h2 className="font-bold text-foreground text-lg">{b.name}</h2>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h2 className="font-bold text-foreground text-lg">{b.name}</h2>
+                        {"label" in b && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${b.label === "Flagship" ? "bg-gold-500/15 text-gold-400" : "bg-emerald-500/15 text-emerald-400"}`}>
+                            {b.label}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                         {b.address}

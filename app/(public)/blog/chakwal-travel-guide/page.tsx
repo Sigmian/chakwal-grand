@@ -210,7 +210,7 @@ export default function ChakwalTravelGuidePage() {
                 <Image src="/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg" alt="Clean comfortable AC room Chakwal Guest House Punjab Pakistan" fill className="object-cover" />
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                For accommodation in Chakwal, <strong className="text-foreground">Chakwal Guest House</strong> is the most popular and trusted option — rated 5.0 stars on Google with 20+ verified reviews. It has 3 branches across the district: Chakwal city, Kallar Kahar, and Sargodha.
+                For accommodation in Chakwal, <strong className="text-foreground">Chakwal Guest House</strong> is the most popular and trusted option — rated 5.0 stars on Google with 20+ verified reviews. It has two locations in Chakwal: Main Branch near District Courts and the new Madina Town Branch.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                 {[

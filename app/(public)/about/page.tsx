@@ -7,12 +7,12 @@ import { CountUp } from "@/features/public/components/CountUp";
 
 export const metadata: Metadata = {
   title: "About Us — Best Stay in Chakwal",
-  description: "Learn about Chakwal Guest House — Chakwal's most trusted guest house with 3 locations across Punjab. Affordable luxury, family-friendly, 24/7 service since establishment.",
+  description: "Learn about Chakwal Guest House — Chakwal's most trusted guest house with two locations in Chakwal. Affordable luxury, family-friendly, 24/7 service.",
   keywords: ["about Chakwal Guest House", "best guest house Chakwal", "trusted guest house Pakistan", "family guest house Chakwal Punjab"],
   alternates: { canonical: `${siteConfig.url}/about` },
   openGraph: {
     title: "About Chakwal Guest House | Best Guest House in Chakwal",
-    description: "Chakwal's most trusted guest house chain with branches in Chakwal, Kallar Kahar, and Sargodha. Family-friendly, affordable, 24/7 service.",
+    description: "Chakwal's most trusted guest house with two locations in Chakwal — Main Branch & Madina Town. Family-friendly, affordable, 24/7 service.",
     url: `${siteConfig.url}/about`,
   },
 };
@@ -22,7 +22,7 @@ const ABOUT_SCHEMA = {
   "@type": "AboutPage",
   "name": "About Chakwal Guest House",
   "url": `${siteConfig.url}/about`,
-  "description": "Chakwal Guest House is the premier accommodation provider in Chakwal, Punjab with branches in Chakwal, Kallar Kahar, and Sargodha.",
+  "description": "Chakwal Guest House is the premier accommodation provider in Chakwal, Punjab — two locations in Chakwal city serving thousands of guests.",
   "mainEntity": {
     "@type": "LodgingBusiness",
     "name": "Chakwal Guest House",
@@ -46,9 +46,8 @@ const VALUES = [
 ];
 
 const BRANCHES = [
-  { name: "Chakwal (Main Branch)", address: "Near District Courts, Talagang Road, Chakwal", city: "Chakwal" },
-  { name: "Kallar Kahar Branch",   address: "Lake View Road, Near Salt Mine, Kallar Kahar, Chakwal", city: "Kallar Kahar" },
-  { name: "Sargodha Branch",       address: "University Road, Near Peoples Colony, Sargodha", city: "Sargodha" },
+  { name: "Main Branch",         address: "Near District Courts, Talagang Road, Chakwal", city: "Chakwal",      label: "Flagship" },
+  { name: "Madina Town Branch",  address: "Madina Town, Chakwal",                         city: "Chakwal",      label: "New — Grand Opening" },
 ];
 
 export default function AboutPage() {
@@ -152,10 +151,10 @@ export default function AboutPage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Our Locations</p>
-              <h2 className="text-3xl font-bold font-serif text-foreground">3 Branches Across Punjab</h2>
-              <p className="text-muted-foreground mt-3">Find us in Chakwal, Kallar Kahar, and Sargodha</p>
+              <h2 className="text-3xl font-bold font-serif text-foreground">Two Locations in Chakwal</h2>
+              <p className="text-muted-foreground mt-3">Main Branch & Madina Town Branch — both in Chakwal, Punjab</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {BRANCHES.map((b, i) => (
                 <Reveal key={b.name} delay={i * 0.08}>
                   <div className="card-luxury rounded-2xl p-6 h-full hover:-translate-y-1 hover:border-gold-500/20 transition-all">

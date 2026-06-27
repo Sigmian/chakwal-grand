@@ -7,7 +7,7 @@ import { Reveal } from "@/features/public/components/Reveal";
 
 export const metadata: Metadata = {
   title: `Contact Us — Call & WhatsApp ${siteConfig.phone}`,
-  description: `Contact Chakwal Guest House for room bookings, inquiries, and reservations. Call or WhatsApp ${siteConfig.phone}. Located in Chakwal, Kallar Kahar & Sargodha, Punjab.`,
+  description: `Contact Chakwal Guest House for room bookings, inquiries, and reservations. Call or WhatsApp ${siteConfig.phone}. Two branches in Chakwal, Punjab — Main Branch & Madina Town Branch.`,
   keywords: ["contact Chakwal Guest House", "Chakwal guest house phone number", "book guest house Chakwal", "Chakwal accommodation contact"],
   alternates: { canonical: `${siteConfig.url}/contact` },
   openGraph: {
@@ -47,16 +47,10 @@ const BRANCHES = [
     mapEmbed: "https://www.google.com/maps?q=Chakwal,Punjab,Pakistan&z=13&output=embed",
   },
   {
-    name:    "Kallar Kahar Branch",
-    address: "Lake View Road, Near Salt Mine, Kallar Kahar, Chakwal, Punjab",
-    mapUrl:  "https://maps.google.com/?q=Kallar+Kahar+Lake+View+Road+Chakwal",
-    mapEmbed: "https://www.google.com/maps?q=Kallar+Kahar,Punjab,Pakistan&z=13&output=embed",
-  },
-  {
-    name:    "Sargodha Branch",
-    address: "University Road, Near Peoples Colony, Sargodha, Punjab",
-    mapUrl:  "https://maps.google.com/?q=University+Road+Sargodha+Punjab",
-    mapEmbed: "https://www.google.com/maps?q=Sargodha,Punjab,Pakistan&z=12&output=embed",
+    name:    "Madina Town Branch",
+    address: "Madina Town, Chakwal, Punjab",
+    mapUrl:  "https://maps.google.com/?q=Madina+Town+Chakwal+Punjab",
+    mapEmbed: "https://www.google.com/maps?q=Madina+Town+Chakwal,Punjab,Pakistan&z=14&output=embed",
   },
 ];
 

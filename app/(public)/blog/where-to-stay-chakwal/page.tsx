@@ -41,7 +41,7 @@ const FAQ_SCHEMA = {
   "mainEntity": [
     { "@type": "Question", "name": "What is the cheapest guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House offers the most affordable quality accommodation in Chakwal, with rooms starting from PKR 2,000/night for a non-AC classic room. No advance payment required — pay cash on arrival." } },
     { "@type": "Question", "name": "Is there a family guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — Chakwal Guest House has dedicated family rooms accommodating 4 adults + 2 children starting from PKR 2,500/night. They also have apartment suites with kitchenettes for longer family stays." } },
-    { "@type": "Question", "name": "Which is the best hotel in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House is rated the best accommodation in Chakwal with a 5.0 Google rating from 20+ reviews. It has branches in Chakwal city, Kallar Kahar, and Sargodha." } },
+    { "@type": "Question", "name": "Which is the best hotel in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House is rated the best accommodation in Chakwal with a 5.0 Google rating from 20+ reviews. It has two branches in Chakwal — Main Branch (Talagang Road) and Madina Town Branch." } },
     { "@type": "Question", "name": "Do Chakwal guest houses require CNIC?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, by law all registered guest houses in Pakistan must collect a copy of the guest's CNIC at check-in. Always carry your original CNIC when travelling." } },
     { "@type": "Question", "name": "Is there an AC guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — Chakwal Guest House has AC rooms available (Classic AC Room from PKR 2,500/night and Executive AC Room from PKR 4,000/night). AC is available for 12 hours per day as standard." } },
   ],
@@ -166,7 +166,7 @@ export default function WhereToStayPage() {
               </div>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  <strong className="text-foreground">Chakwal Guest House</strong> is the most popular and trusted accommodation in Chakwal district. With <strong className="text-foreground">3 branches</strong> — in Chakwal city, Kallar Kahar, and Sargodha — it has served thousands of guests annually since its founding, from solo travelers and business professionals to large family groups.
+                  <strong className="text-foreground">Chakwal Guest House</strong> is the most popular and trusted accommodation in Chakwal district. With <strong className="text-foreground">two locations</strong> — Main Branch near District Courts and the new Madina Town Branch — it has served thousands of guests annually since its founding, from solo travelers and business professionals to large family groups.
                 </p>
                 <p>
                   Located near the District Courts on Talagang Road, the Chakwal city branch is the most convenient for tourists — positioned centrally with easy access to all major attractions, the Chakwal bus terminal, and local restaurants.

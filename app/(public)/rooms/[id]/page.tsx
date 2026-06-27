@@ -4,7 +4,7 @@ import {
   Users, BedDouble, MapPin, Snowflake, Wifi, Tv, Coffee,
   ChevronLeft, CheckCircle2, Mountain, CookingPot, Bath,
 } from "lucide-react";
-import { getPublicRoom, getRoomBookedDates } from "@/server/actions/public";
+import { getPublicRoom, getRoomBookedDates, getGrandOpeningOffer } from "@/server/actions/public";
 import { RoomGallery }           from "@/features/public/components/RoomGallery";
 import { AvailabilityCalendar }  from "@/features/public/components/AvailabilityCalendar";
 import { formatPKR }             from "@/utils";
@@ -43,12 +43,17 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default async function RoomDetailPage({ params }: Props) {
-  const [room, bookedDates] = await Promise.all([
-    getPublicRoom(params.id),
-    getRoomBookedDates(params.id),
-  ]);
-
+  const room = await getPublicRoom(params.id);
   if (!room) notFound();
+
+  const [bookedDates, grandOpeningOffer] = await Promise.all([
+    getRoomBookedDates(params.id),
+    getGrandOpeningOffer(room.branchId),
+  ]);
+  const originalPrice   = Number(room.pricePerNight);
+  const discountedPrice = grandOpeningOffer
+    ? Math.round(originalPrice * (1 - Number(grandOpeningOffer.discountValue) / 100))
+    : originalPrice;
 
   const today    = new Date().toISOString().slice(0, 10);
   const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
@@ -68,7 +73,7 @@ export default async function RoomDetailPage({ params }: Props) {
     })),
     "offers": {
       "@type": "Offer",
-      "price": Number(room.pricePerNight),
+      "price": discountedPrice,
       "priceCurrency": "PKR",
       "availability": "https://schema.org/InStock",
       "url": `${siteConfig.url}/book?branchId=${room.branchId}&roomId=${room.id}`,
@@ -82,7 +87,14 @@ export default async function RoomDetailPage({ params }: Props) {
     <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-elevated/95 backdrop-blur-sm border-t border-border px-4 py-3 flex items-center gap-3">
       <div className="flex-1 min-w-0">
         <p className="text-xs text-muted-foreground truncate">{room.name}</p>
-        <p className="text-sm font-bold text-gold-400">{formatPKR(Number(room.pricePerNight))} <span className="text-xs font-normal text-muted-foreground">/night</span></p>
+        <div className="flex items-baseline gap-2">
+          {grandOpeningOffer && (
+            <p className="text-xs text-muted-foreground line-through">{formatPKR(originalPrice)}</p>
+          )}
+          <p className={`text-sm font-bold ${grandOpeningOffer ? "text-emerald-400" : "text-gold-400"}`}>
+            {formatPKR(discountedPrice)} <span className="text-xs font-normal text-muted-foreground">/night</span>
+          </p>
+        </div>
       </div>
       <Link
         href={bookUrl}
@@ -125,8 +137,18 @@ export default async function RoomDetailPage({ params }: Props) {
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-3xl font-bold text-gold-400 font-serif">{formatPKR(Number(room.pricePerNight))}</p>
-                  <p className="text-sm text-muted-foreground">per night</p>
+                  {grandOpeningOffer && (
+                    <p className="text-base text-muted-foreground line-through leading-none mb-1">{formatPKR(originalPrice)}</p>
+                  )}
+                  <p className={`text-3xl font-bold font-serif ${grandOpeningOffer ? "text-emerald-400" : "text-gold-400"}`}>
+                    {formatPKR(discountedPrice)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">per night{grandOpeningOffer && <span className="text-emerald-400 ml-1 text-xs font-semibold">50% OFF</span>}</p>
+                  {grandOpeningOffer?.expiresAt && (
+                    <p className="text-xs text-emerald-400/70 mt-1">
+                      Offer ends {new Date(grandOpeningOffer.expiresAt).toLocaleDateString("en-PK", { day: "numeric", month: "long" })}
+                    </p>
+                  )}
                 </div>
               </div>
 

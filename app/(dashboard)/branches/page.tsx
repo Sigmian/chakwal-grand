@@ -4,12 +4,14 @@
 // ============================================================
 
 import Link from "next/link";
-import { Building2, MapPin, Phone, BedDouble, Plus, TrendingUp } from "lucide-react";
+import { Building2, MapPin, Phone, BedDouble, Plus, TrendingUp, Flame } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { getBranches } from "@/server/actions/branches";
 import { getDashboardOverview } from "@/server/actions/analytics";
 import { PageHeader, EmptyState, Badge } from "@/components/shared";
 import { cn, formatPKR } from "@/utils";
+import { siteConfig } from "@/config/site";
+import prisma from "@/lib/db/prisma";
 
 export const metadata = { title: "Branches" };
 
@@ -57,8 +59,18 @@ export default async function BranchesPage() {
 }
 
 async function BranchCard({ branch }: { branch: any }) {
-  // Fetch per-branch overview
-  const stats = await getDashboardOverview(branch.id);
+  const [stats, activeOffers] = await Promise.all([
+    getDashboardOverview(branch.id),
+    prisma.offer.count({
+      where: {
+        branchId: branch.id, isActive: true,
+        startsAt: { lte: new Date() }, expiresAt: { gte: new Date() },
+      },
+    }),
+  ]);
+
+  const isMainBranch = branch.id === siteConfig.branchIds.main;
+  const isMadina     = branch.id === siteConfig.branchIds.madinaTown;
 
   return (
     <div className="card-luxury overflow-hidden group hover:-translate-y-0.5 hover:shadow-gold-sm transition-all">
@@ -75,8 +87,18 @@ async function BranchCard({ branch }: { branch: any }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-surface-base/90 via-transparent" />
 
-        {/* Status pill */}
-        <div className="absolute top-3 right-3">
+        {/* Status + label pills */}
+        <div className="absolute top-3 right-3 flex gap-1.5">
+          {isMainBranch && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gold-500/20 text-gold-400 border border-gold-500/30 uppercase tracking-wider">
+              Flagship
+            </span>
+          )}
+          {isMadina && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider flex items-center gap-0.5">
+              <Flame className="w-2.5 h-2.5" /> New
+            </span>
+          )}
           <Badge variant={branch.isActive ? "green" : "red"}>
             {branch.isActive ? "Active" : "Inactive"}
           </Badge>
@@ -145,6 +167,12 @@ async function BranchCard({ branch }: { branch: any }) {
               <Phone className="w-3.5 h-3.5" />
               {branch.phone}
             </a>
+          )}
+          {activeOffers > 0 && (
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              <Flame className="w-2.5 h-2.5" />
+              {activeOffers} active offer{activeOffers !== 1 ? "s" : ""}
+            </span>
           )}
           <div className="flex-1" />
           <Link

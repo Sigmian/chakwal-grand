@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { BedDouble, Users, Wifi, Snowflake, Tv, Coffee, SlidersHorizontal, X, Star, Home, Crown } from "lucide-react";
+import { BedDouble, Users, Wifi, Snowflake, Tv, Coffee, SlidersHorizontal, X, Star, Home, Crown, Flame } from "lucide-react";
 import { formatPKR, cn } from "@/utils";
 import { RoomCompare, CompareCheckbox } from "@/features/public/components/RoomCompare";
 import { RoomGallery } from "@/features/public/components/RoomGallery";
@@ -52,7 +52,9 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
   "Hot Water": <Coffee className="w-3.5 h-3.5" />,
 };
 
-export function RoomsClient({ rooms }: { rooms: Room[] }) {
+interface GrandOpeningOffer { branchId: string; discountValue: number; expiresAt: string }
+
+export function RoomsClient({ rooms, grandOpeningOffer }: { rooms: Room[]; grandOpeningOffer: GrandOpeningOffer | null }) {
   const [guestFilter, setGuestFilter] = useState(0);
   const [branchFilter, setBranchFilter] = useState("");
   const [sortBy, setSortBy] = useState<"default" | "price_asc" | "price_desc">("default");
@@ -179,32 +181,65 @@ export function RoomsClient({ rooms }: { rooms: Room[] }) {
         </div>
       ) : (
         <div className="space-y-16">
-          {Object.entries(grouped).map(([type, typeRooms]) => (
+          {Object.entries(grouped).map(([type, typeRooms]) => {
+            const hasPromo = grandOpeningOffer && typeRooms.some(r => r.branchId === grandOpeningOffer.branchId);
+            const lowestPrice = Math.min(...typeRooms.map(r => {
+              const p = Number(r.pricePerNight);
+              if (grandOpeningOffer && r.branchId === grandOpeningOffer.branchId)
+                return Math.round(p * (1 - grandOpeningOffer.discountValue / 100));
+              return p;
+            }));
+
+            return (
             <section key={type}>
               <div className="flex items-center gap-4 mb-7">
                 <div className="w-12 h-12 rounded-2xl bg-gold-gradient flex items-center justify-center shadow-gold-sm flex-shrink-0">
                   {(() => { const Icon = TYPE_ICON[type] ?? BedDouble; return <Icon className="w-6 h-6 text-background" />; })()}
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold font-serif text-foreground">{TYPE_LABEL[type]} Rooms</h2>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-2xl font-bold font-serif text-foreground">{TYPE_LABEL[type]} Rooms</h2>
+                    {hasPromo && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 uppercase tracking-wider">
+                        <Flame className="w-2.5 h-2.5" /> 50% OFF available
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {typeRooms.length} room{typeRooms.length > 1 ? "s" : ""} ·
-                    from {formatPKR(Math.min(...typeRooms.map((r) => Number(r.pricePerNight))))} / night
+                    from {formatPKR(lowestPrice)} / night
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {typeRooms.map((room, idx) => (
+                {typeRooms.map((room, idx) => {
+                  const isPromo = grandOpeningOffer && room.branchId === grandOpeningOffer.branchId;
+                  const originalPrice = Number(room.pricePerNight);
+                  const discountedPrice = isPromo
+                    ? Math.round(originalPrice * (1 - grandOpeningOffer.discountValue / 100))
+                    : originalPrice;
+
+                  return (
                   <Reveal
                     key={room.id}
                     delay={idx * 0.05}
-                    className={`card-luxury rounded-2xl overflow-hidden border bg-gradient-to-br ${TYPE_COLOR[room.type] ?? ""} transition-all hover:-translate-y-1 hover:shadow-card-lg`}
+                    className={`card-luxury rounded-2xl overflow-hidden border bg-gradient-to-br ${TYPE_COLOR[room.type] ?? ""} transition-all hover:-translate-y-1 hover:shadow-card-lg relative`}
                   >
-                    {/* Room photo gallery */}
-                    {room.images.length > 0 && (
-                      <RoomGallery images={room.images} roomName={room.name} />
+                    {/* Grand Opening ribbon */}
+                    {isPromo && (
+                      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center gap-2 py-1.5 bg-emerald-500/90 backdrop-blur-sm">
+                        <Flame className="w-3 h-3 text-white" />
+                        <span className="text-[11px] font-bold text-white tracking-wider uppercase">Grand Opening — 50% OFF</span>
+                      </div>
                     )}
+
+                    {/* Room photo gallery */}
+                    <div className={isPromo ? "mt-7" : ""}>
+                      {room.images.length > 0 && (
+                        <RoomGallery images={room.images} roomName={room.name} />
+                      )}
+                    </div>
 
                     {/* Room info */}
                     <div className="p-6 pb-4">
@@ -216,7 +251,12 @@ export function RoomsClient({ rooms }: { rooms: Room[] }) {
                           </p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-xl font-bold text-gold-400 font-serif">{formatPKR(Number(room.pricePerNight))}</p>
+                          {isPromo && (
+                            <p className="text-xs text-muted-foreground line-through leading-none mb-0.5">{formatPKR(originalPrice)}</p>
+                          )}
+                          <p className={cn("text-xl font-bold font-serif", isPromo ? "text-emerald-400" : "text-gold-400")}>
+                            {formatPKR(discountedPrice)}
+                          </p>
                           <p className="text-xs text-muted-foreground">/ night</p>
                         </div>
                       </div>
@@ -260,10 +300,12 @@ export function RoomsClient({ rooms }: { rooms: Room[] }) {
                       <CompareCheckbox roomId={room.id} />
                     </div>
                   </Reveal>
-                ))}
+                  );
+                })}
               </div>
             </section>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

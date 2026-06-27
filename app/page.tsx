@@ -12,7 +12,7 @@ import { Reveal }         from "@/features/public/components/Reveal";
 import { GallerySection } from "@/features/public/components/GallerySection";
 import { FAQSection }     from "@/features/public/components/FAQSection";
 import { ChatWidget }     from "@/features/public/components/ChatWidget";
-import { getPublicBranches, getPublicReviews, getPublicRooms } from "@/server/actions/public";
+import { getPublicBranches, getPublicReviews, getPublicRooms, getGrandOpeningOffer } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -130,7 +130,7 @@ const FAQ_SCHEMA = {
     {
       "@type": "Question",
       "name": "Where is Chakwal Guest House located?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Our main branch is located Near District Courts, Talagang Road, Chakwal, Punjab. We also have branches in Kallar Kahar and Sargodha." }
+      "acceptedAnswer": { "@type": "Answer", "text": "We have two locations in Chakwal, Punjab — Main Branch near District Courts, Talagang Road, and our new Madina Town Branch in Madina Town, Chakwal." }
     },
     {
       "@type": "Question",
@@ -143,11 +143,12 @@ const FAQ_SCHEMA = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [branches, reviews, rooms, guestCount] = await Promise.all([
+  const [branches, reviews, rooms, guestCount, grandOpeningOffer] = await Promise.all([
     getPublicBranches(),
     getPublicReviews(),
     getPublicRooms(),
     import("@/lib/db/prisma").then(m => m.default.customer.count()),
+    getGrandOpeningOffer(siteConfig.branchIds.madinaTown),
   ]);
 
   const avgRating = reviews.length > 0
@@ -239,6 +240,31 @@ export default async function HomePage() {
               </p>
             </Reveal>
 
+            {grandOpeningOffer && (
+              <Reveal className="mb-8">
+                <Link href="/book" className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-900/60 via-teal-900/40 to-emerald-900/60 border border-emerald-500/30 hover:border-emerald-500/50 transition-all group">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0 text-xl">
+                      🔥
+                    </div>
+                    <div>
+                      <p className="font-bold text-emerald-300 text-sm sm:text-base">Grand Opening — 50% OFF at Madina Town Branch</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Rooms from <span className="text-muted-foreground line-through">PKR 3,500</span>{" "}
+                        <span className="text-emerald-400 font-bold">PKR 1,750/night</span>
+                        {grandOpeningOffer.expiresAt && (
+                          <> · Valid until {new Date(grandOpeningOffer.expiresAt).toLocaleDateString("en-PK", { day: "numeric", month: "long" })}</>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-2 text-sm font-bold text-emerald-400 group-hover:gap-3 transition-all flex-shrink-0">
+                    Book Now <ChevronRight className="w-4 h-4" />
+                  </span>
+                </Link>
+              </Reveal>
+            )}
+
             <FeaturedRooms rooms={featured as any} />
 
             <div className="text-center mt-10">
@@ -266,7 +292,7 @@ export default async function HomePage() {
                 { Icon: Snowflake,   title: "A/C Available",   body: "Air conditioning in select rooms, included in the room rate (12 hours daily)." },
                 { Icon: ShowerHead,  title: "Hot Water 24/7",  body: "Attached bathrooms with reliable hot water available around the clock." },
                 { Icon: ShieldCheck, title: "Safe & Secure",   body: "CCTV coverage, front-desk staffed 24/7, secure key access to all rooms." },
-                { Icon: MapPin,      title: "Prime Locations", body: "Centrally located in Chakwal, Kallar Kahar, and Sargodha — close to all amenities." },
+                { Icon: MapPin,      title: "Two Locations",   body: "Main Branch near District Courts & new Madina Town Branch — both centrally located in Chakwal." },
               ].map(({ Icon, title, body }, i) => (
                 <Reveal key={title} delay={i * 0.06}>
                   <div className="card-luxury rounded-2xl p-6 h-full hover:-translate-y-1 hover:border-gold-500/30 transition-all group">

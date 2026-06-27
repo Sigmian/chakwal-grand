@@ -69,7 +69,7 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
           {/* Badge */}
           <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gold-400 bg-gold-500/10 border border-gold-500/30 px-4 py-2 rounded-full mb-8 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse" />
-            Chakwal · Kallar Kahar · Sargodha
+            Main Branch · Madina Town · Now Open
           </div>
 
           {/* Headline */}

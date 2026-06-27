@@ -8,7 +8,7 @@ export default function UnauthorizedPage() {
         <div className="text-6xl mb-4">🔒</div>
         <h1 className="text-2xl font-bold text-foreground font-serif mb-2">Access Denied</h1>
         <p className="text-muted-foreground text-sm mb-6">
-          You don't have permission to view this page. Contact your administrator if you believe this is an error.
+          You don&apos;t have permission to view this page. Contact your administrator if you believe this is an error.
         </p>
         <Link
           href="/dashboard"

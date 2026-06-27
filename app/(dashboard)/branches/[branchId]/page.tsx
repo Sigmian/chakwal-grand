@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Building2, MapPin, Phone, Mail, Globe,
   BedDouble, Users, TrendingUp, ChevronRight, Edit,
-  DollarSign,
+  DollarSign, Flame, Tag, ToggleRight, ToggleLeft, Calendar,
 } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { getDashboardOverview, getRevenueChartData } from "@/server/actions/analytics";
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props) {
 export default async function BranchDetailPage({ params }: Props) {
   await requireSuperAdmin();
 
-  const [branch, rooms, staff, overview, chartData] = await Promise.all([
+  const [branch, rooms, staff, overview, chartData, offers] = await Promise.all([
     prisma.branch.findUnique({ where: { id: params.branchId } }),
     prisma.room.findMany({
       where:   { branchId: params.branchId, isActive: true },
@@ -51,6 +51,10 @@ export default async function BranchDetailPage({ params }: Props) {
     }),
     getDashboardOverview(params.branchId),
     getRevenueChartData(params.branchId),
+    prisma.offer.findMany({
+      where:    { branchId: params.branchId },
+      orderBy:  { createdAt: "desc" },
+    }),
   ]);
 
   if (!branch) notFound();
@@ -227,6 +231,105 @@ export default async function BranchDetailPage({ params }: Props) {
             </Link>
           </div>
         )}
+      </div>
+
+      {/* Active Offers / Promotions */}
+      {offers.length > 0 && (
+        <div>
+          <SectionHeader
+            title={`Offers & Promotions (${offers.length})`}
+            actions={
+              <Link href="/offers" className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1">
+                Manage offers <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            }
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {offers.map(offer => {
+              const now       = new Date();
+              const expiry    = new Date(offer.expiresAt);
+              const expired   = expiry < now;
+              const daysLeft  = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              const isGrand   = offer.code === "AUTO_GRANDOPEN50";
+              const savings   = isGrand
+                ? Math.round((Number(offer.discountValue) / 100) * rooms.reduce((s, r) => s + Number(r.pricePerNight), 0) / Math.max(rooms.length, 1) * offer.usedCount)
+                : 0;
+
+              return (
+                <div key={offer.id} className={`card-luxury p-5 rounded-2xl border ${isGrand && offer.isActive && !expired ? "border-emerald-500/30 bg-emerald-500/5" : ""}`}>
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      {isGrand
+                        ? <Flame className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                        : <Tag   className="w-4 h-4 text-gold-400 flex-shrink-0"    />
+                      }
+                      <p className="text-sm font-bold text-foreground">{offer.name}</p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${
+                      expired          ? "bg-surface-base text-muted-foreground"
+                      : offer.isActive ? "bg-emerald-500/10 text-emerald-400"
+                                       : "bg-amber-500/10 text-amber-400"
+                    }`}>
+                      {expired ? "Expired" : offer.isActive ? "Active" : "Paused"}
+                    </span>
+                  </div>
+
+                  {offer.code && (
+                    <p className="font-mono text-xs text-gold-400 bg-gold-500/10 border border-gold-500/20 px-2 py-0.5 rounded-md inline-block mb-3">
+                      {offer.code}
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 text-center mb-3">
+                    <div className="bg-surface-highlight rounded-xl p-2">
+                      <p className={`text-lg font-bold font-serif ${isGrand ? "text-emerald-400" : "text-gold-400"}`}>
+                        {offer.discountType === "PERCENTAGE" ? `${offer.discountValue}%` : formatPKR(Number(offer.discountValue))}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Discount</p>
+                    </div>
+                    <div className="bg-surface-highlight rounded-xl p-2">
+                      <p className="text-lg font-bold font-serif text-foreground">{offer.usedCount}</p>
+                      <p className="text-[10px] text-muted-foreground">Times used</p>
+                    </div>
+                    {isGrand && savings > 0 && (
+                      <div className="col-span-2 bg-surface-highlight rounded-xl p-2">
+                        <p className="text-sm font-bold text-emerald-400">{formatPKR(savings)}</p>
+                        <p className="text-[10px] text-muted-foreground">Est. savings given to guests</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Calendar className="w-3 h-3" />
+                    {expired
+                      ? `Expired ${expiry.toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}`
+                      : daysLeft <= 7
+                      ? <span className="text-amber-400 font-semibold">{daysLeft} day{daysLeft !== 1 ? "s" : ""} remaining</span>
+                      : `Ends ${expiry.toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}`
+                    }
+                    {offer.maxUses && (
+                      <span className="ml-auto">{offer.usedCount}/{offer.maxUses} uses</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Bookings quick-link */}
+      <div className="card-luxury p-5 flex items-center justify-between">
+        <div>
+          <p className="font-semibold text-foreground">Bookings for this branch</p>
+          <p className="text-sm text-muted-foreground mt-0.5">View and manage all reservations at {branch.name}</p>
+        </div>
+        <Link
+          href={`/bookings?branch=${branch.id}`}
+          className="flex items-center gap-2 px-4 py-2 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-md transition-all hover:-translate-y-0.5 flex-shrink-0"
+        >
+          View Bookings <ChevronRight className="w-4 h-4" />
+        </Link>
       </div>
 
       {/* Staff list */}

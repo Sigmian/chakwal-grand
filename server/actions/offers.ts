@@ -13,6 +13,7 @@ interface CreateOfferInput {
   minNights?:    number;
   maxUses?:      number;
   expiresAt:     Date;
+  branchId?:     string;
 }
 
 export async function createOffer(input: CreateOfferInput) {
@@ -31,6 +32,7 @@ export async function createOffer(input: CreateOfferInput) {
       startsAt:      new Date(),
       expiresAt:     input.expiresAt,
       isActive:      true,
+      ...(input.branchId ? { branchId: input.branchId } : {}),
     },
   });
 
