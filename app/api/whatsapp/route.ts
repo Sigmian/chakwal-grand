@@ -309,7 +309,7 @@ async function sendVoiceReply(to: string, text: string): Promise<void> {
     },
     body: JSON.stringify({
       model: "tts-1",
-      voice: "nova",       // warm, professional female voice
+      voice: "shimmer",    // soft, gentle female voice
       input: cleanText,
       response_format: "mp3",
     }),
