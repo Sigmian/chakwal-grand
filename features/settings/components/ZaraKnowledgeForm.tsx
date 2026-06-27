@@ -164,6 +164,61 @@ export function ZaraKnowledgeForm({ initial }: Props) {
           </Field>
         </div>
 
+        <Field label="Payment Policy (one line summary)">
+          <input className={inputCls} value={data.paymentPolicy}
+            onChange={e => set("paymentPolicy", e.target.value)} />
+        </Field>
+      </SectionToggle>
+
+      {/* Payment Accounts */}
+      <SectionToggle title="Payment Accounts" subtitle="Bank and Easypaisa details Zara shares when guests ask how to pay">
+        <p className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+          These are shared with guests exactly as written. Double-check all numbers carefully.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Bank Account Title">
+            <input className={inputCls} value={data.bankAccountTitle}
+              onChange={e => set("bankAccountTitle", e.target.value)} />
+          </Field>
+          <Field label="Bank Name">
+            <input className={inputCls} value={data.bankName}
+              onChange={e => set("bankName", e.target.value)} />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Account Number">
+            <input className={inputCls} value={data.bankAccountNumber}
+              onChange={e => set("bankAccountNumber", e.target.value)} />
+          </Field>
+          <Field label="IBAN">
+            <input className={inputCls} value={data.bankIBAN}
+              onChange={e => set("bankIBAN", e.target.value)} />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Branch Name">
+            <input className={inputCls} value={data.bankBranchName}
+              onChange={e => set("bankBranchName", e.target.value)} />
+          </Field>
+          <Field label="Branch Code">
+            <input className={inputCls} value={data.bankBranchCode}
+              onChange={e => set("bankBranchCode", e.target.value)} />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Easypaisa Number">
+            <input className={inputCls} value={data.easypaisaNumber}
+              onChange={e => set("easypaisaNumber", e.target.value)} />
+          </Field>
+          <Field label="Easypaisa Account Name">
+            <input className={inputCls} value={data.easypaisaName}
+              onChange={e => set("easypaisaName", e.target.value)} />
+          </Field>
+        </div>
+      </SectionToggle>
+
+      {/* Policies */}
+      <SectionToggle title="Other Policies" subtitle="Check-in rules, WiFi, parking etc.">
         <Field label="Other Policies" hint="Shown to guests when they ask about facilities">
           <div className="space-y-2">
             {data.otherPolicies.map((p, i) => (

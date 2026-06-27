@@ -47,6 +47,15 @@ export interface ZaraKnowledge {
   website:              string;
   googleReviewUrl:      string;
   googleReviewIncentive: string;      // "10% cashback on next stay"
+  // Payment accounts
+  bankAccountTitle:     string;
+  bankAccountNumber:    string;
+  bankName:             string;
+  bankBranchName:       string;
+  bankBranchCode:       string;
+  bankIBAN:             string;
+  easypaisaNumber:      string;
+  easypaisaName:        string;
   branches:             ZaraBranch[];
   promotions:           ZaraPromotion[];
   attractions:          ZaraAttraction[];
@@ -63,8 +72,17 @@ export interface ZaraKnowledge {
 export const DEFAULT_KNOWLEDGE: ZaraKnowledge = {
   checkIn:    siteConfig.checkInTime,
   checkOut:   siteConfig.checkOutTime,
-  paymentPolicy: "Cash on arrival. Card/online abhi nahi.",
+  paymentPolicy: "Cash on arrival, bank transfer, ya Easypaisa — teeno accepted hain.",
   acHoursDaily:  siteConfig.acHoursDaily,
+
+  bankAccountTitle:  "Hassan Ali",
+  bankAccountNumber: "339361342",
+  bankName:          "UBL (United Bank Limited)",
+  bankBranchName:    "UBL Odhewal Branch",
+  bankBranchCode:    "2603",
+  bankIBAN:          "PK14UNIL0109000339361342",
+  easypaisaNumber:   "03340005838",
+  easypaisaName:     "Hassan Ali",
   otherPolicies: [
     "CNIC original zaroor lao check-in pe",
     "Free WiFi tamaam rooms mein",
@@ -202,6 +220,24 @@ ${k.googleReviewIncentive}: ${k.googleReviewUrl}
 
 Policies:
 ${policies}
+
+PAYMENT ACCOUNTS (share when guest asks how to pay in advance):
+Bank Transfer:
+  Account Title: ${k.bankAccountTitle}
+  Bank: ${k.bankName}
+  Account No: ${k.bankAccountNumber}
+  Branch: ${k.bankBranchName} (Code: ${k.bankBranchCode})
+  IBAN: ${k.bankIBAN}
+
+Easypaisa:
+  Number: ${k.easypaisaNumber}
+  Name: ${k.easypaisaName}
+
+Payment rules:
+- Sirf tab share karo jab guest khud pooche "kaise payment karein" ya "advance dena hai"
+- Details exact copy karo — numbers mein koi change mat karo
+- Easypaisa sirf mobile number pe — IBAN bank ke liye hai
+- Payment ke baad screenshot mangwao confirmation ke liye
 
 BRANCHES:
 ${branches}
