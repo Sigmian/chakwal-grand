@@ -13,8 +13,7 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, requirePermission, getScopedBranchId } from "@/lib/auth/session";
-import { sendBookingWhatsApp } from "@/lib/whatsapp/send";
-import { siteConfig } from "@/config/site";
+import { sendBookingConfirmed } from "@/lib/whatsapp/templates";
 import {
   createBookingSchema,
   updateBookingSchema,
@@ -216,20 +215,18 @@ export async function createBooking(rawInput: CreateBookingInput) {
       data:  { lastVisitAt: new Date() },
     });
 
-    // 10. Send WhatsApp confirmation (non-blocking)
-    sendBookingWhatsApp({
-      phone:           booking.customer.phone,
-      guestName:       booking.customer.name,
-      bookingRef:      booking.bookingRef,
-      roomName:        booking.room.name,
-      branchName:      booking.branch.name,
-      checkInDate:     booking.checkInDate,
-      checkOutDate:    booking.checkOutDate,
-      nights:          booking.nights,
-      totalAmount:     Number(booking.totalAmount),
-      branchAddress:   booking.branch.address ?? "Chakwal, Punjab, Pakistan",
-      confirmationUrl: `${siteConfig.url}/booking-confirmation/${booking.bookingRef}`,
-    }).catch(err => console.error("[WhatsApp] staff booking confirmation failed:", err));
+    // 10. Send WhatsApp confirmation template (non-blocking)
+    sendBookingConfirmed({
+      phone:       booking.customer.phone,
+      guestName:   booking.customer.name,
+      bookingRef:  booking.bookingRef,
+      roomName:    booking.room.name,
+      branchName:  booking.branch.name,
+      checkIn:     booking.checkInDate.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
+      checkOut:    booking.checkOutDate.toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Karachi" }),
+      nights:      booking.nights,
+      totalAmount: Number(booking.totalAmount),
+    }).catch(err => console.error("[WhatsApp] booking confirmation template failed:", err));
 
     // 11. Log activity
     await logActivity(

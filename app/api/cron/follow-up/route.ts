@@ -185,5 +185,16 @@ export async function GET(req: Request) {
   }
 
   console.log("[Cron] follow-up run complete:", JSON.stringify(results));
+
+  // Alert via console if any sends failed — visible in Vercel logs
+  const totalFailed =
+    results.checkinReminders.failed +
+    results.checkoutReminders.failed +
+    results.reviewRequests.failed +
+    results.winbacks.failed;
+  if (totalFailed > 0) {
+    console.error(`[Cron] ⚠️ ${totalFailed} template send(s) failed — check errors above`);
+  }
+
   return NextResponse.json({ ok: true, results });
 }
