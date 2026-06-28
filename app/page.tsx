@@ -11,7 +11,8 @@ import { FeaturedRooms }  from "@/features/public/components/FeaturedRooms";
 import { Reveal }         from "@/features/public/components/Reveal";
 import { GallerySection } from "@/features/public/components/GallerySection";
 import { FAQSection }     from "@/features/public/components/FAQSection";
-import { ChatWidget }     from "@/features/public/components/ChatWidget";
+import { ChatWidget }            from "@/features/public/components/ChatWidget";
+import { GrandOpeningFireworks } from "@/features/public/components/GrandOpeningFireworks";
 import { getPublicBranches, getPublicReviews, getPublicRooms, getGrandOpeningOffer } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
 
@@ -190,6 +191,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <GrandOpeningFireworks />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_SCHEMA) }} />
