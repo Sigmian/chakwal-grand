@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { processWhatsAppMessage } from "@/lib/agent/whatsapp-agent";
+import { runGroupAgent } from "@/lib/agent/group-agent";
 import { checkRateLimit } from "@/lib/agent/rate-limiter";
 
 export const maxDuration = 60; // Vercel: allow up to 60s for AI processing
@@ -85,6 +86,15 @@ async function processInBackground(body: Record<string, unknown>) {
     // This is the authoritative sender phone for all identity checks.
     const from = msg.from as string;
     if (!from) return;
+
+    // ── Group message detection ───────────────────────────────
+    // Meta sends group messages with a group JID in msg.from that
+    // ends in "@g.us". The actual sender's phone is in contacts[0].
+    const isGroup = from.includes("@g.us") || from.includes("-");
+    if (isGroup) {
+      await processGroupMessage(msg, value, from);
+      return;
+    }
 
     // ── A6: Per-phone rate limiting ───────────────────────────
     const rateResult = checkRateLimit(from);
@@ -204,6 +214,49 @@ async function processInBackground(body: Record<string, unknown>) {
 
   } catch (err) {
     console.error("[WhatsApp Webhook Error]", err);
+  }
+}
+
+// ── Group message handler ──────────────────────────────────────
+// Only responds when "@Zara" or "zara," appears in the message.
+// Replies go to the group JID (same `to` as the group's `from`).
+async function processGroupMessage(
+  msg:   Record<string, unknown>,
+  value: Record<string, unknown>,
+  groupId: string,
+): Promise<void> {
+  if (msg.type !== "text") return; // ignore media in groups
+
+  const text = (msg.text as Record<string, string>)?.body?.trim();
+  if (!text) return;
+
+  // Trigger: message must mention Zara
+  const mentionsZara = /\bzara\b/i.test(text);
+  if (!mentionsZara) return;
+
+  // Extract actual sender's phone from contacts array
+  const contacts = value.contacts as Array<{ wa_id?: string }> | undefined;
+  const senderPhone = contacts?.[0]?.wa_id ?? "unknown";
+
+  // Strip the @Zara mention so only the actual question goes to the agent
+  const question = text
+    .replace(/@\d+/g, "")     // strip @phonenumber mentions
+    .replace(/\bzara[,:]?\s*/gi, "") // strip "zara" / "zara," / "@Zara"
+    .trim();
+
+  if (!question) {
+    await sendReply(groupId, "Ji! Rooms status ke liye: *@Zara rooms*\nSchedule ke liye: *@Zara aaj ka schedule*\nComplaint ke liye: *@Zara complaint Room 101 AC kharab hai*");
+    return;
+  }
+
+  console.log(`[Group] ${senderPhone} in ${groupId}: "${question}"`);
+
+  try {
+    const reply = await runGroupAgent(question, senderPhone);
+    if (reply) await sendReply(groupId, reply);
+  } catch (err) {
+    console.error("[Group Agent Error]", err);
+    await sendReply(groupId, "Technical issue aa gayi. Thodi der mein dobara try karein.");
   }
 }
 
