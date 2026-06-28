@@ -27,8 +27,6 @@ export function GrandOpeningFireworks() {
   useEffect(() => {
     // Don't show after expiry date
     if (new Date() >= EXPIRES_AT) return;
-    // Don't show if already seen this session
-    try { if (localStorage.getItem(STORAGE_KEY)) return; } catch {}
 
     setVisible(true);
 
