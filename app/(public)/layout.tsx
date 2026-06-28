@@ -6,7 +6,7 @@ import { ScrollToTop } from "@/features/public/components/ScrollToTop";
 import { AnnouncementBanner } from "@/features/public/components/AnnouncementBanner";
 import { BranchSelectorModal } from "@/features/public/components/BranchSelectorModal";
 import { BranchProvider } from "@/components/providers/BranchProvider";
-import { getActiveAnnouncement, getGrandOpeningOffer } from "@/server/actions/public";
+import { getActiveAnnouncement, getGrandOpeningOffer, getPublicRooms } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -20,10 +20,18 @@ export const metadata: Metadata = {
 };
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [announcement, grandOpening] = await Promise.all([
+  const [announcement, grandOpening, allRooms] = await Promise.all([
     getActiveAnnouncement(),
     getGrandOpeningOffer(siteConfig.branchIds.madinaTown),
+    getPublicRooms(),
   ]);
+
+  const mainRooms    = allRooms.filter(r => r.branchId === siteConfig.branchIds.main);
+  const madinaRooms  = allRooms.filter(r => r.branchId === siteConfig.branchIds.madinaTown);
+  const minMain      = mainRooms.length   ? Math.min(...mainRooms.map(r  => Number(r.pricePerNight))) : null;
+  const minMadina    = madinaRooms.length ? Math.min(...madinaRooms.map(r => Number(r.pricePerNight))) : null;
+  const discountPct  = grandOpening ? Number(grandOpening.discountValue) : 0;
+  const minMadinaOff = minMadina !== null && discountPct ? Math.round(minMadina * (1 - discountPct / 100)) : minMadina;
 
   return (
     <BranchProvider>
@@ -48,7 +56,12 @@ export default async function PublicLayout({ children }: { children: React.React
       <PublicFooter />
       <ChatWidget />
       <ScrollToTop />
-      <BranchSelectorModal grandOpeningActive={!!grandOpening} />
+      <BranchSelectorModal
+        grandOpeningActive={!!grandOpening}
+        minPriceMain={minMain}
+        minPriceMadina={minMadina}
+        minPriceMadinaOff={minMadinaOff}
+      />
     </BranchProvider>
   );
 }

@@ -8,7 +8,10 @@ import { siteConfig } from "@/config/site";
 import { cn } from "@/utils";
 
 interface Props {
-  grandOpeningActive: boolean;
+  grandOpeningActive:  boolean;
+  minPriceMain:        number | null;
+  minPriceMadina:      number | null;
+  minPriceMadinaOff:   number | null;
 }
 
 const BRANCHES = [
@@ -44,7 +47,7 @@ const BRANCHES = [
 
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
-export function BranchSelectorModal({ grandOpeningActive }: Props) {
+export function BranchSelectorModal({ grandOpeningActive, minPriceMain, minPriceMadina, minPriceMadinaOff }: Props) {
   const { selectedBranchId, setSelectedBranch, isLoaded } = useBranchContext();
   const [remember, setRemember] = useState(true);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -227,15 +230,42 @@ export function BranchSelectorModal({ grandOpeningActive }: Props) {
                         {branch.description}
                       </p>
 
-                      {/* Grand Opening pricing */}
-                      {showGrandOpening && (
+                      {/* Pricing */}
+                      {branch.id === siteConfig.branchIds.main && minPriceMain && (
+                        <div className="mb-4 p-3 rounded-xl bg-gold-500/10 border border-gold-500/20">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-gold-300 font-bold text-sm">
+                              PKR {minPriceMain.toLocaleString("en-PK")}/night
+                            </span>
+                            <span className="text-muted-foreground text-xs">· Starting from</span>
+                          </div>
+                          <p className="text-gold-300/60 text-[10px] mt-0.5">Best price guaranteed</p>
+                        </div>
+                      )}
+
+                      {branch.id === siteConfig.branchIds.madinaTown && showGrandOpening && minPriceMadina && minPriceMadinaOff && (
                         <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-muted-foreground text-xs line-through">PKR 4,500/night</span>
-                            <span className="text-emerald-400 font-bold text-sm">PKR 2,250/night</span>
+                            <span className="text-muted-foreground text-xs line-through">
+                              PKR {minPriceMadina.toLocaleString("en-PK")}/night
+                            </span>
+                            <span className="text-emerald-400 font-bold text-sm">
+                              PKR {minPriceMadinaOff.toLocaleString("en-PK")}/night
+                            </span>
                             <span className="text-emerald-400 text-xs">· Valid till 31 July</span>
                           </div>
                           <p className="text-emerald-300/80 text-[10px] mt-0.5">50% discount applied automatically at checkout</p>
+                        </div>
+                      )}
+
+                      {branch.id === siteConfig.branchIds.madinaTown && !showGrandOpening && minPriceMadina && (
+                        <div className="mb-4 p-3 rounded-xl bg-gold-500/10 border border-gold-500/20">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-gold-300 font-bold text-sm">
+                              PKR {minPriceMadina.toLocaleString("en-PK")}/night
+                            </span>
+                            <span className="text-muted-foreground text-xs">· Starting from</span>
+                          </div>
                         </div>
                       )}
 
