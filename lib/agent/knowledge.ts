@@ -38,7 +38,7 @@ export interface ZaraAttraction {
 }
 
 export interface ZaraKnowledge {
-  checkIn:              string;       // "2:00 PM"
+  checkIn:              string;       // "Flexible (anytime)"
   checkOut:             string;       // "12:00 PM"
   paymentPolicy:        string;       // free text
   acHoursDaily:         number;

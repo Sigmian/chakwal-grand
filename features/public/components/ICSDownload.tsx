@@ -23,7 +23,7 @@ function formatICSDate(isoDate: string, hour: number, minute: number): string {
 
 export function ICSDownload({ bookingRef, roomName, checkInDate, checkOutDate, branchName, address }: Props) {
   const download = () => {
-    const dtStart  = formatICSDate(checkInDate,  14, 0);  // 2:00 PM check-in
+    const dtStart  = formatICSDate(checkInDate,   8, 0);  // flexible — use 8 AM as calendar placeholder
     const dtEnd    = formatICSDate(checkOutDate, 12, 0);  // 12:00 PM check-out
     const now      = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
@@ -39,7 +39,7 @@ export function ICSDownload({ bookingRef, roomName, checkInDate, checkOutDate, b
       `DTSTART:${dtStart}`,
       `DTEND:${dtEnd}`,
       `SUMMARY:Check-in — ${roomName} · Chakwal Guest House`,
-      `DESCRIPTION:Booking Reference: ${bookingRef}\\nRoom: ${roomName}\\nBranch: ${branchName}\\nCheck-in: 2:00 PM · Check-out: 12:00 PM\\nBring CNIC on arrival.`,
+      `DESCRIPTION:Booking Reference: ${bookingRef}\\nRoom: ${roomName}\\nBranch: ${branchName}\\nCheck-in: Anytime (flexible) · Check-out: 12:00 PM\\nBring CNIC on arrival.`,
       `LOCATION:${address}`,
       "STATUS:CONFIRMED",
       "BEGIN:VALARM",

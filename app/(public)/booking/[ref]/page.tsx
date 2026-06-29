@@ -97,7 +97,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
           <div className="mx-6 mb-6 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">Important Notes</p>
             <ul className="text-xs text-amber-400/80 space-y-1">
-              <li>• Check-in: 2:00 PM · Check-out: 12:00 PM</li>
+              <li>• Check-in: Anytime (flexible) · Check-out: 12:00 PM</li>
               <li>• A/C available 12 hours daily (included in room rate)</li>
               <li>• Payment on arrival — cash preferred</li>
               <li>• Bring original CNIC for verification</li>

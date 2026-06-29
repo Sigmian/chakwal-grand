@@ -9,7 +9,7 @@ interface Props {
 
 function getTimeLeft(targetIso: string) {
   const now    = Date.now();
-  const target = new Date(targetIso).setHours(14, 0, 0, 0); // 2:00 PM check-in
+  const target = new Date(targetIso).setHours(0, 0, 0, 0); // flexible check-in — count to start of day
   const diff   = target - now;
 
   if (diff <= 0) return null;

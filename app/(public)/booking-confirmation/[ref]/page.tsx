@@ -133,7 +133,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
                 </div>
                 <p className="font-bold text-foreground text-sm">{checkInFmt}</p>
                 <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> From 2:00 PM
+                  <Clock className="w-3 h-3" /> Anytime (flexible)
                 </p>
               </div>
               <div className="bg-surface-base rounded-xl p-4">
@@ -217,7 +217,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6">
           <p className="text-amber-400 font-semibold text-sm mb-2">📌 Important Notes</p>
           <ul className="space-y-1 text-amber-400/80 text-xs">
-            <li>• Check-in: 2:00 PM · Check-out: 12:00 PM</li>
+            <li>• Check-in: Anytime (flexible) · Check-out: 12:00 PM</li>
             <li>• Bring your original CNIC — it is required at check-in</li>
             <li>• A/C is available {siteConfig.acHoursDaily} hours daily</li>
             <li>• Advance booking preferred — call ahead to confirm</li>

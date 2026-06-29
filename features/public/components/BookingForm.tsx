@@ -528,11 +528,11 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
                   <label htmlFor="guest-arrival" className={labelCls}>Estimated Arrival Time (Optional)</label>
                   <select id="guest-arrival" value={guest.estimatedArrival} onChange={setG("estimatedArrival")} className={inputCls}>
                     <option value="">Select arrival time…</option>
-                    {["12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM","9:00 PM","10:00 PM","11:00 PM","After midnight"].map(t => (
+                    {["Before 8:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM","9:00 PM","10:00 PM","11:00 PM","After midnight"].map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-muted-foreground mt-1">Standard check-in is 2:00 PM. Let us know so we can prepare your room on time.</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Check-in is flexible — you are welcome anytime. Let us know so we can have your room ready.</p>
                 </div>
 
                 <div className="sm:col-span-2">

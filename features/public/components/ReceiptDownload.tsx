@@ -188,7 +188,7 @@ export function ReceiptDownload(props: Props) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(255, 255, 255);
-      doc.text("Check-in: 2:00 PM  ·  Check-out: 12:00 PM  ·  CNIC required at check-in", W / 2, pageH - 12, { align: "center" });
+      doc.text("Check-in: Anytime (flexible)  ·  Check-out: 12:00 PM  ·  CNIC required at check-in", W / 2, pageH - 12, { align: "center" });
       doc.text(`Thank you for choosing Chakwal Guest House  ·  ${siteConfig.url.replace("https://", "")}`, W / 2, pageH - 6,  { align: "center" });
 
       doc.save(`Receipt-${props.bookingRef}.pdf`);

@@ -13,7 +13,7 @@ export const siteConfig = {
   currency:    "PKR",
   currencySymbol: "₨",
 
-  checkInTime:  "2:00 PM",
+  checkInTime:  "Flexible (anytime)",
   checkOutTime: "12:00 PM",
   acHoursDaily: 12,
 

@@ -69,7 +69,7 @@ const LOCAL_BUSINESS_SCHEMA = {
     { "@type": "LocationFeatureSpecification", "name": "Family Rooms",     "value": true },
     { "@type": "LocationFeatureSpecification", "name": "Online Booking",   "value": true },
   ],
-  "checkinTime":  "14:00",
+  "checkinTime":  "00:00",
   "checkoutTime": "12:00",
   "currenciesAccepted": "PKR",
   "paymentAccepted":    "Cash",
@@ -136,7 +136,7 @@ const FAQ_SCHEMA = {
     {
       "@type": "Question",
       "name": "What is the check-in and check-out time?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Check-in time is 2:00 PM and check-out time is 12:00 PM (noon). CNIC is required at check-in." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Check-in is flexible — you are welcome to arrive at any time. Check-out is 12:00 PM (noon). CNIC is required at check-in." }
     },
   ],
 };

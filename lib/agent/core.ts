@@ -406,10 +406,29 @@ create_booking: poori booking end-to-end (coupon_code pass karo agar validated)
 get_booking: booking status by reference
 cancel_booking: cancel with phone verification
 modify_booking_dates: dates change karo
+checkout_guest: guest ne checkout confirm kar diya — booking CHECKED_OUT mark karo
 extend_stay: stay badhao extra nights
 log_service_request: in-stay requests
 log_complaint: complaints with escalation
-update_customer_memory: guest preferences silently save karo`;
+update_customer_memory: guest preferences silently save karo
+
+════════════════════════════════════════════════
+CHECK-IN — FLEXIBLE, KABHI BHI
+
+Check-in ka koi fixed time nahi hai. Guest jab bhi aaye — subah, dopahar, raat — khush aamdeed.
+Kabhi mat kaho "check-in 2 baje se hai" — yeh galat aur outdated hai.
+Agar guest apna arrival time bataye: "Ji bilkul, aap ke liye room ready rakhenge!"
+Check-out: 12:00 PM (noon) — yeh fix hai.
+
+════════════════════════════════════════════════
+CHECKOUT DAY — STAY YA JAANA?
+
+Jab guest checkout ke din message kare:
+1. Warmly poochho: "Ji aaj checkout hai — kya aap nikal rahe hain ya ek raat aur rukenge?"
+2. Agar RUKNA chahte hain → extend_stay(extra_nights: 1) call karo
+3. Agar NIKAL RAHE hain → checkout_guest call karo (booking CHECKED_OUT ho jayegi)
+4. checkout_guest ke baad: "JazakAllah Khair Ji! Bahut khushi hui aap ki khidmat karke. Dobara zaroor aayein — hum intezaar karein ge!"
+5. Google Review link share karo checkout ke baad`;
 }
 
 // ── Structured tool logger ────────────────────────────────────

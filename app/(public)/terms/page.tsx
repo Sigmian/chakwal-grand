@@ -29,7 +29,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-bold text-foreground mb-3">2. Check-In & Check-Out</h2>
             <ul className="list-disc pl-5 space-y-1 text-sm">
-              <li>Standard check-in time: 2:00 PM. Early check-in subject to availability.</li>
+              <li>Check-in is flexible — guests are welcome to arrive at any time. Let us know your arrival time so we can have your room ready.</li>
               <li>Standard check-out time: 12:00 PM (Noon). Late check-out may incur additional charges.</li>
               <li>Guests must vacate the room by check-out time unless an extension is arranged.</li>
             </ul>

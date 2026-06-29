@@ -276,6 +276,20 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "checkout_guest",
+    description:
+      "Mark a booking as CHECKED_OUT when a guest confirms they are leaving today. " +
+      "Verifies guest by phone. Use this when a guest says they are checking out, leaving, or done with their stay.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        booking_ref: { type: "string", description: "Booking reference number" },
+        guest_phone: { type: "string", description: "Guest phone to verify identity" },
+      },
+      required: ["booking_ref", "guest_phone"],
+    },
+  },
+  {
     name: "extend_stay",
     description:
       "Extend an existing booking by N additional nights. Verifies guest by phone, checks room availability for extra nights, " +
@@ -370,6 +384,7 @@ export async function executeAgentTool(
     case "get_booking":            return getBookingTool(input);
     case "cancel_booking":         return cancelBookingTool(input);
     case "modify_booking_dates":   return modifyBookingDatesTool(input);
+    case "checkout_guest":         return checkoutGuestTool(input);
     case "extend_stay":            return extendStayTool(input);
     case "update_customer_memory": return updateCustomerMemoryTool(input);
     default:                       return { error: "Unknown tool: " + toolName };
@@ -867,6 +882,36 @@ async function modifyBookingDatesTool(input: Record<string, unknown>) {
     newCheckOut,
     newNights:  nights,
     newTotal,
+  };
+}
+
+async function checkoutGuestTool(input: Record<string, unknown>) {
+  const ref   = input.booking_ref as string;
+  const phone = input.guest_phone as string;
+
+  const booking = await prisma.booking.findUnique({
+    where:   { bookingRef: ref },
+    include: { customer: { select: { phone: true, name: true } }, room: { select: { name: true } } },
+  });
+  if (!booking) return { success: false, error: "Booking not found." };
+  if (!verifyPhone(phone, booking.customer.phone))
+    return { success: false, error: "Phone number does not match booking records." };
+  if (booking.status === BookingStatus.CHECKED_OUT)
+    return { success: false, error: "Booking is already checked out." };
+  if (booking.status === BookingStatus.CANCELLED)
+    return { success: false, error: "Cannot check out a cancelled booking." };
+
+  await prisma.booking.update({
+    where: { id: booking.id },
+    data:  { status: BookingStatus.CHECKED_OUT },
+  });
+
+  return {
+    success:    true,
+    bookingRef: ref,
+    guestName:  booking.customer.name,
+    roomName:   booking.room.name,
+    message:    "Checkout complete. Room marked as available.",
   };
 }
 

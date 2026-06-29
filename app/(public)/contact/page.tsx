@@ -155,7 +155,7 @@ export default function ContactPage() {
               <h2 className="font-bold text-foreground mb-4 text-lg">Important Information</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-muted-foreground">
                 {[
-                  ["Check-In Time", "2:00 PM"],
+                  ["Check-In Time", "Flexible (anytime)"],
                   ["Check-Out Time", "12:00 PM (Noon)"],
                   ["Payment Method", "Cash on Arrival"],
                   ["ID Required", "Original CNIC at Check-In"],

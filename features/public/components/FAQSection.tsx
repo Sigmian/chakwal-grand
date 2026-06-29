@@ -53,7 +53,7 @@ const FAQS = [
     items: [
       {
         q: "What are the check-in and check-out times?",
-        a: "Standard check-in time is 2:00 PM and check-out is 12:00 PM (noon). Early check-in or late check-out may be available on request, subject to room availability. Please call us in advance to arrange.",
+        a: "Check-in is flexible — you are welcome to arrive at any time. Check-out is 12:00 PM (noon). Please share your estimated arrival time while booking so we can have your room ready.",
       },
       {
         q: "What documents do I need at check-in?",

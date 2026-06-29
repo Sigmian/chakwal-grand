@@ -73,7 +73,7 @@ export async function sendBookingWhatsApp(payload: BookingWhatsAppPayload): Prom
     `📋 *Booking Ref:* ${payload.bookingRef}\n` +
     `🏨 *Room:* ${payload.roomName}\n` +
     `📍 *Branch:* ${payload.branchName}\n` +
-    `📅 *Check-in:* ${ciStr} at 2:00 PM\n` +
+    `📅 *Check-in:* ${ciStr} (anytime — flexible)\n` +
     `📅 *Check-out:* ${coStr} at 12:00 PM\n` +
     `🌙 *Duration:* ${payload.nights} night${payload.nights > 1 ? "s" : ""}\n` +
     `💰 *Total Due:* PKR ${payload.totalAmount.toLocaleString("en-PK")} (cash on arrival)\n\n` +
