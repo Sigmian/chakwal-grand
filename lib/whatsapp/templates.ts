@@ -109,7 +109,7 @@ export async function sendBookingConfirmed(p: {
       String(p.nights),
       Number(p.totalAmount).toLocaleString("en-PK"),
     ],
-    // No dynamic button suffix — v3 uses static URL /my-booking
+    p.bookingRef, // dynamic URL suffix: /booking-confirmation/{bookingRef}
   );
 }
 
