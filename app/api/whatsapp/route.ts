@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
   try {
     body = await req.json();
-  } catch {
+  } catch (err) {
+    console.error("[WhatsApp] JSON parse error:", err);
     return NextResponse.json({ status: "ok" }); // always 200 to Meta
   }
 

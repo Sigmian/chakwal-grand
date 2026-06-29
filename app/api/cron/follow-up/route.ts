@@ -31,19 +31,19 @@ function formatDate(d: Date): string {
   });
 }
 
+// PKT = UTC+5. Calculate day boundaries in UTC that correspond to PKT midnight.
+// e.g. PKT midnight = 19:00 UTC previous day
+const PKT_OFFSET_MS = 5 * 60 * 60 * 1000;
+
 function startOfDayPKT(offsetDays: number): Date {
-  const pkNow = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi" }),
-  );
-  pkNow.setDate(pkNow.getDate() + offsetDays);
-  pkNow.setHours(0, 0, 0, 0);
-  return pkNow;
+  const nowUtc = Date.now();
+  const pktMs  = nowUtc + PKT_OFFSET_MS;
+  const pktMidnight = pktMs - (pktMs % 86_400_000) + offsetDays * 86_400_000;
+  return new Date(pktMidnight - PKT_OFFSET_MS); // back to UTC
 }
 
 function endOfDayPKT(offsetDays: number): Date {
-  const d = startOfDayPKT(offsetDays);
-  d.setHours(23, 59, 59, 999);
-  return d;
+  return new Date(startOfDayPKT(offsetDays + 1).getTime() - 1);
 }
 
 export async function GET(req: Request) {
@@ -122,7 +122,7 @@ export async function GET(req: Request) {
   const checkedOutYesterday = await prisma.booking.findMany({
     where: {
       checkOutDate: { gte: yesterdayStart, lte: yesterdayEnd },
-      status:       { in: ["CHECKED_OUT", "CONFIRMED"] },
+      status:       { in: ["CHECKED_OUT"] },
     },
     include: {
       customer: { select: { name: true, phone: true } },
@@ -145,10 +145,8 @@ export async function GET(req: Request) {
   }
 
   // ── 4. Win-back (Sundays only — weekly cadence) ───────────
-  const pkNow = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Asia/Karachi" }),
-  );
-  const isSunday = pkNow.getDay() === 0;
+  const pkNowMs  = Date.now() + PKT_OFFSET_MS;
+  const isSunday = new Date(pkNowMs).getUTCDay() === 0;
 
   if (isSunday) {
     const thirtyDaysAgo = new Date();

@@ -449,7 +449,7 @@ export async function createPublicBooking(input: {
 
       if (eligible && hasCapacity && firstTimeEligible) {
         discountAmount = offer.discountType === "PERCENTAGE"
-          ? (baseAmount * Number(offer.discountValue)) / 100
+          ? Math.round((baseAmount * Number(offer.discountValue)) / 100)
           : Number(offer.discountValue);
         appliedOfferId = offer.id;
         await prisma.offer.update({ where: { id: offer.id }, data: { usedCount: { increment: 1 } } });
