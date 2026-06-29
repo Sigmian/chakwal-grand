@@ -226,6 +226,7 @@ export async function createBooking(rawInput: CreateBookingInput) {
       checkOut:    booking.checkOutDate.toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Karachi" }),
       nights:      booking.nights,
       totalAmount: Number(booking.totalAmount),
+      // Admin bookings have no arrival time — template will say "anytime (flexible)"
     }).catch(err => console.error("[WhatsApp] booking confirmation template failed:", err));
 
     // 11. Log activity

@@ -80,30 +80,36 @@ async function sendTemplate(
 // ── Public senders ────────────────────────────────────────────
 
 export async function sendBookingConfirmed(p: {
-  phone:       string;
-  guestName:   string;
-  bookingRef:  string;
-  roomName:    string;
-  branchName:  string;
-  checkIn:     string; // "28 June 2026"
-  checkOut:    string;
-  nights:      number;
-  totalAmount: number;
+  phone:             string;
+  guestName:         string;
+  bookingRef:        string;
+  roomName:          string;
+  branchName:        string;
+  checkIn:           string; // "28 June 2026"
+  checkOut:          string;
+  nights:            number;
+  totalAmount:       number;
+  estimatedArrival?: string; // "3:00 PM" — guest preferred arrival time
 }) {
+  // Combine date + arrival time. If no time selected, say "anytime (flexible)"
+  const checkInWithTime = p.estimatedArrival
+    ? `${p.checkIn} at ${p.estimatedArrival}`
+    : `${p.checkIn} (anytime — you're welcome whenever!)`;
+
   return sendTemplate(
     p.phone,
-    "cgh_booking_confirmed_v2",
+    "cgh_booking_confirmed_v3",
     [
       p.guestName,
       p.bookingRef,
       p.roomName,
       p.branchName,
-      p.checkIn,
+      checkInWithTime,
       p.checkOut,
       String(p.nights),
       Number(p.totalAmount).toLocaleString("en-PK"),
     ],
-    p.bookingRef, // dynamic URL: /booking-confirmation/{bookingRef}
+    // No dynamic button suffix — v3 uses static URL /my-booking
   );
 }
 

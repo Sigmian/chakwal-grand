@@ -517,15 +517,16 @@ export async function createPublicBooking(input: {
 
   // Send WhatsApp booking confirmation template (non-blocking — never fails the booking)
   sendBookingConfirmed({
-    phone:       cleanPhone,
-    guestName:   cleanName,
-    bookingRef:  ref,
-    roomName:    room.name,
-    branchName:  room.branch?.name ?? "Chakwal",
-    checkIn:     ci.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
-    checkOut:    co.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
+    phone:             cleanPhone,
+    guestName:         cleanName,
+    bookingRef:        ref,
+    roomName:          room.name,
+    branchName:        room.branch?.name ?? "Chakwal",
+    checkIn:           ci.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
+    checkOut:          co.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
     nights,
     totalAmount,
+    estimatedArrival:  input.estimatedArrival || undefined,
   }).catch((err) => console.error("[WhatsApp]", err));
 
   return { success: true, bookingId: booking.id, ref, shareToken, discountAmount };

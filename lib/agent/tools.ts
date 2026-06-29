@@ -763,7 +763,7 @@ async function createBookingTool(input: Record<string, unknown>) {
     bookingRef:      ref,
     discountApplied: discountAmount > 0,
     discountAmount,
-    confirmationUrl: `${siteConfig.url}/booking-confirmation/${ref}`,
+    confirmationUrl: `${siteConfig.url}/my-booking`,
   };
 }
 
