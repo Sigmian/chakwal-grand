@@ -36,3 +36,5 @@ prisma/*.db-journal
 
 .vercel
 .env*
+playwright-report/
+test-results/
