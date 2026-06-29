@@ -165,9 +165,9 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
         check_in:    { type: "string", description: "Check-in date (YYYY-MM-DD)" },
         check_out:   { type: "string", description: "Check-out date (YYYY-MM-DD)" },
         adults:      { type: "number", description: "Number of adults — used to filter by capacity" },
-        branch_name: {
+        branch_id: {
           type: "string",
-          description: "Filter by branch name. Pass 'Main Branch' for Talagang Road branch, or 'Madina Town' for Madina Town branch. Leave empty to search all branches.",
+          description: "Filter by branch ID. Use 'branch-chakwal' for Main Branch (Talagang Road), or 'branch-madina' for Madina Town Branch. Leave empty to search all branches.",
         },
       },
       required: [],
@@ -526,17 +526,17 @@ async function logComplaintTool(input: Record<string, unknown>) {
 // ── Implementations ───────────────────────────────────────────
 
 async function searchRooms(input: Record<string, unknown>) {
-  const checkIn    = input.check_in    as string | undefined;
-  const checkOut   = input.check_out   as string | undefined;
-  const adults     = input.adults      as number | undefined;
-  const branchName = (input.branch_name as string | undefined) ?? (input.branch_city as string | undefined);
+  const checkIn  = input.check_in  as string | undefined;
+  const checkOut = input.check_out as string | undefined;
+  const adults   = input.adults    as number | undefined;
+  const branchId = (input.branch_id as string | undefined) ?? (input.branch_name as string | undefined) ?? (input.branch_city as string | undefined);
 
   const rooms = await prisma.room.findMany({
     where: {
       isActive: true,
       status:   { not: "BLOCKED" },
-      ...(adults     ? { maxAdults: { gte: adults } } : {}),
-      ...(branchName ? { branch: { name: { contains: branchName, mode: "insensitive" as const } } } : {}),
+      ...(adults   ? { maxAdults: { gte: adults } } : {}),
+      ...(branchId ? { branch: { id: branchId } } : {}),
     },
     include: { branch: { select: { id: true, name: true, city: true } } },
     orderBy: [{ type: "asc" }, { pricePerNight: "asc" }],
