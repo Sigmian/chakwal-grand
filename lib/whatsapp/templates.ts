@@ -14,9 +14,13 @@ function toE164(phone: string): string {
   return digits;
 }
 
+// Strip BOM and zero-width chars that corrupt HTTP Authorization headers
+const clean = (s: string | undefined) =>
+  s ? s.replace(/^﻿/, "").replace(/[​-‍﻿]/g, "").trim() : s;
+
 function getCredentials() {
-  const token   = process.env.WHATSAPP_API_TOKEN;
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const token   = clean(process.env.WHATSAPP_API_TOKEN);
+  const phoneId = clean(process.env.WHATSAPP_PHONE_NUMBER_ID);
   return { token, phoneId, ready: !!(token && phoneId) };
 }
 
