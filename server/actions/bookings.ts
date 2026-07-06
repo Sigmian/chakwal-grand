@@ -271,7 +271,25 @@ export async function confirmBooking(bookingId: string) {
     const updated = await prisma.booking.update({
       where: { id: bookingId },
       data:  { status: BookingStatus.CONFIRMED },
+      include: {
+        room:     { select: { name: true } },
+        customer: { select: { name: true, phone: true } },
+        branch:   { select: { name: true } },
+      },
     });
+
+    // Send WhatsApp confirmation template (non-blocking)
+    sendBookingConfirmed({
+      phone:       updated.customer.phone,
+      guestName:   updated.customer.name,
+      bookingRef:  updated.bookingRef,
+      roomName:    updated.room.name,
+      branchName:  updated.branch.name,
+      checkIn:     updated.checkInDate.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
+      checkOut:    updated.checkOutDate.toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Karachi" }),
+      nights:      updated.nights,
+      totalAmount: Number(updated.totalAmount),
+    }).catch(err => console.error("[WhatsApp] confirm template failed:", err));
 
     await logActivity(user.id, "BOOKING_CONFIRMED", "Booking", bookingId,
       `Booking ${booking.bookingRef} confirmed`);
