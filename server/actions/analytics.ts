@@ -48,8 +48,9 @@ export async function getDashboardOverview(branchId?: string) {
         ...branchFilter,
         status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT] },
         checkInDate: { gte: monthStart, lte: monthEnd },
+        paidAmount: { gt: 0 },  // only bookings with at least some payment recorded
       },
-      _sum: { totalAmount: true, paidAmount: true },
+      _sum: { paidAmount: true, discountAmount: true },
     }),
     prisma.expense.aggregate({
       where: {
@@ -84,8 +85,9 @@ export async function getDashboardOverview(branchId?: string) {
         ...branchFilter,
         status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT] },
         checkInDate: { gte: lastMonthStart, lte: lastMonthEnd },
+        paidAmount: { gt: 0 },
       },
-      _sum: { totalAmount: true },
+      _sum: { paidAmount: true },
     }),
   ]);
 
@@ -98,10 +100,11 @@ export async function getDashboardOverview(branchId?: string) {
   const availableRooms = roomStatusMap[RoomStatus.AVAILABLE] ?? 0;
   const occupiedRooms  = roomStatusMap[RoomStatus.OCCUPIED]  ?? 0;
 
-  const revenueThisMonth  = Number(monthRevenue._sum.totalAmount ?? 0);
-  const revenueLastMonth  = Number(lastMonthRevenue._sum.totalAmount ?? 0);
-  const expensesThisMonth = Number(monthExpenses._sum.amount ?? 0);
-  const profitThisMonth   = revenueThisMonth - expensesThisMonth;
+  const revenueThisMonth     = Number(monthRevenue._sum.paidAmount ?? 0);
+  const revenueLastMonth     = Number(lastMonthRevenue._sum.paidAmount ?? 0);
+  const totalDiscountThisMonth = Number(monthRevenue._sum.discountAmount ?? 0);
+  const expensesThisMonth    = Number(monthExpenses._sum.amount ?? 0);
+  const profitThisMonth      = revenueThisMonth - expensesThisMonth;
   const occupancyRate     = totalRooms > 0
     ? Math.round((occupiedRooms / totalRooms) * 100)
     : 0;
@@ -120,6 +123,7 @@ export async function getDashboardOverview(branchId?: string) {
     revenueThisMonth,
     revenueLastMonth,
     revenueTrend,
+    totalDiscountThisMonth,
     expensesThisMonth,
     profitThisMonth,
     bookingsToday:    todayBookings,

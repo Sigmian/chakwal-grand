@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   BedDouble, DollarSign, CalendarCheck, TrendingUp,
   AlertTriangle, ArrowRight, Clock, UserCheck, UserMinus,
-  Building2, Package, Lightbulb, CheckCircle2, Info,
+  Building2, Package, Lightbulb, CheckCircle2, Info, Tag,
 } from "lucide-react";
 import { requireAuth } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
       {canViewAnalytics && overview && (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Revenue This Month"
+          title="Collected This Month"
           value={formatPKRShort(overview.revenueThisMonth)}
           subtitle={`Profit: ${formatPKRShort(overview.profitThisMonth)}`}
           icon={<DollarSign className="w-5 h-5 text-gold-400" />}
@@ -145,11 +145,11 @@ export default async function DashboardPage() {
           iconBg="bg-green-500/15"
         />
         <StatCard
-          title="Pending Bookings"
-          value={`${overview.pendingBookings}`}
-          subtitle="Require confirmation"
-          icon={<TrendingUp className="w-5 h-5 text-amber-400" />}
-          iconBg="bg-amber-500/15"
+          title="Discounts Given"
+          value={formatPKRShort(overview.totalDiscountThisMonth)}
+          subtitle={overview.pendingBookings > 0 ? `${overview.pendingBookings} pending confirmation` : "This month"}
+          icon={<Tag className="w-5 h-5 text-purple-400" />}
+          iconBg="bg-purple-500/15"
         />
       </div>
       )}
