@@ -28,7 +28,9 @@ interface BookingForExtend {
   paidAmount:     number;
   discountAmount: number;
   taxAmount:      number;
-  extraCharges:   number;
+  extraCharges:         number;
+  extensionDiscountPct: number;
+  extensionOfferName:   string | null;
 }
 
 interface Props {

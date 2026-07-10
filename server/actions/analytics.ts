@@ -157,8 +157,9 @@ export async function getRevenueChartData(branchId?: string) {
             ...branchFilter,
             status: { in: [BookingStatus.CHECKED_OUT, BookingStatus.CHECKED_IN, BookingStatus.CONFIRMED] },
             checkInDate: { gte: start, lte: end },
+            paidAmount:  { gt: 0 },
           },
-          _sum: { totalAmount: true },
+          _sum: { paidAmount: true },
         }),
         prisma.sale.aggregate({
           where: { ...branchFilter, createdAt: { gte: start, lte: end } },
@@ -174,7 +175,7 @@ export async function getRevenueChartData(branchId?: string) {
         }),
       ]);
 
-      const roomRevenue    = Number(bookingRevenue._sum.totalAmount ?? 0);
+      const roomRevenue    = Number(bookingRevenue._sum.paidAmount ?? 0);
       const productRev     = Number(productRevenue._sum.totalAmount ?? 0);
       const totalRevenue   = roomRevenue + productRev;
       const ghExpTotal     = Number(ghExpenses._sum.amount ?? 0);
@@ -214,11 +215,12 @@ export async function getBranchPerformance() {
       const [revenue, expenses, avgRating, occupancy] = await Promise.all([
         prisma.booking.aggregate({
           where: {
-            branchId: branch.id,
-            status:   { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT] },
+            branchId:   branch.id,
+            status:     { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT] },
             checkInDate: { gte: monthStart, lte: monthEnd },
+            paidAmount:  { gt: 0 },
           },
-          _sum: { totalAmount: true },
+          _sum: { paidAmount: true },
         }),
         prisma.expense.aggregate({
           where: { branchId: branch.id, paidAt: { gte: monthStart, lte: monthEnd } },
@@ -235,7 +237,7 @@ export async function getBranchPerformance() {
         }),
       ]);
 
-      const totalRevenue  = Number(revenue._sum.totalAmount ?? 0);
+      const totalRevenue  = Number(revenue._sum.paidAmount ?? 0);
       const totalExpenses = Number(expenses._sum.amount ?? 0);
 
       const occupancyMap  = Object.fromEntries(occupancy.map((o) => [o.status, o._count.id]));

@@ -578,13 +578,15 @@ export async function extendBooking(input: {
     }
 
     // 4. Parse and validate new checkout date
-    const currentCheckOut = new Date(booking.checkOutDate);
-    const newCheckOut     = new Date(input.newCheckOutDate + "T12:00:00.000Z");
+    const currentCheckOut    = new Date(booking.checkOutDate);
+    const currentCheckOutStr = currentCheckOut.toISOString().slice(0, 10); // "YYYY-MM-DD"
+    const newCheckOut        = new Date(input.newCheckOutDate + "T00:00:00.000Z");
 
     if (isNaN(newCheckOut.getTime())) {
       return { success: false, error: "Invalid new check-out date" };
     }
-    if (newCheckOut <= currentCheckOut) {
+    // Compare as calendar dates so T12 vs T00 offsets can't sneak through
+    if (input.newCheckOutDate <= currentCheckOutStr) {
       return { success: false, error: "New check-out date must be after the current check-out date" };
     }
 
@@ -612,10 +614,28 @@ export async function extendBooking(input: {
       };
     }
 
-    // 6. Calculate additional charges
-    const nightsAdded      = getNights(currentCheckOut, newCheckOut);
-    const pricePerNight    = Number(booking.room.pricePerNight);
-    const additionalCharge = pricePerNight * nightsAdded;
+    // 6. Calculate additional charges (apply active branch offer if present)
+    const nightsAdded   = getNights(currentCheckOut, newCheckOut);
+    const pricePerNight = Number(booking.room.pricePerNight);
+
+    const nowOffer = new Date();
+    const activeOfferRaw = await prisma.offer.findFirst({
+      where: {
+        AND: [
+          { OR: [{ branchId: booking.branchId }, { branchId: null }] },
+          { isActive: true },
+          { discountType: "PERCENTAGE" },
+          { startsAt: { lte: nowOffer } },
+        ],
+      },
+      select: { discountValue: true, expiresAt: true },
+      orderBy: { discountValue: "desc" },
+    });
+    const activeOffer = activeOfferRaw && (!activeOfferRaw.expiresAt || activeOfferRaw.expiresAt >= nowOffer)
+      ? activeOfferRaw : null;
+    const discountPct      = activeOffer ? Number(activeOffer.discountValue) / 100 : 0;
+    const fullCharge       = pricePerNight * nightsAdded;
+    const additionalCharge = Math.round(fullCharge * (1 - discountPct));
     const previousTotal    = Number(booking.totalAmount);
     const newBaseAmount    = Number(booking.baseAmount) + additionalCharge;
     const newNights        = booking.nights + nightsAdded;
@@ -648,7 +668,7 @@ export async function extendBooking(input: {
         },
       });
 
-      await (tx as any).bookingExtension.create({
+      await tx.bookingExtension.create({
         data: {
           bookingId:       booking.id,
           previousCheckOut: currentCheckOut,

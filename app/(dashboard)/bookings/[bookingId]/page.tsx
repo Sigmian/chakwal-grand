@@ -48,6 +48,25 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
 
   if (!booking) notFound();
 
+  // Check for an active PERCENTAGE offer on this branch (for extension pricing)
+  const now = new Date();
+  const activeOfferRaw = await prisma.offer.findFirst({
+    where: {
+      AND: [
+        { OR: [{ branchId: booking.branchId }, { branchId: null }] },
+        { isActive: true },
+        { discountType: "PERCENTAGE" },
+        { startsAt: { lte: now } },
+      ],
+    },
+    select: { discountValue: true, name: true, expiresAt: true },
+    orderBy: { discountValue: "desc" },
+  });
+  // Check expiry in JS to avoid Prisma null-in-DateTimeFilter typing issues
+  const activeOffer = activeOfferRaw && (!activeOfferRaw.expiresAt || activeOfferRaw.expiresAt >= now)
+    ? activeOfferRaw : null;
+  const extensionDiscountPct = activeOffer ? Number(activeOffer.discountValue) / 100 : 0;
+
   const statusCfg  = BOOKING_STATUS_CONFIG[booking.status];
   const paymentCfg = PAYMENT_STATUS_CONFIG[booking.paymentStatus];
   const typeCfg    = ROOM_TYPE_CONFIG[booking.room.type as keyof typeof ROOM_TYPE_CONFIG] ?? ROOM_TYPE_CONFIG.STANDARD;
@@ -373,22 +392,24 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
               bookingRef: booking.bookingRef,
             }}
             extendData={{
-              id:             booking.id,
-              bookingRef:     booking.bookingRef,
-              guestName:      booking.customer.name,
-              guestPhone:     booking.customer.phone,
-              roomNumber:     booking.room.number,
-              roomName:       booking.room.name,
-              branchName:     booking.branch.name,
-              checkInDate:    booking.checkInDate.toISOString(),
-              checkOutDate:   booking.checkOutDate.toISOString(),
-              nights:         booking.nights,
-              pricePerNight:  Number(booking.baseAmount) / booking.nights,
-              totalAmount:    Number(booking.totalAmount),
-              paidAmount:     Number(booking.paidAmount),
-              discountAmount: Number(booking.discountAmount),
-              taxAmount:      Number(booking.taxAmount),
-              extraCharges:   Number(booking.extraCharges),
+              id:                   booking.id,
+              bookingRef:           booking.bookingRef,
+              guestName:            booking.customer.name,
+              guestPhone:           booking.customer.phone,
+              roomNumber:           booking.room.number,
+              roomName:             booking.room.name,
+              branchName:           booking.branch.name,
+              checkInDate:          booking.checkInDate.toISOString(),
+              checkOutDate:         booking.checkOutDate.toISOString(),
+              nights:               booking.nights,
+              pricePerNight:        booking.nights > 0 ? Number(booking.baseAmount) / booking.nights : Number(booking.room.pricePerNight),
+              totalAmount:          Number(booking.totalAmount),
+              paidAmount:           Number(booking.paidAmount),
+              discountAmount:       Number(booking.discountAmount),
+              taxAmount:            Number(booking.taxAmount),
+              extraCharges:         Number(booking.extraCharges),
+              extensionDiscountPct: extensionDiscountPct,
+              extensionOfferName:   activeOffer?.name ?? null,
             }}
             showCancel={searchParams.action === "cancel"}
           />
@@ -408,7 +429,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
                 checkIn:        formatDate(booking.checkInDate),
                 checkOut:       formatDate(booking.checkOutDate),
                 nights:         booking.nights,
-                pricePerNight:  Number(booking.baseAmount) / booking.nights,
+                pricePerNight:  booking.nights > 0 ? Number(booking.baseAmount) / booking.nights : Number(booking.room.pricePerNight),
                 baseAmount:     Number(booking.baseAmount),
                 discountAmount: Number(booking.discountAmount),
                 extraCharges:   Number(booking.extraCharges),

@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   X, CalendarPlus, ArrowRight, Check, Loader2,
-  MessageCircle, PrinterIcon, AlertTriangle, Clock,
+  MessageCircle, AlertTriangle, Clock,
 } from "lucide-react";
 import { extendBooking } from "@/server/actions/bookings";
 import { cn, formatPKR, buildWhatsAppUrl } from "@/utils";
@@ -35,7 +35,9 @@ interface BookingData {
   paidAmount:     number;
   discountAmount: number;
   taxAmount:      number;
-  extraCharges:   number;
+  extraCharges:         number;
+  extensionDiscountPct: number;
+  extensionOfferName:   string | null;
 }
 
 interface Props {
@@ -46,7 +48,7 @@ interface Props {
 // ── Helpers ───────────────────────────────────────────────────
 
 function diffDays(a: Date, b: Date): number {
-  return Math.max(1, Math.round((b.getTime() - a.getTime()) / 86_400_000));
+  return Math.max(1, Math.floor((b.getTime() - a.getTime()) / 86_400_000));
 }
 
 /** Format Date → "YYYY-MM-DD" for <input type="date"> */
@@ -103,14 +105,16 @@ export function ExtendStayModal({ booking, onClose }: Props) {
 
   const preview = useMemo(() => {
     if (!newCheckOut) return null;
-    const newCO       = new Date(newCheckOut + "T12:00:00.000Z");
-    const nightsAdded = diffDays(currentCheckOut, newCO);
-    const addCharge   = booking.pricePerNight * nightsAdded;
-    const newBase     = booking.totalAmount + addCharge; // totalAmount already includes prev discount/tax
-    const prevBalance = booking.totalAmount - booking.paidAmount;
-    const paymentNow  = Number(payAmt) || 0;
-    const newBalance  = newBase - booking.paidAmount - paymentNow;
-    return { nightsAdded, addCharge, newTotal: newBase, prevBalance, newBalance, paymentNow };
+    const newCO          = new Date(newCheckOut + "T12:00:00.000Z");
+    const nightsAdded    = diffDays(currentCheckOut, newCO);
+    const fullCharge     = booking.pricePerNight * nightsAdded;
+    const discountAmt    = Math.round(fullCharge * booking.extensionDiscountPct);
+    const addCharge      = fullCharge - discountAmt;
+    const newBase        = booking.totalAmount + addCharge;
+    const prevBalance    = booking.totalAmount - booking.paidAmount;
+    const paymentNow     = Number(payAmt) || 0;
+    const newBalance     = newBase - booking.paidAmount - paymentNow;
+    return { nightsAdded, fullCharge, discountAmt, addCharge, newTotal: newBase, prevBalance, newBalance, paymentNow };
   }, [newCheckOut, booking, payAmt]);
 
   // ── Confirm handler ────────────────────────────────────────
@@ -258,12 +262,21 @@ export function ExtendStayModal({ booking, onClose }: Props) {
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                     Price Preview
                   </p>
+                  {/* Offer badge */}
+                  {booking.extensionDiscountPct > 0 && booking.extensionOfferName && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg mb-1">
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                        🔥 {booking.extensionOfferName} applied
+                      </span>
+                    </div>
+                  )}
                   {[
-                    { label: "Price / night",        value: formatPKR(booking.pricePerNight), color: "" },
-                    { label: `× ${preview.nightsAdded} night${preview.nightsAdded !== 1 ? "s" : ""}`, value: "", color: "" },
-                    { label: "Additional charge",    value: formatPKR(preview.addCharge),    color: "text-amber-400" },
-                    { label: "Previous balance due", value: formatPKR(preview.prevBalance),  color: preview.prevBalance > 0 ? "text-red-400" : "text-muted-foreground" },
-                  ].map(({ label, value, color }) => value && (
+                    { label: "Price / night",        value: formatPKR(booking.pricePerNight),                    color: "" },
+                    { label: `× ${preview.nightsAdded} night${preview.nightsAdded !== 1 ? "s" : ""}`, value: preview.discountAmt > 0 ? formatPKR(preview.fullCharge) : "", color: "text-muted-foreground line-through" },
+                    preview.discountAmt > 0 ? { label: `Discount (${Math.round(booking.extensionDiscountPct * 100)}% off)`, value: `− ${formatPKR(preview.discountAmt)}`, color: "text-emerald-400" } : null,
+                    { label: "Additional charge",    value: formatPKR(preview.addCharge),                        color: "text-amber-400" },
+                    { label: "Previous balance due", value: formatPKR(preview.prevBalance),                      color: preview.prevBalance > 0 ? "text-red-400" : "text-muted-foreground" },
+                  ].filter((r): r is { label: string; value: string; color: string } => r !== null).map(({ label, value, color }) => value && (
                     <div key={label} className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">{label}</span>
                       <span className={cn("text-xs font-semibold", color || "text-foreground")}>{value}</span>
