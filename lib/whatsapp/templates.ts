@@ -109,7 +109,7 @@ export async function sendBookingConfirmed(p: {
       String(p.nights),
       Number(p.totalAmount).toLocaleString("en-PK"),
     ],
-    p.bookingRef, // dynamic URL suffix: /booking-confirmation/{bookingRef}
+    `booking-confirmation/${p.bookingRef}`, // full path suffix → staychakwal.de/booking-confirmation/{ref}
   );
 }
 
