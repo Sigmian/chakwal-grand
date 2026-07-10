@@ -7,20 +7,42 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CheckCircle2, LogIn, LogOut, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, LogIn, LogOut, XCircle, Loader2, CalendarPlus } from "lucide-react";
 import { confirmBooking, checkInBooking, checkOutBooking, cancelBooking } from "@/server/actions/bookings";
 import { BookingStatus } from "@/types";
+import { ExtendStayModal } from "./ExtendStayModal";
+
+interface BookingForExtend {
+  id:             string;
+  bookingRef:     string;
+  guestName:      string;
+  guestPhone:     string;
+  roomNumber:     string;
+  roomName:       string;
+  branchName:     string;
+  checkInDate:    string;
+  checkOutDate:   string;
+  nights:         number;
+  pricePerNight:  number;
+  totalAmount:    number;
+  paidAmount:     number;
+  discountAmount: number;
+  taxAmount:      number;
+  extraCharges:   number;
+}
 
 interface Props {
   booking: { id: string; status: string; bookingRef: string };
+  extendData?: BookingForExtend;
   showCancel?: boolean;
 }
 
-export function BookingActions({ booking, showCancel }: Props) {
+export function BookingActions({ booking, extendData, showCancel }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [cancelOpen, setCancelOpen]  = useState(showCancel ?? false);
-  const [reason, setReason]          = useState("");
+  const [cancelOpen,  setCancelOpen]  = useState(showCancel ?? false);
+  const [extendOpen,  setExtendOpen]  = useState(false);
+  const [reason, setReason]           = useState("");
 
   const handleAction = (action: "confirm" | "checkin" | "checkout") => {
     startTransition(async () => {
@@ -55,6 +77,10 @@ export function BookingActions({ booking, showCancel }: Props) {
   const status = booking.status as BookingStatus;
 
   return (
+    <>
+    {extendOpen && extendData && (
+      <ExtendStayModal booking={extendData} onClose={() => setExtendOpen(false)} />
+    )}
     <div className="card-luxury rounded-xl p-5 space-y-3">
       <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Actions</h3>
 
@@ -88,6 +114,17 @@ export function BookingActions({ booking, showCancel }: Props) {
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
           Check Out Guest
+        </button>
+      )}
+
+      {/* Extend Stay — available for CONFIRMED and CHECKED_IN bookings */}
+      {extendData && [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN].includes(status) && (
+        <button
+          onClick={() => setExtendOpen(true)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-semibold rounded-xl hover:bg-blue-500/20 transition-colors"
+        >
+          <CalendarPlus className="w-4 h-4" />
+          Extend Stay
         </button>
       )}
 
@@ -131,5 +168,6 @@ export function BookingActions({ booking, showCancel }: Props) {
         </>
       )}
     </div>
+    </>
   );
 }

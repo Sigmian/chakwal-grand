@@ -25,7 +25,7 @@ import {
   getNights,
   calculateBookingTotal,
 } from "@/utils";
-import { BookingStatus, PaymentStatus, RoomStatus } from "@/types";
+import { BookingStatus, PaymentStatus, PaymentMethod, RoomStatus } from "@/types";
 import type {
   CreateBookingInput,
   UpdateBookingInput,
@@ -544,6 +544,176 @@ export async function addPayment(rawInput: AddPaymentInput) {
   } catch (error) {
     console.error("[addPayment]", error);
     return { success: false, error: "Failed to record payment" };
+  }
+}
+
+// ─── EXTEND STAY ─────────────────────────────────────────────
+export async function extendBooking(input: {
+  bookingId:       string;
+  newCheckOutDate: string;       // "YYYY-MM-DD"
+  paymentAmount?:  number;
+  paymentMethod?:  string;       // PaymentMethod enum value
+  paymentRef?:     string;
+  notes?:          string;
+}) {
+  const user = await requirePermission("bookings:update");
+
+  try {
+    // 1. Load booking with room, customer, branch
+    const booking = await prisma.booking.findUnique({
+      where:   { id: input.bookingId },
+      include: { room: true, customer: true, branch: true },
+    });
+    if (!booking) return { success: false, error: "Booking not found" };
+
+    // 2. Branch scope check
+    const branchId = getScopedBranchId(user, booking.branchId);
+    if (branchId && branchId !== booking.branchId) {
+      return { success: false, error: "Access denied — this booking belongs to a different branch" };
+    }
+
+    // 3. Status check
+    if (!["CONFIRMED", "CHECKED_IN"].includes(booking.status)) {
+      return { success: false, error: `Cannot extend a booking with status: ${booking.status}` };
+    }
+
+    // 4. Parse and validate new checkout date
+    const currentCheckOut = new Date(booking.checkOutDate);
+    const newCheckOut     = new Date(input.newCheckOutDate + "T12:00:00.000Z");
+
+    if (isNaN(newCheckOut.getTime())) {
+      return { success: false, error: "Invalid new check-out date" };
+    }
+    if (newCheckOut <= currentCheckOut) {
+      return { success: false, error: "New check-out date must be after the current check-out date" };
+    }
+
+    // 5. Availability check — no other booking for this room in the extension window
+    const conflict = await prisma.booking.findFirst({
+      where: {
+        roomId: booking.roomId,
+        id:     { not: booking.id },
+        status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.PENDING] },
+        AND: [
+          { checkInDate:  { lt: newCheckOut     } },
+          { checkOutDate: { gt: currentCheckOut } },
+        ],
+      },
+      select: { bookingRef: true, checkInDate: true, checkOutDate: true },
+    });
+
+    if (conflict) {
+      const ci = conflict.checkInDate.toLocaleDateString("en-PK", { day: "numeric", month: "short", timeZone: "Asia/Karachi" });
+      const co = conflict.checkOutDate.toLocaleDateString("en-PK", { day: "numeric", month: "short", timeZone: "Asia/Karachi" });
+      return {
+        success:  false,
+        error:    `Room already booked ${ci}–${co} (${conflict.bookingRef}). Choose an earlier date.`,
+        conflict: { ref: conflict.bookingRef, checkIn: ci, checkOut: co },
+      };
+    }
+
+    // 6. Calculate additional charges
+    const nightsAdded      = getNights(currentCheckOut, newCheckOut);
+    const pricePerNight    = Number(booking.room.pricePerNight);
+    const additionalCharge = pricePerNight * nightsAdded;
+    const previousTotal    = Number(booking.totalAmount);
+    const newBaseAmount    = Number(booking.baseAmount) + additionalCharge;
+    const newNights        = booking.nights + nightsAdded;
+    const newTotal         = calculateBookingTotal({
+      baseAmount:    newBaseAmount,
+      discountAmount: Number(booking.discountAmount),
+      taxAmount:     Number(booking.taxAmount),
+      extraCharges:  Number(booking.extraCharges),
+    });
+
+    // 7. Payment
+    const paymentAmount  = input.paymentAmount ?? 0;
+    const newPaidAmount  = Number(booking.paidAmount) + paymentAmount;
+    const paymentStatus: PaymentStatus =
+      newPaidAmount >= newTotal ? PaymentStatus.PAID
+      : newPaidAmount > 0       ? PaymentStatus.PARTIAL
+      : PaymentStatus.UNPAID;
+
+    // 8. Atomic transaction (Serializable to prevent double-booking race)
+    await prisma.$transaction(async (tx) => {
+      await tx.booking.update({
+        where: { id: booking.id },
+        data:  {
+          checkOutDate:  newCheckOut,
+          nights:        newNights,
+          baseAmount:    newBaseAmount,
+          totalAmount:   newTotal,
+          paidAmount:    newPaidAmount,
+          paymentStatus,
+        },
+      });
+
+      await (tx as any).bookingExtension.create({
+        data: {
+          bookingId:       booking.id,
+          previousCheckOut: currentCheckOut,
+          newCheckOut,
+          nightsAdded,
+          previousTotal,
+          additionalCharge,
+          newTotal,
+          pricePerNight,
+          paymentAmount,
+          paymentMethod:   paymentAmount > 0 ? input.paymentMethod as PaymentMethod : null,
+          paymentRef:      input.paymentRef  || null,
+          notes:           input.notes       || null,
+          extendedById:    user.id,
+          extendedByName:  user.name,
+        },
+      });
+
+      if (paymentAmount > 0 && input.paymentMethod) {
+        await tx.payment.create({
+          data: {
+            bookingId:    booking.id,
+            amount:       paymentAmount,
+            method:       input.paymentMethod as PaymentMethod,
+            reference:    input.paymentRef || null,
+            receivedById: user.id,
+            notes:        `Stay extension (+${nightsAdded} night${nightsAdded > 1 ? "s" : ""})${input.notes ? `. ${input.notes}` : ""}`,
+          },
+        });
+      }
+    }, { isolationLevel: "Serializable" });
+
+    // 9. Activity log
+    await logActivity(
+      user.id,
+      "BOOKING_EXTENDED",
+      "Booking",
+      booking.id,
+      `${booking.bookingRef} extended +${nightsAdded} night${nightsAdded > 1 ? "s" : ""}. New checkout: ${input.newCheckOutDate}. +₨${additionalCharge.toLocaleString("en-PK")}`,
+      { nightsAdded, newCheckOutDate: input.newCheckOutDate, additionalCharge, paymentAmount }
+    );
+
+    revalidatePath(`/bookings/${booking.id}`);
+    revalidatePath("/bookings");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      data: {
+        bookingRef:       booking.bookingRef,
+        guestName:        booking.customer.name,
+        guestPhone:       booking.customer.phone,
+        roomNumber:       booking.room.number,
+        branchName:       booking.branch.name,
+        nightsAdded,
+        newCheckOut:      newCheckOut.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
+        additionalCharge,
+        paymentAmount,
+        newTotal,
+        newBalance:       newTotal - newPaidAmount,
+      },
+    };
+  } catch (error) {
+    console.error("[extendBooking]", error);
+    return { success: false, error: "Failed to extend booking. Please try again." };
   }
 }
 

@@ -5,7 +5,7 @@
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Phone, MessageCircle } from "lucide-react";
+import { ArrowLeft, Phone, MessageCircle, CalendarPlus } from "lucide-react";
 import { requirePermission } from "@/lib/auth/session";
 import prisma from "@/lib/db/prisma";
 import { SectionHeader } from "@/components/shared";
@@ -41,7 +41,8 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
       salesAttached: {
         include: { lineItems: { include: { inventoryItem: { include: { product: true } } } } },
       },
-      offer:    true,
+      offer:       true,
+      extensions:  { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -225,6 +226,65 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
               </div>
             </div>
           )}
+          {/* Extension history */}
+          {(booking as any).extensions?.length > 0 && (
+            <div className="card-luxury rounded-xl p-5">
+              <SectionHeader
+                title="Stay Extensions"
+                subtitle={`${(booking as any).extensions.length} extension${(booking as any).extensions.length !== 1 ? "s" : ""}`}
+              />
+              <div className="space-y-3">
+                {(booking as any).extensions.map((ext: any, idx: number) => (
+                  <div key={ext.id} className="p-4 bg-surface-base rounded-xl border border-blue-500/10">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+                          <CalendarPlus className="w-3.5 h-3.5 text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-foreground">
+                            +{ext.nightsAdded} night{ext.nightsAdded !== 1 ? "s" : ""}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDateTime(ext.createdAt)}
+                            {ext.extendedByName ? ` · ${ext.extendedByName}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs text-blue-400 font-semibold bg-blue-500/10 px-2 py-0.5 rounded-full">
+                        Extension {(booking as any).extensions.length - idx}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                      <div className="text-muted-foreground">Previous check-out</div>
+                      <div className="text-foreground font-medium line-through opacity-60">
+                        {formatDate(ext.previousCheckOut)}
+                      </div>
+                      <div className="text-muted-foreground">New check-out</div>
+                      <div className="text-blue-400 font-semibold">{formatDate(ext.newCheckOut)}</div>
+                      <div className="text-muted-foreground">Additional charge</div>
+                      <div className="text-amber-400 font-semibold">{formatPKR(Number(ext.additionalCharge))}</div>
+                      {Number(ext.paymentAmount) > 0 && (
+                        <>
+                          <div className="text-muted-foreground">Payment received</div>
+                          <div className="text-emerald-400 font-semibold">
+                            {formatPKR(Number(ext.paymentAmount))}
+                            {ext.paymentMethod ? ` (${ext.paymentMethod.replace(/_/g, " ")})` : ""}
+                          </div>
+                        </>
+                      )}
+                      {ext.notes && (
+                        <>
+                          <div className="text-muted-foreground">Notes</div>
+                          <div className="text-foreground">{ext.notes}</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right: Billing + actions */}
@@ -311,6 +371,24 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
               id:     booking.id,
               status: booking.status,
               bookingRef: booking.bookingRef,
+            }}
+            extendData={{
+              id:             booking.id,
+              bookingRef:     booking.bookingRef,
+              guestName:      booking.customer.name,
+              guestPhone:     booking.customer.phone,
+              roomNumber:     booking.room.number,
+              roomName:       booking.room.name,
+              branchName:     booking.branch.name,
+              checkInDate:    booking.checkInDate.toISOString(),
+              checkOutDate:   booking.checkOutDate.toISOString(),
+              nights:         booking.nights,
+              pricePerNight:  Number(booking.baseAmount) / booking.nights,
+              totalAmount:    Number(booking.totalAmount),
+              paidAmount:     Number(booking.paidAmount),
+              discountAmount: Number(booking.discountAmount),
+              taxAmount:      Number(booking.taxAmount),
+              extraCharges:   Number(booking.extraCharges),
             }}
             showCancel={searchParams.action === "cancel"}
           />
