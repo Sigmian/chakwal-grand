@@ -98,7 +98,7 @@ export async function sendBookingConfirmed(p: {
 
   return sendTemplate(
     p.phone,
-    "cgh_booking_confirmed_v3",
+    "cgh_booking_confirmed_v4",
     [
       p.guestName,
       p.bookingRef,
