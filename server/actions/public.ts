@@ -521,7 +521,7 @@ export async function createPublicBooking(input: {
     guestName:         cleanName,
     bookingRef:        ref,
     roomName:          room.name,
-    branchName:        room.branch?.name ?? "Chakwal",
+    branchName:        room.branch!.name,
     checkIn:           ci.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
     checkOut:          co.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
     nights,

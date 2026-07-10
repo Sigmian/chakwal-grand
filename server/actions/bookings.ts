@@ -215,19 +215,8 @@ export async function createBooking(rawInput: CreateBookingInput) {
       data:  { lastVisitAt: new Date() },
     });
 
-    // 10. Send WhatsApp confirmation template (non-blocking)
-    sendBookingConfirmed({
-      phone:       booking.customer.phone,
-      guestName:   booking.customer.name,
-      bookingRef:  booking.bookingRef,
-      roomName:    booking.room.name,
-      branchName:  booking.branch.name,
-      checkIn:     booking.checkInDate.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
-      checkOut:    booking.checkOutDate.toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Karachi" }),
-      nights:      booking.nights,
-      totalAmount: Number(booking.totalAmount),
-      // Admin bookings have no arrival time — template will say "anytime (flexible)"
-    }).catch(err => console.error("[WhatsApp] booking confirmation template failed:", err));
+    // 10. WhatsApp template fires on confirmBooking (PENDING → CONFIRMED), not here.
+    //     Sending on creation would double-fire if admin also clicks Confirm.
 
     // 11. Log activity
     await logActivity(
@@ -286,7 +275,7 @@ export async function confirmBooking(bookingId: string) {
       roomName:    updated.room.name,
       branchName:  updated.branch.name,
       checkIn:     updated.checkInDate.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
-      checkOut:    updated.checkOutDate.toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Karachi" }),
+      checkOut:    updated.checkOutDate.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
       nights:      updated.nights,
       totalAmount: Number(updated.totalAmount),
     }).catch(err => console.error("[WhatsApp] confirm template failed:", err));
