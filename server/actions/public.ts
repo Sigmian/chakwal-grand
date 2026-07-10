@@ -507,6 +507,12 @@ export async function createPublicBooking(input: {
     },
   });
 
+  // Update customer visit timestamp so win-back cron can target them correctly
+  await prisma.customer.update({
+    where: { id: customer.id },
+    data:  { lastVisitAt: new Date() },
+  });
+
   // Fire push notification to all staff in this branch (non-blocking)
   sendPushToBranch(input.branchId, {
     title: "🔔 New Booking Received",

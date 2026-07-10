@@ -144,24 +144,40 @@ export async function GET(req: Request) {
     }
   }
 
-  // ── 4. Win-back (Sundays only — weekly cadence) ───────────
-  const pkNowMs  = Date.now() + PKT_OFFSET_MS;
-  const isSunday = new Date(pkNowMs).getUTCDay() === 0;
-
-  if (isSunday) {
+  // ── 4. Win-back — only when ?winback=1 (Sunday cron in vercel.json) ────
+  const runWinback = new URL(req.url).searchParams.get("winback") === "1";
+  if (runWinback) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Find customers whose last booking ended 30+ days ago with no upcoming booking
+    // Find customers inactive 30+ days with no upcoming booking.
+    // OR clause catches existing customers whose lastVisitAt was never set (null).
     const inactiveCustomers = await prisma.customer.findMany({
       where: {
-        lastVisitAt: { lte: thirtyDaysAgo },
-        bookings: {
-          none: {
-            checkInDate: { gte: new Date() },
-            status:      { in: ["PENDING", "CONFIRMED"] },
+        AND: [
+          {
+            OR: [
+              { lastVisitAt: { lte: thirtyDaysAgo } },
+              {
+                lastVisitAt: null,
+                bookings: {
+                  some: {
+                    checkOutDate: { lte: thirtyDaysAgo },
+                    status:       "CHECKED_OUT",
+                  },
+                },
+              },
+            ],
           },
-        },
+          {
+            bookings: {
+              none: {
+                checkInDate: { gte: new Date() },
+                status:      { in: ["PENDING", "CONFIRMED"] },
+              },
+            },
+          },
+        ],
       },
       select: { name: true, phone: true },
       take: 50, // cap per run to avoid flooding
