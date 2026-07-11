@@ -5,7 +5,7 @@ import { CustomerOTPLogin } from "@/features/public/components/CustomerOTPLogin"
 import { CustomerAccount, type CustomerAccountData } from "@/features/public/components/CustomerAccount";
 
 export const metadata: Metadata = {
-  title: "My Account | Chakwal Guest House",
+  title: "My Account",
   description: "Sign in to view your bookings, loyalty tier and benefits at Chakwal Guest House.",
   robots: { index: false },
 };
