@@ -25,14 +25,15 @@ const PAYMENT_COLOR: Record<string, string> = {
 
 export function BookingLookup() {
   const [ref, setRef]         = useState("");
+  const [phone, setPhone]     = useState("");
   const [result, setResult]   = useState<{ booking?: BookingData; error?: string } | null>(null);
   const [pending, start]      = useTransition();
   const [receiptLoading, setReceiptLoading] = useState(false);
 
   const search = () => {
-    if (!ref.trim()) return;
+    if (!ref.trim() || !phone.trim()) return;
     start(async () => {
-      const res = await lookupBooking(ref);
+      const res = await lookupBooking(ref, phone);
       setResult(res as any);
     });
   };
@@ -196,7 +197,7 @@ export function BookingLookup() {
           <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
             Booking Reference
           </label>
-          <div className="flex gap-3">
+          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
             <input
               value={ref}
               onChange={e => setRef(e.target.value.toUpperCase())}
@@ -204,9 +205,18 @@ export function BookingLookup() {
               placeholder="e.g. BK-2026-XXXXXX"
               className="flex-1 bg-surface-base border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-500/60 focus:ring-1 focus:ring-gold-500/20 transition-all uppercase tracking-widest"
             />
+            <input
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && search()}
+              placeholder="Phone used for booking"
+              inputMode="tel"
+              autoComplete="tel"
+              className="bg-surface-base border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-500/60 focus:ring-1 focus:ring-gold-500/20 transition-all"
+            />
             <button
               onClick={search}
-              disabled={pending || !ref.trim()}
+              disabled={pending || !ref.trim() || !phone.trim()}
               className="flex items-center gap-2 px-5 py-3 bg-gold-gradient text-background text-sm font-bold rounded-xl hover:shadow-gold-lg transition-all disabled:opacity-50"
             >
               {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}

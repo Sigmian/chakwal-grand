@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth-options";
+import { getSession } from "@/lib/auth/session";
 import prisma from "@/lib/db/prisma";
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const user = await getSession();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -13,11 +12,11 @@ export async function POST(req: NextRequest) {
 
   if (endpoint) {
     await prisma.pushSubscription.deleteMany({
-      where: { endpoint, userId: session.user.id },
+      where: { endpoint, userId: user.id },
     });
   } else {
     // Remove ALL subscriptions for this user
-    await prisma.pushSubscription.deleteMany({ where: { userId: session.user.id } });
+    await prisma.pushSubscription.deleteMany({ where: { userId: user.id } });
   }
 
   return NextResponse.json({ ok: true });

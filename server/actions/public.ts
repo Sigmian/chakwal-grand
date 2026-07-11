@@ -6,21 +6,6 @@ import { sendPushToBranch } from "@/lib/push/send";
 import { siteConfig } from "@/config/site";
 import { rateLimit } from "@/lib/rate-limit";
 
-// Atomically claim one usage slot on an offer. Returns true if a slot was taken.
-// When maxUses is set, the conditional updateMany's WHERE guard on usedCount is
-// re-evaluated against the row lock, so concurrent callers can't exceed the cap.
-async function claimOfferSlot(offerId: string, maxUses: number | null): Promise<boolean> {
-  if (maxUses == null) {
-    await prisma.offer.update({ where: { id: offerId }, data: { usedCount: { increment: 1 } } });
-    return true;
-  }
-  const res = await prisma.offer.updateMany({
-    where: { id: offerId, usedCount: { lt: maxUses } },
-    data:  { usedCount: { increment: 1 } },
-  });
-  return res.count > 0;
-}
-
 export async function getPublicRooms() {
   return prisma.room.findMany({
     where: { status: { not: "BLOCKED" }, isActive: true },
@@ -91,15 +76,16 @@ export async function getRoomAvailability(roomId: string, year: number, month: n
   }));
 }
 
-export async function getBookingByRef(ref: string) {
+export async function getBookingByRef(ref: string, shareToken: string) {
   // Throttle per IP — this returns guest PII (name/phone/email) keyed only by a
   // booking ref, so an unthrottled caller could enumerate refs and harvest it.
   const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
   if (!rateLimit(`booking-ref:${ip}`, 20, 60_000)) {
     return null;
   }
-  return prisma.booking.findUnique({
-    where: { bookingRef: ref },
+  if (!shareToken) return null;
+  return prisma.booking.findFirst({
+    where: { bookingRef: ref, shareToken },
     include: {
       room: {
         include: {
@@ -429,34 +415,55 @@ export async function createPublicBooking(input: {
 
   const room = await prisma.room.findUnique({
     where: { id: input.roomId },
-    include: { branch: { select: { name: true, city: true } } },
+    include: {
+      branch: {
+        select: {
+          id: true,
+          companyId: true,
+          name: true,
+          city: true,
+          isActive: true,
+          deletedAt: true,
+        },
+      },
+    },
   });
-  if (!room) return { success: false, error: "Room not found." };
+  if (
+    !room ||
+    !room.isActive ||
+    room.status === "BLOCKED" ||
+    room.status === "MAINTENANCE" ||
+    !room.branch.isActive ||
+    room.branch.deletedAt
+  ) {
+    return { success: false, error: "Room is not available for booking." };
+  }
+
+  // The selected room, not client input, determines branch and company ownership.
+  const branchId = room.branchId;
+  const companyId = room.branch.companyId;
 
   const baseAmount = Number(room.pricePerNight) * nights;
 
   // Determine discount: Grand Opening auto-apply → manual code → auto weekly/monthly
   let discountAmount = 0;
   let appliedOfferId: string | null = null;
+  let offerMaxUses: number | null = null;
 
   // Auto-apply Grand Opening 50% for Madina Town (no code needed)
   const grandOpeningOffer = await prisma.offer.findFirst({
     where: {
-      branchId:  input.branchId,
+      branchId,
       code:      "AUTO_GRANDOPEN50",
       isActive:  true,
       startsAt:  { lte: new Date() },
       expiresAt: { gte: new Date() },
     },
   });
-  if (grandOpeningOffer) {
-    // Atomically claim a usage slot: the WHERE guard on usedCount is re-checked
-    // against the locked row, so concurrent bookings can't exceed maxUses.
-    const claimed = await claimOfferSlot(grandOpeningOffer.id, grandOpeningOffer.maxUses);
-    if (claimed) {
-      discountAmount = Math.round((baseAmount * Number(grandOpeningOffer.discountValue)) / 100);
-      appliedOfferId = grandOpeningOffer.id;
-    }
+  if (grandOpeningOffer && (!grandOpeningOffer.maxUses || grandOpeningOffer.usedCount < grandOpeningOffer.maxUses)) {
+    discountAmount = Math.round((baseAmount * Number(grandOpeningOffer.discountValue)) / 100);
+    appliedOfferId = grandOpeningOffer.id;
+    offerMaxUses = grandOpeningOffer.maxUses;
   }
 
   const autoCode = !appliedOfferId ? (nights >= 30 ? "MONTHLY40" : nights >= 7 ? "WEEKLY14" : null) : null;
@@ -497,14 +504,11 @@ export async function createPublicBooking(input: {
       }
 
       if (eligible && hasCapacity && firstTimeEligible) {
-        // Atomically claim a usage slot before applying the discount.
-        const claimed = await claimOfferSlot(offer.id, offer.maxUses);
-        if (claimed) {
-          discountAmount = offer.discountType === "PERCENTAGE"
-            ? Math.round((baseAmount * Number(offer.discountValue)) / 100)
-            : Number(offer.discountValue);
-          appliedOfferId = offer.id;
-        }
+        discountAmount = offer.discountType === "PERCENTAGE"
+          ? Math.round((baseAmount * Number(offer.discountValue)) / 100)
+          : Number(offer.discountValue);
+        appliedOfferId = offer.id;
+        offerMaxUses = offer.maxUses;
       }
     }
   }
@@ -512,13 +516,12 @@ export async function createPublicBooking(input: {
   // Never let a discount exceed the room subtotal (a large FIXED_AMOUNT offer
   // must not produce a free room or a negative stored discount/total).
   discountAmount = Math.min(discountAmount, baseAmount);
-  const totalAmount = Math.max(0, baseAmount - discountAmount);
 
   let customer = await prisma.customer.findUnique({ where: { phone: cleanPhone } });
   if (!customer) {
     customer = await prisma.customer.create({
       data: {
-        companyId: "company-001",
+        companyId,
         name:      cleanName,
         phone:     cleanPhone,
         cnic:      cleanCnic  || null,
@@ -539,7 +542,7 @@ export async function createPublicBooking(input: {
   // and oversell the same room+dates.
   let booking;
   try {
-    booking = await prisma.$transaction(async (tx) => {
+    const transactionResult = await prisma.$transaction(async (tx) => {
       const conflict = await tx.booking.findFirst({
         where: {
           roomId: input.roomId,
@@ -550,10 +553,31 @@ export async function createPublicBooking(input: {
       });
       if (conflict) throw new Error("ROOM_CONFLICT");
 
-      return tx.booking.create({
+      // Claim the promotional slot in the same transaction as the booking. If
+      // booking creation fails, PostgreSQL rolls the counter back automatically.
+      let committedDiscount = discountAmount;
+      let committedOfferId = appliedOfferId;
+      if (committedOfferId) {
+        const claim = offerMaxUses == null
+          ? await tx.offer.updateMany({
+              where: { id: committedOfferId, isActive: true },
+              data: { usedCount: { increment: 1 } },
+            })
+          : await tx.offer.updateMany({
+              where: { id: committedOfferId, isActive: true, usedCount: { lt: offerMaxUses } },
+              data: { usedCount: { increment: 1 } },
+            });
+        if (claim.count === 0) {
+          committedDiscount = 0;
+          committedOfferId = null;
+        }
+      }
+      const committedTotal = Math.max(0, baseAmount - committedDiscount);
+
+      const createdBooking = await tx.booking.create({
         data: {
           bookingRef:         ref,
-          branchId:           input.branchId,
+          branchId,
           roomId:             input.roomId,
           customerId:         customer.id,
           checkInDate:        ci,
@@ -565,11 +589,11 @@ export async function createPublicBooking(input: {
           status:             "PENDING",
           paymentStatus:      "UNPAID",
           baseAmount,
-          discountAmount,
+          discountAmount: committedDiscount,
           taxAmount:          0,
           extraCharges:       0,
-          totalAmount,
-          offerId:            appliedOfferId,
+          totalAmount:        committedTotal,
+          offerId:            committedOfferId,
           source:             "website",
           specialRequests:    cleanNotes || null,
           estimatedArrival:   input.estimatedArrival?.slice(0, 20) || null,
@@ -577,7 +601,10 @@ export async function createPublicBooking(input: {
           shareToken,
         },
       });
+      return { booking: createdBooking, discountAmount: committedDiscount };
     }, { isolationLevel: "Serializable" });
+    booking = transactionResult.booking;
+    discountAmount = transactionResult.discountAmount;
   } catch (err) {
     // Either our explicit conflict guard, or a Postgres serialization failure
     // (P2034) when two transactions raced — both mean the room was just taken.
@@ -595,7 +622,7 @@ export async function createPublicBooking(input: {
   });
 
   // Fire push notification to all staff in this branch (non-blocking)
-  sendPushToBranch(input.branchId, {
+  sendPushToBranch(branchId, {
     title: "🔔 New Booking Received",
     body:  `${cleanName} booked Room ${room.number} · ${nights} night${nights !== 1 ? "s" : ""} · Ref: ${ref}`,
     tag:   "new-booking",
@@ -691,8 +718,10 @@ export async function markLeadFollowedUp(phone: string): Promise<void> {
   });
 }
 
-export async function lookupBooking(ref: string) {
+export async function lookupBooking(ref: string, phone: string) {
   if (!ref?.trim()) return { success: false, error: "Please enter a booking reference." };
+  const normalizedPhone = phone.replace(/\D/g, "").slice(-10);
+  if (normalizedPhone.length !== 10) return { success: false, error: "Please enter the phone number used for this booking." };
 
   const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
   if (!rateLimit(`booking-lookup:${ip}`, 10, 60_000)) {
@@ -709,6 +738,9 @@ export async function lookupBooking(ref: string) {
   });
 
   if (!booking) return { success: false, error: "No booking found with that reference. Please check and try again." };
+  if (booking.customer.phone.replace(/\D/g, "").slice(-10) !== normalizedPhone) {
+    return { success: false, error: "The booking reference and phone number do not match." };
+  }
 
   return {
     success: true,

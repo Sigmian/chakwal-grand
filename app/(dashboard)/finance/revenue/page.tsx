@@ -9,10 +9,9 @@ import { PageHeader, SectionHeader } from "@/components/shared";
 import { getRevenueChartData } from "@/server/actions/analytics";
 import { RevenueAreaChart } from "@/components/charts/RevenueChart";
 import { cn, formatPKR, formatDate } from "@/utils";
-import { BookingStatus } from "@/types";
 import prisma from "@/lib/db/prisma";
-import { startOfMonth, endOfMonth } from "date-fns";
 import { TrendingUp, BedDouble, ShoppingBag } from "lucide-react";
+import { getPKTMonthPeriod } from "@/lib/finance/reporting";
 
 export const metadata = { title: "Revenue" };
 
@@ -20,43 +19,34 @@ export default async function RevenuePage() {
   const user     = await requirePermission("finance:read");
   const branchId = getScopedBranchId(user);
 
-  const now        = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd   = endOfMonth(now);
+  const { start: monthStart, end: monthEnd } = getPKTMonthPeriod();
   const branchFilter = branchId ? { branchId } : {};
 
-  const [chartData, bookings, sales] = await Promise.all([
-    getRevenueChartData(branchId),
+  const [chartData, bookings] = await Promise.all([
+    getRevenueChartData(branchId, 1),
     prisma.booking.findMany({
       where: {
         ...branchFilter,
-        status: { in: [BookingStatus.CHECKED_OUT, BookingStatus.CHECKED_IN, BookingStatus.CONFIRMED] },
-        checkInDate: { gte: monthStart, lte: monthEnd },
+        paymentStatus: { not: "REFUNDED" },
+        payments: { some: { createdAt: { gte: monthStart, lte: monthEnd } } },
       },
       include: {
         customer: { select: { name: true } },
         room:     { select: { number: true, name: true } },
         branch:   { select: { name: true } },
-      },
-      orderBy: { checkInDate: "desc" },
-    }),
-    prisma.sale.findMany({
-      where: {
-        ...branchFilter,
-        createdAt: { gte: monthStart, lte: monthEnd },
-      },
-      include: {
-        lineItems: {
-          include: { inventoryItem: { include: { product: { select: { name: true } } } } },
+        payments: {
+          where: { createdAt: { gte: monthStart, lte: monthEnd } },
+          select: { amount: true, createdAt: true },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { updatedAt: "desc" },
     }),
   ]);
 
-  const bookingRevenue = bookings.reduce((s, b) => s + Number(b.totalAmount), 0);
-  const salesRevenue   = sales.reduce((s, sl) => s + Number(sl.totalAmount), 0);
-  const totalRevenue   = bookingRevenue + salesRevenue;
+  const currentMonth = chartData[0];
+  const bookingRevenue = currentMonth?.roomRevenue ?? 0;
+  const salesRevenue   = currentMonth?.productRevenue ?? 0;
+  const totalRevenue   = currentMonth ? bookingRevenue + salesRevenue : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -84,44 +74,47 @@ export default async function RevenuePage() {
         ))}
       </div>
 
-      {/* 6-month chart */}
+      {/* Current month chart */}
       <div className="card-luxury p-6">
-        <SectionHeader title="6-Month Revenue Trend" />
+        <SectionHeader title="Current Month Collections" />
         <RevenueAreaChart data={chartData} />
       </div>
 
       {/* Booking revenue table */}
       <div className="card-luxury overflow-hidden">
         <div className="p-5 border-b border-border">
-          <SectionHeader title={`Bookings This Month (${bookings.length})`} />
+          <SectionHeader title={`Bookings With Payments This Month (${bookings.length})`} />
         </div>
         <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Booking Ref</th>
                 <th>Guest</th>
-                <th>Room</th>
-                {!branchId && <th>Branch</th>}
-                <th>Check-in</th>
-                <th>Nights</th>
+                <th className="hidden sm:table-cell">Ref</th>
+                <th className="hidden md:table-cell">Room</th>
+                {!branchId && <th className="hidden lg:table-cell">Branch</th>}
+                <th className="hidden sm:table-cell">Check-in</th>
+                <th className="hidden md:table-cell">Nights</th>
                 <th className="text-right">Amount</th>
               </tr>
             </thead>
             <tbody>
               {bookings.map((b) => (
                 <tr key={b.id}>
-                  <td><span className="font-mono text-xs text-gold-400">{b.bookingRef}</span></td>
-                  <td><span className="text-sm text-foreground">{b.customer.name}</span></td>
-                  <td><span className="text-sm text-muted-foreground">{b.room.number} — {b.room.name}</span></td>
-                  {!branchId && <td><span className="text-sm text-muted-foreground">{b.branch.name}</span></td>}
-                  <td><span className="text-sm text-muted-foreground">{formatDate(b.checkInDate)}</span></td>
-                  <td><span className="text-sm text-foreground">{b.nights}</span></td>
-                  <td className="text-right"><span className="text-sm font-bold text-foreground">{formatPKR(Number(b.totalAmount))}</span></td>
+                  <td>
+                    <p className="text-sm text-foreground">{b.customer.name}</p>
+                    <p className="text-xs text-gold-400 font-mono sm:hidden">{b.bookingRef}</p>
+                  </td>
+                  <td className="hidden sm:table-cell"><span className="font-mono text-xs text-gold-400">{b.bookingRef}</span></td>
+                  <td className="hidden md:table-cell"><span className="text-sm text-muted-foreground">{b.room.number} — {b.room.name}</span></td>
+                  {!branchId && <td className="hidden lg:table-cell"><span className="text-sm text-muted-foreground">{b.branch.name}</span></td>}
+                  <td className="hidden sm:table-cell"><span className="text-sm text-muted-foreground">{formatDate(b.checkInDate)}</span></td>
+                  <td className="hidden md:table-cell"><span className="text-sm text-foreground">{b.nights}</span></td>
+                  <td className="text-right"><span className="text-sm font-bold text-foreground whitespace-nowrap">{formatPKR(b.payments.reduce((sum, payment) => sum + Number(payment.amount), 0))}</span></td>
                 </tr>
               ))}
               {bookings.length === 0 && (
-                <tr><td colSpan={7} className="text-center text-muted-foreground py-8">No bookings this month</td></tr>
+                <tr><td colSpan={7} className="text-center text-muted-foreground py-8">No payments received this month</td></tr>
               )}
             </tbody>
           </table>

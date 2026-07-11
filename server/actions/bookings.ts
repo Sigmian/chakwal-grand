@@ -130,6 +130,7 @@ export async function createBooking(rawInput: CreateBookingInput) {
     // 6. Apply offer discount (manual code OR auto weekly/monthly)
     let discountAmount = 0;
     let appliedOfferId: string | null = input.offerId || null;
+    let offerMaxUses: number | null = null;
 
     const nights = getNights(checkIn, checkOut);
     const baseAmt = Number(room.pricePerNight) * nights;
@@ -150,33 +151,31 @@ export async function createBooking(rawInput: CreateBookingInput) {
           isActive:  true,
           startsAt:  { lte: new Date() },
           expiresAt: { gte: new Date() },
+          OR: [{ branchId: null }, { branchId }],
         },
       });
       if (offer) {
-        const eligible = !offer.minNights || nights >= offer.minNights;
+        const appliesToRoom = offer.roomTypes.length === 0 || offer.roomTypes.includes(room.type);
+        const priorBooking = offer.firstTimeOnly
+          ? await prisma.booking.findFirst({
+              where: {
+                customerId: customerId!,
+                status: { notIn: [BookingStatus.CANCELLED, BookingStatus.NO_SHOW] },
+              },
+              select: { id: true },
+            })
+          : null;
+        const eligible =
+          (!offer.minNights || nights >= offer.minNights) &&
+          appliesToRoom &&
+          !priorBooking;
         if (eligible) {
-          // Atomically claim a usage slot: a conditional update guarded on
-          // usedCount prevents concurrent bookings from exceeding maxUses.
-          let claimed: boolean;
-          if (offer.maxUses == null) {
-            await prisma.offer.update({
-              where: { id: offer.id },
-              data:  { usedCount: { increment: 1 } },
-            });
-            claimed = true;
-          } else {
-            const res = await prisma.offer.updateMany({
-              where: { id: offer.id, usedCount: { lt: offer.maxUses } },
-              data:  { usedCount: { increment: 1 } },
-            });
-            claimed = res.count > 0;
-          }
-
-          if (claimed) {
+          if (offer.maxUses == null || offer.usedCount < offer.maxUses) {
             discountAmount = offer.discountType === "PERCENTAGE"
               ? (baseAmt * Number(offer.discountValue)) / 100
               : Number(offer.discountValue);
             appliedOfferId = offer.id;
+            offerMaxUses = offer.maxUses;
           }
         }
       }
@@ -187,9 +186,6 @@ export async function createBooking(rawInput: CreateBookingInput) {
     discountAmount = Math.min(discountAmount, baseAmt);
     const baseAmount = baseAmt;
     const taxAmount  = 0; // Configurable in future
-    const totalAmount = calculateBookingTotal({
-      baseAmount, discountAmount, taxAmount, extraCharges: 0,
-    });
 
     // 8. Create the booking inside a Serializable transaction that re-checks
     //    availability, so two concurrent creates can't oversell the same room.
@@ -209,6 +205,30 @@ export async function createBooking(rawInput: CreateBookingInput) {
         });
         if (conflict) throw new Error("ROOM_CONFLICT");
 
+        let committedDiscount = discountAmount;
+        let committedOfferId = appliedOfferId;
+        if (committedOfferId) {
+          const claim = offerMaxUses == null
+            ? await tx.offer.updateMany({
+                where: { id: committedOfferId, isActive: true },
+                data: { usedCount: { increment: 1 } },
+              })
+            : await tx.offer.updateMany({
+                where: { id: committedOfferId, isActive: true, usedCount: { lt: offerMaxUses } },
+                data: { usedCount: { increment: 1 } },
+              });
+          if (claim.count === 0) {
+            committedDiscount = 0;
+            committedOfferId = null;
+          }
+        }
+        const committedTotal = calculateBookingTotal({
+          baseAmount,
+          discountAmount: committedDiscount,
+          taxAmount,
+          extraCharges: 0,
+        });
+
         return tx.booking.create({
           data: {
             bookingRef:   generateBookingRef(),
@@ -222,15 +242,15 @@ export async function createBooking(rawInput: CreateBookingInput) {
             childCount:   input.childCount ?? 0,
             guestCount:   input.adultCount + (input.childCount ?? 0),
             baseAmount,
-            discountAmount,
+            discountAmount: committedDiscount,
             taxAmount,
             extraCharges: 0,
-            totalAmount,
+            totalAmount: committedTotal,
             paidAmount:   0,
             status:       BookingStatus.PENDING,
             paymentStatus: PaymentStatus.UNPAID,
             source:       input.source ?? "website",
-            offerId:      appliedOfferId || null,
+            offerId:      committedOfferId,
             specialRequests: input.specialRequests || null,
             internalNotes:   input.internalNotes || null,
           },
@@ -630,8 +650,23 @@ export async function addPayment(rawInput: AddPaymentInput) {
         ? PaymentStatus.PARTIAL
         : PaymentStatus.UNPAID;
 
-    await prisma.$transaction([
-      prisma.payment.create({
+    await prisma.$transaction(async (tx) => {
+      // Optimistic guard: if another payment or adjustment changed the booking
+      // after our read, abort the whole transaction instead of over-collecting.
+      const updated = await tx.booking.updateMany({
+        where: {
+          id: input.bookingId,
+          paidAmount: booking.paidAmount,
+          totalAmount: booking.totalAmount,
+        },
+        data: {
+          paidAmount: newPaidAmount,
+          paymentStatus,
+        },
+      });
+      if (updated.count !== 1) throw new Error("PAYMENT_CONFLICT");
+
+      await tx.payment.create({
         data: {
           bookingId:   input.bookingId,
           amount:      input.amount,
@@ -640,15 +675,8 @@ export async function addPayment(rawInput: AddPaymentInput) {
           receivedById: user.id,
           notes:       input.notes || null,
         },
-      }),
-      prisma.booking.update({
-        where: { id: input.bookingId },
-        data: {
-          paidAmount:    newPaidAmount,
-          paymentStatus,
-        },
-      }),
-    ]);
+      });
+    });
 
     await logActivity(user.id, "PAYMENT_RECEIVED", "Booking", input.bookingId,
       `Payment of ₨${input.amount} received via ${input.method}`);
@@ -658,6 +686,9 @@ export async function addPayment(rawInput: AddPaymentInput) {
 
     return { success: true };
   } catch (error) {
+    if ((error as Error)?.message === "PAYMENT_CONFLICT") {
+      return { success: false, error: "The balance changed while this payment was being recorded. Please refresh and try again." };
+    }
     console.error("[addPayment]", error);
     return { success: false, error: "Failed to record payment" };
   }
@@ -955,14 +986,17 @@ export async function applyBookingAdjustment(input: {
   amount:          number;
   description:     string;
 }) {
-  await requirePermission("bookings:update");
+  const user = await requirePermission("bookings:update");
 
   if (!input.bookingId) return { success: false, error: "Booking ID required" };
-  if (input.amount <= 0)  return { success: false, error: "Amount must be greater than zero" };
+  if (!Number.isFinite(input.amount) || input.amount <= 0) return { success: false, error: "Amount must be a valid number greater than zero" };
   if (!input.description.trim()) return { success: false, error: "Please provide a reason" };
 
   const booking = await prisma.booking.findUnique({ where: { id: input.bookingId } });
   if (!booking) return { success: false, error: "Booking not found" };
+  if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+    return { success: false, error: "You cannot adjust a booking from another branch." };
+  }
 
   const baseAmount     = Number(booking.baseAmount);
   const taxAmount      = Number(booking.taxAmount);
@@ -983,15 +1017,41 @@ export async function applyBookingAdjustment(input: {
   }
 
   const newTotal = baseAmount - newDiscount + newExtra + taxAmount;
+  const paidAmount = Number(booking.paidAmount);
+  if (newTotal < paidAmount) {
+    return { success: false, error: `Adjustment would reduce the total below the amount already paid (${paidAmount.toLocaleString("en-PK")}).` };
+  }
+  const paymentStatus: PaymentStatus = paidAmount >= newTotal
+    ? PaymentStatus.PAID
+    : paidAmount > 0
+    ? PaymentStatus.PARTIAL
+    : PaymentStatus.UNPAID;
 
-  await prisma.booking.update({
-    where: { id: input.bookingId },
+  const updated = await prisma.booking.updateMany({
+    where: {
+      id: input.bookingId,
+      totalAmount: booking.totalAmount,
+      paidAmount: booking.paidAmount,
+    },
     data: {
       discountAmount: newDiscount,
       extraCharges:   newExtra,
       totalAmount:    Math.max(0, newTotal),
+      paymentStatus,
     },
   });
+  if (updated.count !== 1) {
+    return { success: false, error: "The booking balance changed while applying this adjustment. Please refresh and try again." };
+  }
+
+  await logActivity(
+    user.id,
+    "BOOKING_ADJUSTMENT",
+    "Booking",
+    input.bookingId,
+    `${input.adjustmentType === "DISCOUNT" ? "Discount" : "Extra charge"} of ₨${input.amount} applied: ${input.description.trim()}`,
+    { previousTotal: Number(booking.totalAmount), newTotal, type: input.adjustmentType },
+  );
 
   revalidatePath(`/bookings/${input.bookingId}`);
   revalidatePath("/bookings");

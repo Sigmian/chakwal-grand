@@ -102,6 +102,15 @@ export const DASHBOARD_NAV: NavItem[] = [
     ],
   },
   {
+    label: "Analytics",
+    href:  "/analytics",
+    icon:  "BarChart2",
+    requiredRoles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.BRANCH_MANAGER,
+    ],
+  },
+  {
     label: "Finance",
     href:  "/finance",
     icon:  "DollarSign",

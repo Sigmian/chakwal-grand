@@ -17,6 +17,7 @@ import { hasPermission, DASHBOARD_ROLES } from "./permissions";
 import type { Permission } from "./permissions";
 import type { SessionUser } from "@/types";
 import { UserRole } from "@/types";
+import prisma from "@/lib/db/prisma";
 
 // ─── Get current session ──────────────────────────────────────
 
@@ -27,7 +28,34 @@ import { UserRole } from "@/types";
 export async function getSession(): Promise<SessionUser | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
-  return session.user as SessionUser;
+
+  // JWT authorization claims can be stale for up to 30 days. Resolve current
+  // access state so deactivation, demotion, and branch transfers apply now.
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      companyId: true,
+      email: true,
+      name: true,
+      image: true,
+      role: true,
+      isActive: true,
+      staffMember: { select: { branchId: true } },
+    },
+  });
+
+  if (!currentUser?.isActive) return null;
+
+  return {
+    id: currentUser.id,
+    companyId: currentUser.companyId,
+    email: currentUser.email,
+    name: currentUser.name,
+    image: currentUser.image ?? undefined,
+    role: currentUser.role as UserRole,
+    branchId: currentUser.staffMember?.branchId ?? undefined,
+  };
 }
 
 /**
@@ -98,6 +126,28 @@ export function getScopedBranchId(
 
   // Non-super-admin is always restricted to their branch
   return user.branchId;
+}
+
+/** Return whether the current user may access records owned by a branch. */
+export function canAccessBranch(user: SessionUser, branchId: string): boolean {
+  return user.role === UserRole.SUPER_ADMIN || user.branchId === branchId;
+}
+
+/**
+ * Enforce branch ownership after loading an entity by ID. This is intended for
+ * Server Actions where the entity's branch is not known until it is queried.
+ */
+export function assertBranchAccess(user: SessionUser, branchId: string): void {
+  if (!canAccessBranch(user, branchId)) {
+    throw new Error("Unauthorized branch access");
+  }
+}
+
+/** Enforce company ownership for company-level entities such as customers. */
+export function assertCompanyAccess(user: SessionUser, companyId: string): void {
+  if (user.companyId !== companyId) {
+    throw new Error("Unauthorized company access");
+  }
 }
 
 /**

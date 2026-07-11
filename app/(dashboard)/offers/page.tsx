@@ -1,4 +1,4 @@
-import { requirePermission } from "@/lib/auth/session";
+import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import prisma from "@/lib/db/prisma";
 import { SectionHeader } from "@/components/shared";
 import { OffersClient } from "@/features/offers/OffersClient";
@@ -6,15 +6,18 @@ import { OffersClient } from "@/features/offers/OffersClient";
 export const metadata = { title: "Promo Codes & Offers" };
 
 export default async function OffersPage() {
-  await requirePermission("settings:company");
+  const user     = await requirePermission("offers:read");
+  const branchId = getScopedBranchId(user);
 
   const [offers, branches] = await Promise.all([
     prisma.offer.findMany({
+      where:   branchId ? { OR: [{ branchId }, { branchId: null }] } : {},
       include: { branch: { select: { id: true, name: true } } },
       orderBy: { createdAt: "desc" },
     }),
+    // Managers only see their own branch in the branch selector
     prisma.branch.findMany({
-      where:   { isActive: true },
+      where:   { isActive: true, ...(branchId ? { id: branchId } : {}) },
       select:  { id: true, name: true },
       orderBy: { name: "asc" },
     }),

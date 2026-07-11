@@ -33,8 +33,8 @@ interface ExpenseBreakdown {
 interface Branch { id: string; name: string }
 interface Props  { branches: Branch[]; defaultBranchId?: string | null }
 
-function fetchReportData(branchId?: string): Promise<MonthlyData[]> {
-  return getRevenueChartData(branchId);
+function fetchReportData(branchId: string | undefined, months: number): Promise<MonthlyData[]> {
+  return getRevenueChartData(branchId, months);
 }
 
 function fetchExpenseBreakdown(branchId?: string, months = 6): Promise<ExpenseBreakdown> {
@@ -57,29 +57,43 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
     guesthouse: { total: 0, byCategory: {} },
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
+    setError(null);
     Promise.all([
-      fetchReportData(branchId || undefined),
+      fetchReportData(branchId || undefined, months),
       fetchExpenseBreakdown(branchId || undefined, months),
     ]).then(([d, b]) => {
+      if (!active) return;
       setData(d);
       setBreakdown(b);
-    }).finally(() => setLoading(false));
+    }).catch(() => {
+      if (!active) return;
+      setError("Could not load the financial report. Please try again.");
+      setData([]);
+      setBreakdown({ inventory: { total: 0, byCategory: {} }, guesthouse: { total: 0, byCategory: {} } });
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
   }, [branchId, months]);
 
-  const totalRevenue   = data.reduce((s, d) => s + d.roomRevenue + d.productRevenue, 0);
+  const roomRevenue    = data.reduce((s, d) => s + d.roomRevenue, 0);
+  const productRevenue = data.reduce((s, d) => s + d.productRevenue, 0);
+  const totalRevenue   = roomRevenue + productRevenue;
   const ghExpenses     = breakdown.guesthouse.total;
   const invExpenses    = breakdown.inventory.total;
   const totalExpenses  = ghExpenses + invExpenses;
 
-  // Guest house P&L: room + product revenue minus guesthouse operational costs
-  const ghProfit  = totalRevenue - ghExpenses;
+  // Independent operating segments; their sum equals overall net profit.
+  const ghProfit  = roomRevenue - ghExpenses;
   // Inventory P&L: product revenue only minus inventory purchase costs
-  const invProfit = data.reduce((s, d) => s + d.productRevenue, 0) - invExpenses;
+  const invProfit = productRevenue - invExpenses;
 
-  const totalProfit  = ghProfit;  // Net profit = revenue - guesthouse ops (inventory is a sub-P&L)
+  const totalProfit  = ghProfit + invProfit;
   const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
   const handleExport = () => {
@@ -90,11 +104,11 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
         d.roomRevenue,
         d.productRevenue,
         d.roomRevenue + d.productRevenue,
-        "",
-        "",
+        d.ghExpenses,
+        d.invExpenses,
         d.profit,
       ]),
-      ["TOTAL", data.reduce((s,d)=>s+d.roomRevenue,0), data.reduce((s,d)=>s+d.productRevenue,0), totalRevenue, ghExpenses, invExpenses, totalProfit],
+      ["TOTAL", roomRevenue, productRevenue, totalRevenue, ghExpenses, invExpenses, data.reduce((s, d) => s + d.profit, 0)],
     ];
     const csv  = rows.map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -129,6 +143,7 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
             onChange={e => setMonths(Number(e.target.value))}
             className="bg-surface-elevated border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-gold-500/50"
           >
+            <option value={1}>Current month</option>
             <option value={3}>Last 3 months</option>
             <option value={6}>Last 6 months</option>
             <option value={12}>Last 12 months</option>
@@ -142,6 +157,12 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
           <Download className="w-4 h-4" /> Export CSV
         </button>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400" role="alert">
+          {error}
+        </div>
+      )}
 
       {/* Overall KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -179,7 +200,7 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
           </div>
           <div className="space-y-2">
             {[
-              { label: "Revenue",    value: totalRevenue, color: "text-gold-400" },
+              { label: "Room Revenue", value: roomRevenue, color: "text-gold-400" },
               { label: "GH Expenses", value: -ghExpenses, color: "text-red-400" },
             ].map(({ label, value, color }) => (
               <div key={label} className="flex justify-between text-sm py-1 border-b border-border/50">
@@ -234,7 +255,7 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
           </div>
           <div className="space-y-2">
             {[
-              { label: "Product Revenue", value: data.reduce((s, d) => s + d.productRevenue, 0), color: "text-blue-400" },
+              { label: "Product Revenue", value: productRevenue, color: "text-blue-400" },
               { label: "Inventory Costs",  value: -invExpenses, color: "text-red-400" },
             ].map(({ label, value, color }) => (
               <div key={label} className="flex justify-between text-sm py-1 border-b border-border/50">

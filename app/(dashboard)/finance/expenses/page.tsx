@@ -10,8 +10,8 @@ import { ExpenseForm } from "@/features/finance/components/ExpenseForm";
 import { ExpenseCategory } from "@/types";
 import { cn, formatPKR, formatDate } from "@/utils";
 import prisma from "@/lib/db/prisma";
-import { startOfMonth, endOfMonth } from "date-fns";
 import { Receipt, AlertTriangle, Building2, Package } from "lucide-react";
+import { getPKTMonthPeriod } from "@/lib/finance/reporting";
 
 export const metadata = { title: "Expenses" };
 
@@ -47,9 +47,7 @@ export default async function ExpensesPage() {
   const branchId  = getScopedBranchId(user);
   const canCreate = hasPermission(user.role, "finance:expenses:create");
 
-  const now        = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd   = endOfMonth(now);
+  const { start: monthStart, end: monthEnd } = getPKTMonthPeriod();
   const branchWhere = branchId ? { branchId } : {};
 
   const [expenses, branches] = await Promise.all([
@@ -171,11 +169,11 @@ export default async function ExpensesPage() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Type</th>
-                      <th>Category</th>
                       <th>Title</th>
-                      <th>Branch</th>
-                      <th>Date</th>
+                      <th className="hidden sm:table-cell">Category</th>
+                      <th className="hidden md:table-cell">Type</th>
+                      <th className="hidden lg:table-cell">Branch</th>
+                      <th className="hidden sm:table-cell">Date</th>
                       <th className="text-right">Amount</th>
                     </tr>
                   </thead>
@@ -183,16 +181,13 @@ export default async function ExpensesPage() {
                     {expenses.map((expense) => (
                       <tr key={expense.id}>
                         <td>
-                          <span className={cn(
-                            "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full",
-                            String(expense.expenseType) === "INVENTORY"
-                              ? "bg-blue-500/10 text-blue-400"
-                              : "bg-gold-500/10 text-gold-400"
-                          )}>
-                            {String(expense.expenseType) === "INVENTORY" ? "📦 Inventory" : "🏨 Guest House"}
-                          </span>
+                          <p className="text-sm font-medium text-foreground">{expense.title}</p>
+                          {/* Mobile-only: category inline */}
+                          <p className="text-xs text-muted-foreground sm:hidden capitalize">
+                            {CATEGORY_ICONS[expense.category] ?? "📌"} {expense.category.toLowerCase().replace(/_/g, " ")}
+                          </p>
                         </td>
-                        <td>
+                        <td className="hidden sm:table-cell">
                           <span className="flex items-center gap-1.5">
                             <span>{CATEGORY_ICONS[expense.category] ?? "📌"}</span>
                             <span className="text-xs text-muted-foreground capitalize">
@@ -200,16 +195,20 @@ export default async function ExpensesPage() {
                             </span>
                           </span>
                         </td>
-                        <td>
-                          <p className="text-sm font-medium text-foreground">{expense.title}</p>
-                          {expense.description && (
-                            <p className="text-xs text-muted-foreground truncate max-w-xs">{expense.description}</p>
-                          )}
+                        <td className="hidden md:table-cell">
+                          <span className={cn(
+                            "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full",
+                            String(expense.expenseType) === "INVENTORY"
+                              ? "bg-blue-500/10 text-blue-400"
+                              : "bg-gold-500/10 text-gold-400"
+                          )}>
+                            {String(expense.expenseType) === "INVENTORY" ? "📦 Inv" : "🏨 GH"}
+                          </span>
                         </td>
-                        <td><span className="text-sm text-muted-foreground">{expense.branch?.name ?? "—"}</span></td>
-                        <td><span className="text-sm text-muted-foreground">{formatDate(expense.paidAt)}</span></td>
+                        <td className="hidden lg:table-cell"><span className="text-sm text-muted-foreground">{expense.branch?.name ?? "—"}</span></td>
+                        <td className="hidden sm:table-cell"><span className="text-sm text-muted-foreground">{formatDate(expense.paidAt)}</span></td>
                         <td className="text-right">
-                          <span className="text-sm font-bold text-foreground">{formatPKR(Number(expense.amount))}</span>
+                          <span className="text-sm font-bold text-foreground whitespace-nowrap">{formatPKR(Number(expense.amount))}</span>
                         </td>
                       </tr>
                     ))}

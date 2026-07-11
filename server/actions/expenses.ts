@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
-import { requirePermission } from "@/lib/auth/session";
+import { assertBranchAccess, getScopedBranchId, requirePermission } from "@/lib/auth/session";
+import { getPKTMonthPeriods } from "@/lib/finance/reporting";
+import { ExpenseCategory } from "@/types";
 
 // INVENTORY_PURCHASE is the only category that belongs to inventory spending
 const INVENTORY_CATEGORIES = ["INVENTORY_PURCHASE"];
@@ -16,22 +18,35 @@ export async function createExpenseAction(data: {
   paidAt:      string;
   expenseType?: "INVENTORY" | "GUESTHOUSE";
 }) {
-  await requirePermission("finance:expenses:create");
+  const user = await requirePermission("finance:expenses:create");
 
   if (!data.branchId || !data.category || !data.title || !data.amount || !data.paidAt) {
     return { success: false, error: "All required fields must be filled." };
   }
-  if (data.amount <= 0) {
-    return { success: false, error: "Amount must be greater than zero." };
+  assertBranchAccess(user, data.branchId);
+  if (!Number.isFinite(data.amount) || data.amount <= 0) {
+    return { success: false, error: "Amount must be a valid number greater than zero." };
   }
 
-  // Auto-classify if not explicitly provided
+  if (!Object.values(ExpenseCategory).includes(data.category as ExpenseCategory)) {
+    return { success: false, error: "Invalid expense category." };
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data.paidAt)) {
+    return { success: false, error: "Invalid payment date." };
+  }
+  const todayPKT = new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  if (data.paidAt > todayPKT) {
+    return { success: false, error: "Expense date cannot be in the future." };
+  }
+
+  // Derive this on the server so category and P&L type cannot conflict.
   const expenseType: "INVENTORY" | "GUESTHOUSE" =
-    data.expenseType ??
-    (INVENTORY_CATEGORIES.includes(data.category) ? "INVENTORY" : "GUESTHOUSE");
+    INVENTORY_CATEGORIES.includes(data.category) ? "INVENTORY" : "GUESTHOUSE";
 
   try {
-    const date = new Date(data.paidAt);
+    const date = new Date(`${data.paidAt}T00:00:00+05:00`);
+    if (Number.isNaN(date.getTime())) return { success: false, error: "Invalid payment date." };
+    const [year, month] = data.paidAt.split("-").map(Number);
     await prisma.expense.create({
       data: {
         branchId:    data.branchId,
@@ -41,8 +56,8 @@ export async function createExpenseAction(data: {
         amount:      data.amount,
         description: data.description?.trim() || null,
         paidAt:      date,
-        month:       date.getMonth() + 1,
-        year:        date.getFullYear(),
+        month,
+        year,
       },
     });
     revalidatePath("/finance/expenses");
@@ -56,9 +71,12 @@ export async function createExpenseAction(data: {
 }
 
 export async function deleteExpenseAction(id: string) {
-  await requirePermission("finance:expenses:update");
+  const user = await requirePermission("finance:expenses:update");
 
   try {
+    const expense = await prisma.expense.findUnique({ where: { id }, select: { branchId: true } });
+    if (!expense) return { success: false, error: "Expense not found." };
+    assertBranchAccess(user, expense.branchId);
     await prisma.expense.delete({ where: { id } });
     revalidatePath("/finance/expenses");
     revalidatePath("/finance/reports");
@@ -72,14 +90,16 @@ export async function deleteExpenseAction(id: string) {
 
 // Returns real expense breakdown split by expenseType for reports
 export async function getExpenseBreakdown(branchId?: string, months = 6) {
-  await requirePermission("finance:read");
+  const user = await requirePermission("finance:read");
 
-  const branchFilter = branchId ? { branchId } : {};
-  const since = new Date();
-  since.setMonth(since.getMonth() - months);
+  const scopedBranchId = getScopedBranchId(user, branchId);
+  const branchFilter = scopedBranchId ? { branchId: scopedBranchId } : {};
+  const periods = getPKTMonthPeriods(months);
+  const since = periods[0].start;
+  const through = periods[periods.length - 1].end;
 
   const expenses = await prisma.expense.findMany({
-    where: { ...branchFilter, paidAt: { gte: since } },
+    where: { ...branchFilter, paidAt: { gte: since, lte: through } },
     select: { category: true, expenseType: true, amount: true },
   });
 

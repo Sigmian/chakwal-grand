@@ -25,7 +25,7 @@ export function BlacklistButton({ customerId, customerName }: Props) {
     if (!reason.trim()) { toast.error("Please provide a reason"); return; }
     startTransition(async () => {
       const result = await blacklistCustomer(customerId, reason);
-      if (result.success) {
+      if (result?.success) {
         toast.success(`${customerName} has been blacklisted`);
         setOpen(false);
         router.refresh();

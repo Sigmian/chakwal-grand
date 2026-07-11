@@ -80,15 +80,15 @@ export function ExpenseForm({ branches, defaultBranchId }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Expense Type toggle */}
+      {/* Expense type is derived from category and enforced by the server. */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expense Type</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expense Type (Automatic)</label>
         <div className="grid grid-cols-2 gap-2">
           {(["GUESTHOUSE", "INVENTORY"] as const).map((t) => (
             <button
               key={t}
               type="button"
-              onClick={() => setForm(f => ({ ...f, expenseType: t }))}
+              disabled
               className={`py-2 rounded-xl text-xs font-bold border transition-all ${
                 form.expenseType === t
                   ? t === "INVENTORY"

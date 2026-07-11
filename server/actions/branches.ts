@@ -8,7 +8,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/db/prisma";
-import { requireSuperAdmin, requirePermission, getScopedBranchId } from "@/lib/auth/session";
+import { assertBranchAccess, assertCompanyAccess, requireSuperAdmin, requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { createBranchSchema, updateBranchSchema } from "@/lib/validation/schemas";
 import type { CreateBranchInput, UpdateBranchInput } from "@/lib/validation/schemas";
 import { slugify } from "@/utils";
@@ -39,7 +39,8 @@ export async function getBranches() {
 
 // ─── GET BRANCH WITH LIVE STATS ───────────────────────────────
 export async function getBranchWithStats(branchId: string) {
-  await requirePermission("branches:read");
+  const user = await requirePermission("branches:read");
+  assertBranchAccess(user, branchId);
 
   const [branch, roomStats, activeBookings, monthRevenue] = await Promise.all([
     prisma.branch.findUnique({
@@ -146,7 +147,8 @@ export async function createBranch(rawInput: CreateBranchInput) {
 
 // ─── UPDATE BRANCH ───────────────────────────────────────────
 export async function updateBranch(branchId: string, rawInput: UpdateBranchInput) {
-  await requirePermission("branches:update");
+  const user = await requirePermission("branches:update");
+  assertBranchAccess(user, branchId);
 
   const result = updateBranchSchema.safeParse(rawInput);
   if (!result.success) {
@@ -206,13 +208,14 @@ export async function getCustomers(params?: {
   page?:    number;
   pageSize?: number;
 }) {
-  await requirePermission("customers:read");
+  const user = await requirePermission("customers:read");
 
   const page  = params?.page     ?? 1;
   const limit = params?.pageSize ?? 25;
   const skip  = (page - 1) * limit;
 
   const where = {
+    companyId: user.companyId,
     ...(params?.search
       ? {
           OR: [
@@ -245,7 +248,11 @@ export async function getCustomers(params?: {
 }
 
 export async function getCustomerProfile(customerId: string) {
-  await requirePermission("customers:read");
+  const user = await requirePermission("customers:read");
+
+  const owner = await prisma.customer.findUnique({ where: { id: customerId }, select: { companyId: true } });
+  if (!owner) return null;
+  assertCompanyAccess(user, owner.companyId);
 
   const [customer, bookings, reviews] = await Promise.all([
     prisma.customer.findUnique({ where: { id: customerId } }),
@@ -273,11 +280,12 @@ export async function getCustomerProfile(customerId: string) {
 export async function updateCustomerLoyaltyTier(customerId: string) {
   // Guard: this is a "use server" export, so it's a public POST endpoint —
   // require an authenticated staffer with customer-write permission.
-  await requirePermission("customers:update");
+  const user = await requirePermission("customers:update");
 
   // Auto-calculate loyalty tier based on total visits
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
   if (!customer) return;
+  assertCompanyAccess(user, customer.companyId);
 
   let tier: "BRONZE" | "SILVER" | "GOLD" | "VIP";
   if      (customer.totalVisits >= 25) tier = "VIP";
@@ -296,6 +304,10 @@ export async function blacklistCustomer(
   reason: string
 ) {
   const user = await requirePermission("customers:blacklist");
+
+  const customer = await prisma.customer.findUnique({ where: { id: customerId }, select: { companyId: true } });
+  if (!customer) return;
+  assertCompanyAccess(user, customer.companyId);
 
   await prisma.customer.update({
     where: { id: customerId },

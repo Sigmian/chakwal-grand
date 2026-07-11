@@ -53,10 +53,8 @@ setInterval(() => { processedIds.clear(); }, 5 * 60 * 1000);
 function verifyMetaSignature(rawBody: string, signature: string | null): boolean {
   const secret = clean(process.env.WHATSAPP_APP_SECRET);
   if (!secret) {
-    // Not configured — we cannot verify. Warn loudly and allow (so a live bot
-    // isn't taken offline), but WHATSAPP_APP_SECRET MUST be set in production.
-    console.warn("[WhatsApp] ⚠️ WHATSAPP_APP_SECRET not set — inbound webhook is NOT signature-verified. Set it in Vercel to secure the agent.");
-    return true;
+    console.error("[WhatsApp] WHATSAPP_APP_SECRET is not configured; rejecting inbound webhook.");
+    return false;
   }
   if (!signature) return false;
   const expected = "sha256=" + crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");

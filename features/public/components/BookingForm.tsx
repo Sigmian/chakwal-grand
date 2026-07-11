@@ -270,7 +270,7 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
       if (res.success && res.ref) {
         // Mark any pending abandoned leads for this phone as followed-up
         markLeadFollowedUp(guest.phone).catch(() => {/* fire-and-forget */});
-        router.push(`/booking-confirmation/${res.ref}`);
+        router.push(`/booking-confirmation/${res.ref}?t=${encodeURIComponent(res.shareToken ?? "")}`);
       } else {
         toast.error(res.error ?? "Booking failed. Please try again.");
       }

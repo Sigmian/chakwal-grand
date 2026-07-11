@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
-import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
+import { assertBranchAccess, requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { z } from "zod";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -141,6 +141,7 @@ export async function getStaffStats(branchId?: string) {
 export async function createStaffMember(rawInput: CreateStaffInput) {
   const user  = await requirePermission("staff:manage");
   const input = createStaffSchema.parse(rawInput);
+  assertBranchAccess(user, input.branchId);
 
   // Create auth user + staff profile atomically
   const staff = await prisma.$transaction(async (tx) => {
@@ -256,6 +257,7 @@ export async function getStaffPerformance(staffId: string) {
     select: { userId: true, branchId: true },
   });
   if (!staff) throw new Error("Not found");
+  assertBranchAccess(user, staff.branchId);
 
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);

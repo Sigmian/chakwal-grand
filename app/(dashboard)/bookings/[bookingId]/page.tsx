@@ -6,7 +6,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Phone, MessageCircle, CalendarPlus } from "lucide-react";
-import { requirePermission } from "@/lib/auth/session";
+import { requirePermission, assertBranchAccess } from "@/lib/auth/session";
 import prisma from "@/lib/db/prisma";
 import { SectionHeader } from "@/components/shared";
 import { BookingActions } from "@/features/bookings/components/BookingActions";
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function BookingDetailPage({ params, searchParams }: PageProps & { searchParams: { action?: string } }) {
-  await requirePermission("bookings:read");
+  const user = await requirePermission("bookings:read");
 
   const booking = await prisma.booking.findUnique({
     where:   { id: params.bookingId },
@@ -47,6 +47,7 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   });
 
   if (!booking) notFound();
+  assertBranchAccess(user, booking.branchId);
 
   // Check for an active PERCENTAGE offer on this branch (for extension pricing)
   const now = new Date();
@@ -90,22 +91,22 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Back + header */}
-      <div className="flex items-start gap-4">
-        <Link href="/bookings" className="p-2 rounded-xl border border-border text-muted-foreground hover:text-foreground transition-colors mt-1">
+      <div className="flex items-start gap-3">
+        <Link href="/bookings" className="p-2 rounded-xl border border-border text-muted-foreground hover:text-foreground transition-colors mt-1 flex-shrink-0">
           <ArrowLeft className="w-4 h-4" />
         </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-foreground font-serif">{booking.bookingRef}</h1>
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${statusCfg.bgColor} ${statusCfg.color} ${statusCfg.borderColor}`}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-2xl font-bold text-foreground font-serif truncate">{booking.bookingRef}</h1>
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border flex-shrink-0 ${statusCfg.bgColor} ${statusCfg.color} ${statusCfg.borderColor}`}>
               <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
               {statusCfg.label}
             </span>
-            <span className={`text-xs font-semibold ${paymentCfg.color}`}>
+            <span className={`text-xs font-semibold flex-shrink-0 ${paymentCfg.color}`}>
               {paymentCfg.label}
             </span>
           </div>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-xs sm:text-sm mt-1 truncate">
             Created {formatDateTime(booking.createdAt)} · {booking.branch.name}
           </p>
         </div>
@@ -115,16 +116,16 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-colors flex-shrink-0"
         >
           <MessageCircle className="w-4 h-4" />
-          WhatsApp
+          <span className="hidden sm:inline">WhatsApp</span>
         </a>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left: Booking + guest info */}
-        <div className="xl:col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-5">
           {/* Room card */}
           <div className="card-luxury rounded-xl overflow-hidden">
             <div className="flex">

@@ -418,7 +418,7 @@ export default function ChakwalFromIslamabadPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">{a.dist}</p>
                       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{a.desc}</p>
-                      {a.link && <Link href={a.link} className="text-xs text-gold-400 hover:underline mt-1 inline-block">Full visitor guide â†'</Link>}
+                      {a.link && <Link href={a.link} className="text-xs text-gold-400 hover:underline mt-1 inline-block">Full visitor guide →</Link>}
                     </div>
                   </div>
                 ))}

@@ -7,11 +7,12 @@ import { formatPKR } from "@/utils";
 
 export const metadata: Metadata = { title: "Booking Confirmation" };
 
-interface Props { params: { ref: string } }
+interface Props { params: { ref: string }; searchParams: { t?: string } }
 
-async function getBookingByRef(ref: string) {
-  return prisma.booking.findUnique({
-    where: { bookingRef: ref },
+async function getBookingByRef(ref: string, shareToken: string) {
+  if (!shareToken) return null;
+  return prisma.booking.findFirst({
+    where: { bookingRef: ref, shareToken },
     include: {
       room:     { select: { name: true, number: true, type: true } },
       branch:   { select: { name: true, city: true, phone: true, address: true } },
@@ -20,8 +21,8 @@ async function getBookingByRef(ref: string) {
   });
 }
 
-export default async function BookingConfirmationPage({ params }: Props) {
-  const booking = await getBookingByRef(params.ref.toUpperCase());
+export default async function BookingConfirmationPage({ params, searchParams }: Props) {
+  const booking = await getBookingByRef(params.ref.toUpperCase(), searchParams.t ?? "");
   if (!booking) notFound();
 
   const nights = booking.nights ?? 1;

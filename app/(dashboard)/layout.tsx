@@ -35,7 +35,7 @@ export default async function DashboardLayout({
         <DashboardHeader user={user} />
 
         <main className="flex-1 overflow-y-auto">
-          <div className="p-6 max-w-[1600px] mx-auto">
+          <div className="p-3 sm:p-4 lg:p-6 max-w-[1600px] mx-auto">
             {children}
           </div>
         </main>

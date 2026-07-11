@@ -2,10 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
-import { requirePermission } from "@/lib/auth/session";
+import { assertBranchAccess, getScopedBranchId, requirePermission } from "@/lib/auth/session";
+
+async function requireReviewAccess(id: string, permission: "reviews:approve" | "reviews:delete") {
+  const user = await requirePermission(permission);
+  const review = await prisma.review.findUnique({ where: { id }, select: { branchId: true } });
+  if (!review) throw new Error("Review not found");
+  assertBranchAccess(user, review.branchId);
+}
 
 export async function approveReview(id: string) {
-  await requirePermission("reviews:approve");
+  await requireReviewAccess(id, "reviews:approve");
   try {
     await prisma.review.update({ where: { id }, data: { isApproved: true, approvedAt: new Date() } });
     revalidatePath("/reviews");
@@ -17,7 +24,7 @@ export async function approveReview(id: string) {
 }
 
 export async function rejectReview(id: string) {
-  await requirePermission("reviews:approve");
+  await requireReviewAccess(id, "reviews:approve");
   try {
     await prisma.review.update({ where: { id }, data: { isApproved: false, approvedAt: null } });
     revalidatePath("/reviews");
@@ -29,7 +36,7 @@ export async function rejectReview(id: string) {
 }
 
 export async function toggleFeatured(id: string, current: boolean) {
-  await requirePermission("reviews:approve");
+  await requireReviewAccess(id, "reviews:approve");
   try {
     await prisma.review.update({ where: { id }, data: { isFeatured: !current } });
     revalidatePath("/reviews");
@@ -41,7 +48,7 @@ export async function toggleFeatured(id: string, current: boolean) {
 }
 
 export async function deleteReview(id: string) {
-  await requirePermission("reviews:delete");
+  await requireReviewAccess(id, "reviews:delete");
   try {
     await prisma.review.delete({ where: { id } });
     revalidatePath("/reviews");
@@ -53,9 +60,10 @@ export async function deleteReview(id: string) {
 }
 
 export async function getReviews(branchId?: string) {
-  await requirePermission("reviews:read");
+  const user = await requirePermission("reviews:read");
+  const scopedBranchId = getScopedBranchId(user, branchId);
   return prisma.review.findMany({
-    where: branchId ? { branchId } : undefined,
+    where: scopedBranchId ? { branchId: scopedBranchId } : undefined,
     orderBy: [{ isApproved: "asc" }, { createdAt: "desc" }],
     include: {
       customer: { select: { name: true, phone: true } },

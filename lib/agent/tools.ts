@@ -5,7 +5,7 @@
 
 import type Anthropic from "@anthropic-ai/sdk";
 import prisma from "@/lib/db/prisma";
-import { createPublicBooking, getBookingByRef } from "@/server/actions/public";
+import { createPublicBooking } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
 import { BookingStatus, RoomType } from "@/types";
 import { sendPushToAllStaff } from "@/lib/push/send";
@@ -389,7 +389,7 @@ export async function executeAgentTool(
     case "send_room_images":        return sendRoomImagesTool(input);
     case "validate_coupon":        return validateCouponTool(input);
     case "create_booking":         return createBookingTool(input);
-    case "get_booking":            return getBookingTool(input);
+    case "get_booking":            return getBookingTool(input, authed);
     // Identity-sensitive mutations: bind to the authenticated sender, never the
     // LLM-supplied guest_phone (which an attacker could set to a victim's number).
     case "cancel_booking":         return cancelBookingTool(input, authed);
@@ -777,9 +777,19 @@ async function createBookingTool(input: Record<string, unknown>) {
   };
 }
 
-async function getBookingTool(input: Record<string, unknown>) {
-  const booking = await getBookingByRef(input.booking_ref as string);
+async function getBookingTool(input: Record<string, unknown>, authedPhone?: string | null) {
+  const booking = await prisma.booking.findUnique({
+    where: { bookingRef: input.booking_ref as string },
+    include: {
+      customer: { select: { name: true, phone: true } },
+      room: { select: { name: true } },
+      branch: { select: { name: true } },
+    },
+  });
   if (!booking) return { found: false, error: "Booking not found. Please check the reference number." };
+  if (!authedPhone || normalizePhone(booking.customer.phone) !== normalizePhone(authedPhone)) {
+    return { found: false, error: "Please request booking details from the WhatsApp number used for the reservation." };
+  }
 
   return {
     found:           true,
@@ -792,7 +802,9 @@ async function getBookingTool(input: Record<string, unknown>) {
     checkOut:        booking.checkOutDate.toISOString().split("T")[0],
     nights:          booking.nights,
     totalAmount:     Number(booking.totalAmount),
-    confirmationUrl: `${siteConfig.url}/booking-confirmation/${booking.bookingRef}`,
+    confirmationUrl: booking.shareToken
+      ? `${siteConfig.url}/booking-confirmation/${booking.bookingRef}?t=${booking.shareToken}`
+      : `${siteConfig.url}/my-booking`,
   };
 }
 

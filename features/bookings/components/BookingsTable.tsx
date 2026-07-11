@@ -161,14 +161,13 @@ export function BookingsTable({ bookings, pagination }: Props) {
           <table className="data-table w-full">
             <thead>
               <tr>
-                <th>Booking Ref</th>
-                <th>Guest</th>
-                <th>Room</th>
-                <th>Branch</th>
-                <th>Dates</th>
+                <th>Guest / Ref</th>
+                <th className="hidden sm:table-cell">Room</th>
+                <th className="hidden md:table-cell">Branch</th>
+                <th className="hidden sm:table-cell">Dates</th>
                 <th>Amount</th>
                 <th>Status</th>
-                <th>Payment</th>
+                <th className="hidden md:table-cell">Payment</th>
                 <th className="text-right">Actions</th>
               </tr>
             </thead>
@@ -180,30 +179,24 @@ export function BookingsTable({ bookings, pagination }: Props) {
 
                 return (
                   <tr key={booking.id} className="group">
-                    {/* Booking ref */}
+                    {/* Guest + ref — always visible, room/date shown on mobile */}
                     <td>
-                      <Link
-                        href={`/bookings/${booking.id}`}
-                        className="text-gold-400 font-bold text-xs hover:underline"
-                      >
-                        {booking.bookingRef}
-                      </Link>
-                    </td>
-
-                    {/* Guest */}
-                    <td>
-                      <div>
+                      <Link href={`/bookings/${booking.id}`} className="block">
                         <p className="text-sm font-semibold text-foreground">
                           {booking.customer?.name ?? "—"}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {booking.customer?.phone}
+                        <p className="text-gold-400 font-bold text-xs hover:underline">
+                          {booking.bookingRef}
                         </p>
-                      </div>
+                        {/* Mobile-only: room + dates inline */}
+                        <p className="text-xs text-muted-foreground sm:hidden mt-0.5">
+                          Rm {booking.room?.number} · {formatDate(booking.checkInDate)}
+                        </p>
+                      </Link>
                     </td>
 
                     {/* Room */}
-                    <td>
+                    <td className="hidden sm:table-cell">
                       <div>
                         <p className="text-sm text-foreground font-medium">
                           {booking.room?.name ?? "—"}
@@ -215,7 +208,7 @@ export function BookingsTable({ bookings, pagination }: Props) {
                     </td>
 
                     {/* Branch */}
-                    <td>
+                    <td className="hidden md:table-cell">
                       <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${branchColor.badge}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${branchColor.dot}`} />
                         {booking.branch?.name ?? "—"}
@@ -223,7 +216,7 @@ export function BookingsTable({ bookings, pagination }: Props) {
                     </td>
 
                     {/* Dates */}
-                    <td>
+                    <td className="hidden sm:table-cell">
                       <div>
                         <p className="text-xs text-foreground">
                           {formatDate(booking.checkInDate)}
@@ -239,26 +232,24 @@ export function BookingsTable({ bookings, pagination }: Props) {
 
                     {/* Amount */}
                     <td>
-                      <p className="text-sm font-bold text-gold-400">
+                      <p className="text-sm font-bold text-gold-400 whitespace-nowrap">
                         {formatPKR(booking.totalAmount)}
                       </p>
-                      {booking.paidAmount > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          Paid: {formatPKR(booking.paidAmount)}
-                        </p>
-                      )}
+                      <p className={`text-xs font-semibold md:hidden ${paymentCfg.color}`}>
+                        {paymentCfg.label}
+                      </p>
                     </td>
 
                     {/* Booking status */}
                     <td>
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${statusCfg.bgColor} ${statusCfg.color} ${statusCfg.borderColor}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.color.replace("text-", "bg-")}`} />
-                        {statusCfg.label}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${statusCfg.bgColor} ${statusCfg.color} ${statusCfg.borderColor}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusCfg.color.replace("text-", "bg-")}`} />
+                        <span className="hidden xs:inline">{statusCfg.label}</span>
                       </span>
                     </td>
 
                     {/* Payment status */}
-                    <td>
+                    <td className="hidden md:table-cell">
                       <span className={`text-xs font-semibold ${paymentCfg.color}`}>
                         {paymentCfg.label}
                       </span>

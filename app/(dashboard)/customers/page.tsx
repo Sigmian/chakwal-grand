@@ -85,12 +85,12 @@ export default async function CustomersPage() {
               <thead>
                 <tr>
                   <th>Customer</th>
-                  <th>Contact</th>
+                  <th className="hidden sm:table-cell">Contact</th>
                   <th>Loyalty</th>
-                  <th>Visits</th>
-                  <th>Total Spent</th>
-                  <th>Last Visit</th>
-                  <th>Status</th>
+                  <th className="hidden md:table-cell">Visits</th>
+                  <th>Spent</th>
+                  <th className="hidden lg:table-cell">Last Visit</th>
+                  <th className="hidden sm:table-cell">Status</th>
                   <th></th>
                 </tr>
               </thead>
@@ -104,18 +104,17 @@ export default async function CustomersPage() {
                           <div className="w-8 h-8 rounded-full bg-gold-gradient flex items-center justify-center text-background text-xs font-bold flex-shrink-0">
                             {customer.name.charAt(0).toUpperCase()}
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <p className="font-semibold text-foreground text-sm flex items-center gap-1.5">
                               {customer.name}
                               {customer.isVIP && <Crown className="w-3 h-3 text-gold-400" />}
                             </p>
-                            {customer.cnic && (
-                              <p className="text-xs text-muted-foreground">{customer.cnic}</p>
-                            )}
+                            {/* Mobile-only: show phone inline */}
+                            <p className="text-xs text-muted-foreground font-mono sm:hidden">{customer.phone}</p>
                           </div>
                         </div>
                       </td>
-                      <td>
+                      <td className="hidden sm:table-cell">
                         <p className="text-sm text-foreground font-mono">{customer.phone}</p>
                         {customer.email && (
                           <p className="text-xs text-muted-foreground truncate max-w-[150px]">{customer.email}</p>
@@ -126,20 +125,20 @@ export default async function CustomersPage() {
                           {tierCfg.icon} {tierCfg.label}
                         </Badge>
                       </td>
-                      <td>
+                      <td className="hidden md:table-cell">
                         <span className="text-sm font-semibold text-foreground">{customer.totalVisits}</span>
                       </td>
                       <td>
-                        <span className="text-sm font-semibold text-gold-400">
+                        <span className="text-sm font-semibold text-gold-400 whitespace-nowrap">
                           {formatPKR(Number(customer.totalSpending))}
                         </span>
                       </td>
-                      <td>
+                      <td className="hidden lg:table-cell">
                         <span className="text-sm text-muted-foreground">
                           {formatDate(customer.lastVisitAt)}
                         </span>
                       </td>
-                      <td>
+                      <td className="hidden sm:table-cell">
                         {customer.isBlacklisted ? (
                           <Badge variant="red">Blacklisted</Badge>
                         ) : customer.isVIP ? (
@@ -151,7 +150,7 @@ export default async function CustomersPage() {
                       <td>
                         <Link
                           href={`/customers/${customer.id}`}
-                          className="text-xs text-gold-400 hover:text-gold-300 font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-xs text-gold-400 hover:text-gold-300 font-semibold"
                         >
                           View →
                         </Link>

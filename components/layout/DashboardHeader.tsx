@@ -110,9 +110,9 @@ export function DashboardHeader({ user }: Props) {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-surface-elevated/80 backdrop-blur-sm flex items-center justify-between px-6 flex-shrink-0 z-30">
-      {/* ── Breadcrumbs ── */}
-      <nav className="flex items-center gap-1.5 text-sm min-w-0">
+    <header className="h-16 border-b border-border bg-surface-elevated/80 backdrop-blur-sm flex items-center justify-between px-3 sm:px-6 flex-shrink-0 z-30">
+      {/* ── Breadcrumbs — offset on mobile to clear hamburger button ── */}
+      <nav className="flex items-center gap-1.5 text-sm min-w-0 pl-10 md:pl-0">
         {segments.map((seg, idx) => (
           <span key={idx} className="flex items-center gap-1.5 min-w-0">
             {idx > 0 && (
@@ -182,7 +182,7 @@ export function DashboardHeader({ user }: Props) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.96 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-80 card-luxury border border-border shadow-card-lg z-50 overflow-hidden"
+                  className="absolute right-0 top-full mt-2 w-[min(320px,calc(100vw-1rem))] card-luxury border border-border shadow-card-lg z-50 overflow-hidden"
                 >
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                     <span className="text-sm font-semibold">Notifications</span>

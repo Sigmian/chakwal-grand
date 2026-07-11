@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import prisma from "@/lib/db/prisma";
-import { requirePermission } from "@/lib/auth/session";
+import { assertCompanyAccess, requirePermission } from "@/lib/auth/session";
 import { RoomType } from "@/types";
 
 const createCustomerSchema = z.object({
@@ -30,7 +30,7 @@ export async function createCustomer(rawInput: CreateCustomerInput) {
 
   const customer = await prisma.customer.create({
     data: {
-      companyId:        "company-001",
+      companyId:        user.companyId,
       name:             input.name,
       phone:            input.phone,
       email:            input.email || null,
@@ -48,9 +48,13 @@ export async function createCustomer(rawInput: CreateCustomerInput) {
 }
 
 export async function updateCustomerCnic(customerId: string, cnic: string, cnicImage?: string) {
-  await requirePermission("bookings:update");
+  const user = await requirePermission("bookings:update");
 
   if (!customerId) return { success: false, error: "Customer ID required" };
+
+  const customer = await prisma.customer.findUnique({ where: { id: customerId }, select: { companyId: true } });
+  if (!customer) return { success: false, error: "Customer not found" };
+  assertCompanyAccess(user, customer.companyId);
 
   await prisma.customer.update({
     where: { id: customerId },
@@ -66,6 +70,8 @@ export async function updateCustomerCnic(customerId: string, cnic: string, cnicI
 }
 
 export async function getCustomer(customerId: string) {
-  await requirePermission("bookings:read");
-  return prisma.customer.findUnique({ where: { id: customerId } });
+  const user = await requirePermission("bookings:read");
+  const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+  if (customer) assertCompanyAccess(user, customer.companyId);
+  return customer;
 }

@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/cron/abandoned-leads",
-      "schedule": "0 * * * *"
+      "schedule": "0 9 * * *"
     }
   ]
 }

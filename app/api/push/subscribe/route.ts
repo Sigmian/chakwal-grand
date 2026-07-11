@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth-options";
+import { getSession } from "@/lib/auth/session";
 import prisma from "@/lib/db/prisma";
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const user = await getSession();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -21,8 +20,8 @@ export async function POST(req: NextRequest) {
 
   await prisma.pushSubscription.upsert({
     where: { endpoint },
-    update: { p256dh: keys.p256dh, auth: keys.auth, userId: session.user.id },
-    create: { endpoint, p256dh: keys.p256dh, auth: keys.auth, userId: session.user.id },
+    update: { p256dh: keys.p256dh, auth: keys.auth, userId: user.id },
+    create: { endpoint, p256dh: keys.p256dh, auth: keys.auth, userId: user.id },
   });
 
   return NextResponse.json({ ok: true });

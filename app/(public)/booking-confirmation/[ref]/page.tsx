@@ -16,7 +16,7 @@ import { ShareBookingButton }   from "@/features/public/components/ShareBookingB
 import { formatPKR }         from "@/utils";
 import type { Metadata } from "next";
 
-interface Props { params: { ref: string } }
+interface Props { params: { ref: string }; searchParams: { t?: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
@@ -26,8 +26,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function BookingConfirmationPage({ params }: Props) {
-  const booking = await getBookingByRef(params.ref);
+export default async function BookingConfirmationPage({ params, searchParams }: Props) {
+  const booking = await getBookingByRef(params.ref, searchParams.t ?? "");
   if (!booking) notFound();
 
   const room     = booking.room;

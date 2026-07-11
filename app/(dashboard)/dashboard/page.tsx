@@ -98,9 +98,9 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* ── Greeting ── */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-serif text-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold font-serif text-foreground">
             {getGreeting()},{" "}
             <span className="text-gold-gradient">{user.name.split(" ")[0]}</span> 👋
           </h1>
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
         {overview && overview.lowStockAlerts > 0 && (
           <Link
             href="/inventory/products"
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-sm text-amber-400 hover:bg-amber-500/20 transition-colors"
+            className="self-start flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-sm text-amber-400 hover:bg-amber-500/20 transition-colors"
           >
             <AlertTriangle className="w-4 h-4" />
             {overview.lowStockAlerts} low stock alert{overview.lowStockAlerts !== 1 ? "s" : ""}
@@ -191,11 +191,11 @@ export default async function DashboardPage() {
           return (
             <div className="space-y-3">
               {forecast.weeks.map((week) => (
-                <div key={week.label} className="flex items-center gap-3">
+                <div key={week.label} className="flex items-center gap-2 sm:gap-3">
                   {/* Label */}
-                  <div className="w-16 flex-shrink-0">
+                  <div className="w-12 sm:w-16 flex-shrink-0">
                     <p className="text-xs font-semibold text-foreground">{week.label}</p>
-                    <p className="text-2xs text-muted-foreground">{week.days}</p>
+                    <p className="text-2xs text-muted-foreground hidden sm:block">{week.days}</p>
                   </div>
                   {/* Bar */}
                   <div className="flex-1">
@@ -214,9 +214,9 @@ export default async function DashboardPage() {
                     </div>
                   </div>
                   {/* Revenue + bookings */}
-                  <div className="w-36 flex-shrink-0 text-right">
+                  <div className="w-20 sm:w-36 flex-shrink-0 text-right">
                     <span className="text-sm font-bold text-foreground">{formatPKRShort(week.revenue)}</span>
-                    <span className="text-2xs text-muted-foreground ml-1.5">
+                    <span className="text-2xs text-muted-foreground ml-1 hidden sm:inline">
                       {week.bookings} booking{week.bookings !== 1 ? "s" : ""}
                     </span>
                   </div>

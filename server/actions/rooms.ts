@@ -12,11 +12,18 @@ import { sendPushToBranch } from "@/lib/push/send";
 import {
   requirePermission,
   getScopedBranchId,
-  requireBranchAccess,
+  assertBranchAccess,
 } from "@/lib/auth/session";
 import { createRoomSchema, updateRoomSchema } from "@/lib/validation/schemas";
 import type { CreateRoomInput, UpdateRoomInput } from "@/lib/validation/schemas";
-import { RoomStatus, BookingStatus } from "@/types";
+import { RoomStatus, BookingStatus, type SessionUser } from "@/types";
+
+async function requireRoomAccess(user: SessionUser, roomId: string) {
+  const room = await prisma.room.findUnique({ where: { id: roomId }, select: { branchId: true } });
+  if (!room) throw new Error("Room not found");
+  assertBranchAccess(user, room.branchId);
+  return room;
+}
 
 // ─── GET ALL ROOMS ────────────────────────────────────────────
 export async function getRooms(params?: {
@@ -45,7 +52,8 @@ export async function getRooms(params?: {
 
 // ─── GET SINGLE ROOM ──────────────────────────────────────────
 export async function getRoom(roomId: string) {
-  await requirePermission("rooms:read");
+  const user = await requirePermission("rooms:read");
+  await requireRoomAccess(user, roomId);
 
   return prisma.room.findUnique({
     where: { id: roomId },
@@ -83,7 +91,8 @@ export async function checkRoomAvailability(params: {
   roomType?:   string;
   adultCount?: number;
 }) {
-  await requirePermission("rooms:read");
+  const user = await requirePermission("rooms:read");
+  assertBranchAccess(user, params.branchId);
 
   const checkIn  = new Date(params.checkInDate);
   const checkOut = new Date(params.checkOutDate);
@@ -193,7 +202,8 @@ export async function createRoom(rawInput: CreateRoomInput) {
 
 // ─── UPDATE ROOM ─────────────────────────────────────────────
 export async function updateRoom(roomId: string, rawInput: UpdateRoomInput) {
-  await requirePermission("rooms:update");
+  const user = await requirePermission("rooms:update");
+  await requireRoomAccess(user, roomId);
 
   const result = updateRoomSchema.safeParse(rawInput);
   if (!result.success) {
@@ -223,6 +233,7 @@ export async function updateRoomStatus(
   notes?:  string
 ) {
   const user = await requirePermission("rooms:update");
+  await requireRoomAccess(user, roomId);
 
   try {
     const room = await prisma.room.update({
@@ -284,6 +295,7 @@ export async function logMaintenance(params: {
   cost?:        number;
 }) {
   const user = await requirePermission("rooms:set_maintenance");
+  await requireRoomAccess(user, params.roomId);
 
   try {
     // Set room to maintenance mode
@@ -327,6 +339,13 @@ export async function resolveMaintenance(maintenanceLogId: string) {
   const user = await requirePermission("rooms:set_maintenance");
 
   try {
+    const existingLog = await prisma.maintenanceLog.findUnique({
+      where: { id: maintenanceLogId },
+      include: { room: { select: { branchId: true } } },
+    });
+    if (!existingLog) return { success: false, error: "Maintenance record not found" };
+    assertBranchAccess(user, existingLog.room.branchId);
+
     const log = await prisma.maintenanceLog.update({
       where: { id: maintenanceLogId },
       data:  { resolvedAt: new Date() },
@@ -401,7 +420,8 @@ export async function getHousekeepingBoard(branchId?: string) {
 
 // ─── GET BOOKING CALENDAR DATA (for a room) ──────────────────
 export async function getRoomCalendar(roomId: string, year: number, month: number) {
-  await requirePermission("rooms:read");
+  const user = await requirePermission("rooms:read");
+  await requireRoomAccess(user, roomId);
 
   const start = new Date(year, month - 1, 1);
   const end   = new Date(year, month,     0, 23, 59, 59);
@@ -434,7 +454,8 @@ export async function addRoomImages(
   imageUrls: string[],
   setCoverIndex?: number
 ) {
-  await requirePermission("rooms:upload_images");
+  const user = await requirePermission("rooms:upload_images");
+  await requireRoomAccess(user, roomId);
 
   try {
     const existingCount = await prisma.roomImage.count({ where: { roomId } });
@@ -464,7 +485,10 @@ export async function addRoomImages(
 
 // ─── SET COVER IMAGE ─────────────────────────────────────────
 export async function setRoomCoverImage(roomId: string, imageId: string) {
-  await requirePermission("rooms:upload_images");
+  const user = await requirePermission("rooms:upload_images");
+  await requireRoomAccess(user, roomId);
+  const image = await prisma.roomImage.findUnique({ where: { id: imageId }, select: { roomId: true } });
+  if (!image || image.roomId !== roomId) return { success: false, error: "Image does not belong to this room" };
 
   await prisma.$transaction([
     prisma.roomImage.updateMany({
@@ -483,7 +507,10 @@ export async function setRoomCoverImage(roomId: string, imageId: string) {
 
 // ─── DELETE ROOM IMAGE ────────────────────────────────────────
 export async function deleteRoomImage(imageId: string) {
-  await requirePermission("rooms:upload_images");
+  const user = await requirePermission("rooms:upload_images");
+  const image = await prisma.roomImage.findUnique({ where: { id: imageId }, select: { roomId: true } });
+  if (!image) return { success: false, error: "Image not found" };
+  await requireRoomAccess(user, image.roomId);
 
   await prisma.roomImage.delete({ where: { id: imageId } });
   revalidatePath("/dashboard/rooms");
