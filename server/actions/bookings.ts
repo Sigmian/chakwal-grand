@@ -169,45 +169,72 @@ export async function createBooking(rawInput: CreateBookingInput) {
       }
     }
 
-    // 7. Calculate totals
+    // 7. Calculate totals — never let a discount exceed the room subtotal
+    //    (a large FIXED_AMOUNT offer must not create a negative/free total).
+    discountAmount = Math.min(discountAmount, baseAmt);
     const baseAmount = baseAmt;
     const taxAmount  = 0; // Configurable in future
     const totalAmount = calculateBookingTotal({
       baseAmount, discountAmount, taxAmount, extraCharges: 0,
     });
 
-    // 8. Create the booking
-    const booking = await prisma.booking.create({
-      data: {
-        bookingRef:   generateBookingRef(),
-        branchId,
-        roomId:       input.roomId,
-        customerId:   customerId!,
-        checkInDate:  checkIn,
-        checkOutDate: checkOut,
-        nights,
-        adultCount:   input.adultCount,
-        childCount:   input.childCount ?? 0,
-        guestCount:   input.adultCount + (input.childCount ?? 0),
-        baseAmount,
-        discountAmount,
-        taxAmount,
-        extraCharges: 0,
-        totalAmount,
-        paidAmount:   0,
-        status:       BookingStatus.PENDING,
-        paymentStatus: PaymentStatus.UNPAID,
-        source:       input.source ?? "website",
-        offerId:      appliedOfferId || null,
-        specialRequests: input.specialRequests || null,
-        internalNotes:   input.internalNotes || null,
-      },
-      include: {
-        room:     { select: { number: true, name: true, type: true } },
-        customer: { select: { name: true, phone: true } },
-        branch:   { select: { name: true, address: true } },
-      },
-    });
+    // 8. Create the booking inside a Serializable transaction that re-checks
+    //    availability, so two concurrent creates can't oversell the same room.
+    let booking;
+    try {
+      booking = await prisma.$transaction(async (tx) => {
+        const conflict = await tx.booking.findFirst({
+          where: {
+            roomId: input.roomId,
+            status: { in: ["CONFIRMED", "CHECKED_IN", "PENDING"] },
+            AND: [
+              { checkInDate:  { lt: checkOut } },
+              { checkOutDate: { gt: checkIn  } },
+            ],
+          },
+          select: { id: true, bookingRef: true },
+        });
+        if (conflict) throw new Error("ROOM_CONFLICT");
+
+        return tx.booking.create({
+          data: {
+            bookingRef:   generateBookingRef(),
+            branchId,
+            roomId:       input.roomId,
+            customerId:   customerId!,
+            checkInDate:  checkIn,
+            checkOutDate: checkOut,
+            nights,
+            adultCount:   input.adultCount,
+            childCount:   input.childCount ?? 0,
+            guestCount:   input.adultCount + (input.childCount ?? 0),
+            baseAmount,
+            discountAmount,
+            taxAmount,
+            extraCharges: 0,
+            totalAmount,
+            paidAmount:   0,
+            status:       BookingStatus.PENDING,
+            paymentStatus: PaymentStatus.UNPAID,
+            source:       input.source ?? "website",
+            offerId:      appliedOfferId || null,
+            specialRequests: input.specialRequests || null,
+            internalNotes:   input.internalNotes || null,
+          },
+          include: {
+            room:     { select: { number: true, name: true, type: true } },
+            customer: { select: { name: true, phone: true } },
+            branch:   { select: { name: true, address: true } },
+          },
+        });
+      }, { isolationLevel: "Serializable" });
+    } catch (err) {
+      const code = (err as { code?: string })?.code;
+      if ((err as Error)?.message === "ROOM_CONFLICT" || code === "P2034") {
+        return { success: false, error: "Room was just booked for these dates. Please refresh and try again." };
+      }
+      throw err;
+    }
 
     // 9. Update customer visit stats
     await prisma.customer.update({
@@ -302,6 +329,11 @@ export async function checkInBooking(bookingId: string) {
     });
     if (!booking) return { success: false, error: "Booking not found" };
 
+    // Branch scope check — a branch-scoped user can't act on another branch's booking
+    if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+      return { success: false, error: "Access denied" };
+    }
+
     if (booking.status !== BookingStatus.CONFIRMED) {
       return {
         success: false,
@@ -354,6 +386,11 @@ export async function checkOutBooking(bookingId: string) {
       },
     });
     if (!booking) return { success: false, error: "Booking not found" };
+
+    // Branch scope check
+    if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+      return { success: false, error: "Access denied" };
+    }
 
     if (booking.status !== BookingStatus.CHECKED_IN) {
       return { success: false, error: "Guest must be checked in first" };
@@ -434,6 +471,11 @@ export async function cancelBooking(bookingId: string, rawInput: CancelBookingIn
     });
     if (!booking) return { success: false, error: "Booking not found" };
 
+    // Branch scope check
+    if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+      return { success: false, error: "Access denied" };
+    }
+
     if (
       booking.status === BookingStatus.CHECKED_OUT ||
       booking.status === BookingStatus.CANCELLED
@@ -493,8 +535,25 @@ export async function addPayment(rawInput: AddPaymentInput) {
     });
     if (!booking) return { success: false, error: "Booking not found" };
 
-    const newPaidAmount = Number(booking.paidAmount) + input.amount;
-    const totalAmount   = Number(booking.totalAmount);
+    // Branch scope check — prevent recording payments against another branch's booking
+    if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+      return { success: false, error: "Access denied" };
+    }
+
+    const totalAmount    = Number(booking.totalAmount);
+    const currentPaid    = Number(booking.paidAmount);
+    const remaining      = Math.max(0, totalAmount - currentPaid);
+    if (remaining <= 0) {
+      return { success: false, error: "This booking is already fully paid." };
+    }
+    if (input.amount > remaining) {
+      return {
+        success: false,
+        error:   `Payment exceeds the outstanding balance of ₨${remaining.toLocaleString("en-PK")}.`,
+      };
+    }
+
+    const newPaidAmount = currentPaid + input.amount;
 
     const paymentStatus: PaymentStatus =
       newPaidAmount >= totalAmount

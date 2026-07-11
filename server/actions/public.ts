@@ -77,6 +77,12 @@ export async function getRoomAvailability(roomId: string, year: number, month: n
 }
 
 export async function getBookingByRef(ref: string) {
+  // Throttle per IP — this returns guest PII (name/phone/email) keyed only by a
+  // booking ref, so an unthrottled caller could enumerate refs and harvest it.
+  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
+  if (!rateLimit(`booking-ref:${ip}`, 20, 60_000)) {
+    return null;
+  }
   return prisma.booking.findUnique({
     where: { bookingRef: ref },
     include: {
@@ -481,6 +487,9 @@ export async function createPublicBooking(input: {
     }
   }
 
+  // Never let a discount exceed the room subtotal (a large FIXED_AMOUNT offer
+  // must not produce a free room or a negative stored discount/total).
+  discountAmount = Math.min(discountAmount, baseAmount);
   const totalAmount = Math.max(0, baseAmount - discountAmount);
 
   let customer = await prisma.customer.findUnique({ where: { phone: cleanPhone } });
@@ -503,33 +512,59 @@ export async function createPublicBooking(input: {
   }
   const shareToken = crypto.randomUUID();
 
-  const booking = await prisma.booking.create({
-    data: {
-      bookingRef:         ref,
-      branchId:           input.branchId,
-      roomId:             input.roomId,
-      customerId:         customer.id,
-      checkInDate:        ci,
-      checkOutDate:       co,
-      nights,
-      adultCount:         adults,
-      childCount:         children,
-      guestCount:         adults + children,
-      status:             "PENDING",
-      paymentStatus:      "UNPAID",
-      baseAmount,
-      discountAmount,
-      taxAmount:          0,
-      extraCharges:       0,
-      totalAmount,
-      offerId:            appliedOfferId,
-      source:             "website",
-      specialRequests:    cleanNotes || null,
-      estimatedArrival:   input.estimatedArrival?.slice(0, 20) || null,
-      structuredRequests: input.structuredRequests ?? undefined,
-      shareToken,
-    },
-  });
+  // Create the booking inside a Serializable transaction that re-checks room
+  // availability, so two concurrent requests can't both pass the earlier check
+  // and oversell the same room+dates.
+  let booking;
+  try {
+    booking = await prisma.$transaction(async (tx) => {
+      const conflict = await tx.booking.findFirst({
+        where: {
+          roomId: input.roomId,
+          status: { in: ["CONFIRMED", "CHECKED_IN", "PENDING"] },
+          AND: [{ checkInDate: { lt: co } }, { checkOutDate: { gt: ci } }],
+        },
+        select: { id: true },
+      });
+      if (conflict) throw new Error("ROOM_CONFLICT");
+
+      return tx.booking.create({
+        data: {
+          bookingRef:         ref,
+          branchId:           input.branchId,
+          roomId:             input.roomId,
+          customerId:         customer.id,
+          checkInDate:        ci,
+          checkOutDate:       co,
+          nights,
+          adultCount:         adults,
+          childCount:         children,
+          guestCount:         adults + children,
+          status:             "PENDING",
+          paymentStatus:      "UNPAID",
+          baseAmount,
+          discountAmount,
+          taxAmount:          0,
+          extraCharges:       0,
+          totalAmount,
+          offerId:            appliedOfferId,
+          source:             "website",
+          specialRequests:    cleanNotes || null,
+          estimatedArrival:   input.estimatedArrival?.slice(0, 20) || null,
+          structuredRequests: input.structuredRequests ?? undefined,
+          shareToken,
+        },
+      });
+    }, { isolationLevel: "Serializable" });
+  } catch (err) {
+    // Either our explicit conflict guard, or a Postgres serialization failure
+    // (P2034) when two transactions raced — both mean the room was just taken.
+    const code = (err as { code?: string })?.code;
+    if ((err as Error)?.message === "ROOM_CONFLICT" || code === "P2034") {
+      return { success: false, error: "This room was just booked by someone else. Please choose another room or dates." };
+    }
+    throw err;
+  }
 
   // Update customer visit timestamp so win-back cron can target them correctly
   await prisma.customer.update({
