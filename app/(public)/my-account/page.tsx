@@ -97,6 +97,11 @@ async function loadSession(token: string) {
   });
 
   if (!session) return null;
-  if (session.expiresAt.getTime() <= Date.now()) return null;
+  if (session.expiresAt.getTime() <= Date.now()) {
+    // Opportunistically prune the expired row so the CustomerSession table
+    // doesn't grow unbounded (each stale-cookie visit cleans up after itself).
+    await prisma.customerSession.delete({ where: { id: session.id } }).catch(() => {/* already gone */});
+    return null;
+  }
   return session;
 }

@@ -965,6 +965,8 @@ model AbandonedLead {
   room   Room?   @relation(fields: [roomId],   references: [id], onDelete: SetNull)
   branch Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
+  @@index([phone])
+  @@index([followedUp, phone])
   @@index([createdAt])
   @@index([followedUp, createdAt])
 }

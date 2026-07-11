@@ -78,8 +78,18 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
     ).then((result) => {
       const { rooms: r } = result as { rooms: Room[]; fallbackRooms: Room[]; fallbackBranch: unknown };
       const match = r.find((room) => room.id === preselectedRoomId);
-      if (match) setSelectedRoom(match);
-    }).catch(() => {/* ignore */});
+      if (match) {
+        setSelectedRoom(match);
+      } else {
+        // Room unavailable for these dates (or invalid link) — don't strand the
+        // guest on a permanent spinner; send them back to search.
+        toast.info("That room isn't available for the selected dates. Please search again.");
+        setStep(1);
+      }
+    }).catch(() => {
+      toast.error("Couldn't load that room. Please search again.");
+      setStep(1);
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -202,6 +212,9 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
     setSearchDone(false);
     setFallbackRooms([]);
     setFallbackBranch(null);
+    // Clear any previously-selected room so a stale room (possibly from another
+    // branch) can't be carried into the new search's booking.
+    setSelectedRoom(null);
     try {
       const result = await getAvailableRooms(dates.branchId, dates.checkIn, dates.checkOut, dates.adults);
       const { rooms: r, fallbackRooms: fb, fallbackBranch: fbb } = result as {

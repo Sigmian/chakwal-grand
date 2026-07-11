@@ -53,8 +53,10 @@ export async function getRoomBookedDates(roomId: string): Promise<{ checkIn: str
 
 // Returns booked date ranges for a specific month — used by the two-month availability calendar
 export async function getRoomAvailability(roomId: string, year: number, month: number) {
-  const start = new Date(year, month - 1, 1);
-  const end   = new Date(year, month, 0, 23, 59, 59); // last moment of the month
+  // Build boundaries in UTC to match how checkInDate/checkOutDate are stored,
+  // so the visible-month window doesn't shift on a non-UTC server.
+  const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+  const end   = new Date(Date.UTC(year, month, 0, 23, 59, 59)); // last moment of the month
 
   const bookings = await prisma.booking.findMany({
     where: {
@@ -610,8 +612,13 @@ export async function saveAbandonedLead(data: {
 }
 
 export async function markLeadFollowedUp(phone: string): Promise<void> {
+  // Trim to match how saveAbandonedLead stores the phone, otherwise a lead
+  // saved from a phone with surrounding whitespace never gets flagged and the
+  // recovery cron would message a guest who already booked.
+  const trimmed = phone?.trim();
+  if (!trimmed) return;
   await prisma.abandonedLead.updateMany({
-    where: { phone, followedUp: false },
+    where: { phone: trimmed, followedUp: false },
     data:  { followedUp: true, followedUpAt: new Date() },
   });
 }

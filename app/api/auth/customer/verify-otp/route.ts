@@ -59,11 +59,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // Must match the SAME set of phone variants send-otp uses, otherwise the
+    // OTP gets consumed above but the lookup 404s → permanent lockout.
     const customer = await prisma.customer.findFirst({
       where: {
         OR: [
           { phone },
           ...(localVariant ? [{ phone: localVariant }] : []),
+          { phone: rawPhone.trim() },
         ],
       },
     });

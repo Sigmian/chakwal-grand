@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   MapPin, Phone, BedDouble,
   CalendarDays, Users, Clock, MessageSquare, Star,
+  CheckCircle2, XCircle,
 } from "lucide-react";
 import { getBookingByRef } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
@@ -41,9 +42,11 @@ export default async function BookingConfirmationPage({ params }: Props) {
   const checkInFmt  = booking.checkInDate.toLocaleDateString("en-PK",  { weekday: "long",  day: "numeric", month: "long", year: "numeric" });
   const checkOutFmt = booking.checkOutDate.toLocaleDateString("en-PK", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
 
-  // Guests only see receipt / calendar / cashback options once the booking is confirmed.
-  // Public bookings start as PENDING and are approved by staff.
-  const isConfirmed = booking.status !== "PENDING";
+  // Guests only see receipt / calendar / cashback options for live bookings.
+  // Public bookings start as PENDING and are approved by staff. Use an explicit
+  // allow-list so CANCELLED / NO_SHOW never render a valid-looking receipt.
+  const isConfirmed = ["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"].includes(booking.status);
+  const isCancelled = ["CANCELLED", "NO_SHOW"].includes(booking.status);
 
   const total    = Number(booking.totalAmount);
   const discount = Number(booking.discountAmount);
@@ -66,20 +69,31 @@ export default async function BookingConfirmationPage({ params }: Props) {
     <div className="min-h-screen bg-surface-base py-12 px-4">
       <div className="max-w-2xl mx-auto">
 
-        {/* ── Header ── */}
+        {/* ── Header ── (state-dependent: cancelled / confirmed / awaiting) */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="w-20 h-20 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-4">
-            <Clock className="w-10 h-10 text-amber-400" />
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border ${
+            isCancelled ? "bg-red-500/15 border-red-500/30"
+            : isConfirmed ? "bg-green-500/15 border-green-500/30"
+            : "bg-amber-500/15 border-amber-500/30"
+          }`}>
+            {isCancelled ? <XCircle className="w-10 h-10 text-red-400" />
+             : isConfirmed ? <CheckCircle2 className="w-10 h-10 text-green-400" />
+             : <Clock className="w-10 h-10 text-amber-400" />}
           </div>
           <h1 className="text-3xl font-bold font-serif text-foreground mb-2">
-            Booking Received — Awaiting Confirmation
+            {isCancelled ? "Booking Cancelled"
+             : isConfirmed ? "Booking Confirmed!"
+             : "Booking Received — Awaiting Confirmation"}
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            You will receive a WhatsApp confirmation message once your booking is approved.
+            {isCancelled ? "This booking has been cancelled. Contact us if you think this is a mistake."
+             : isConfirmed ? "Your stay is confirmed. We look forward to welcoming you!"
+             : "You will receive a WhatsApp confirmation message once your booking is approved."}
           </p>
         </div>
 
-        {/* ── Awaiting-confirmation note ── */}
+        {/* ── Awaiting-confirmation note ── (only while pending) */}
+        {!isConfirmed && !isCancelled && (
         <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-5 mb-5">
           <p className="text-amber-400 font-semibold text-sm mb-2 flex items-center gap-2">
             <Clock className="w-4 h-4" />
@@ -98,6 +112,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
             </li>
           </ul>
         </div>
+        )}
 
         {/* ── Booking Reference ── */}
         <div className="card-luxury rounded-2xl p-6 text-center mb-5 border border-gold-500/20">

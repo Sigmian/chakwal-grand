@@ -94,6 +94,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    // Invalidate any still-valid codes for this phone so only the newest OTP
+    // works — avoids leaving multiple live codes widening the brute-force window.
+    await prisma.customerOTP.updateMany({
+      where: { phone, used: false },
+      data:  { used: true },
+    });
+
     // Cryptographically-secure 6-digit code
     const otp = randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);

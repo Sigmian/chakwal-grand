@@ -367,15 +367,17 @@ export async function getRevenueForecast(branchId?: string) {
   const scopedBranch = getScopedBranchId(user, branchId);
   const branchFilter = scopedBranch ? { branchId: scopedBranch } : {};
 
-  const now = new Date();
-  const thirtyDaysLater = new Date(now.getTime() + 30 * 86_400_000);
+  // Anchor to the START of today so a booking checking in today (stored at
+  // midnight) isn't excluded by a mid-day `now` timestamp.
+  const dayStart = startOfDay(new Date());
+  const thirtyDaysLater = new Date(dayStart.getTime() + 30 * 86_400_000);
 
   // Get all confirmed/pending bookings in next 30 days
   const bookings = await prisma.booking.findMany({
     where: {
       ...branchFilter,
       status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] },
-      checkInDate: { gte: now, lte: thirtyDaysLater },
+      checkInDate: { gte: dayStart, lte: thirtyDaysLater },
     },
     select: {
       checkInDate: true,
@@ -385,7 +387,8 @@ export async function getRevenueForecast(branchId?: string) {
     },
   });
 
-  // Group by week (week 1 = days 1-7, week 2 = 8-14, etc.)
+  // Group into weekly buckets by days-from-today. Labels match the bucket
+  // boundaries below (daysAhead 0–6 → Week 1, 7–13 → Week 2, …).
   const weeks = [
     { label: "Week 1", days: "Days 1–7",   revenue: 0, bookings: 0, outstanding: 0 },
     { label: "Week 2", days: "Days 8–14",  revenue: 0, bookings: 0, outstanding: 0 },
@@ -394,7 +397,7 @@ export async function getRevenueForecast(branchId?: string) {
   ];
 
   for (const b of bookings) {
-    const daysAhead = Math.floor((b.checkInDate.getTime() - now.getTime()) / 86_400_000);
+    const daysAhead = Math.floor((b.checkInDate.getTime() - dayStart.getTime()) / 86_400_000);
     const weekIdx = daysAhead < 7 ? 0 : daysAhead < 14 ? 1 : daysAhead < 21 ? 2 : 3;
     weeks[weekIdx].revenue += Number(b.totalAmount);
     weeks[weekIdx].outstanding += Number(b.totalAmount) - Number(b.paidAmount);
