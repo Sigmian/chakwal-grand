@@ -271,6 +271,10 @@ export async function getCustomerProfile(customerId: string) {
 }
 
 export async function updateCustomerLoyaltyTier(customerId: string) {
+  // Guard: this is a "use server" export, so it's a public POST endpoint —
+  // require an authenticated staffer with customer-write permission.
+  await requirePermission("customers:update");
+
   // Auto-calculate loyalty tier based on total visits
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
   if (!customer) return;

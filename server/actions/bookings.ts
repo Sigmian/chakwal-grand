@@ -154,17 +154,30 @@ export async function createBooking(rawInput: CreateBookingInput) {
       });
       if (offer) {
         const eligible = !offer.minNights || nights >= offer.minNights;
-        const hasCapacity = !offer.maxUses || offer.usedCount < offer.maxUses;
-        if (eligible && hasCapacity) {
-          discountAmount = offer.discountType === "PERCENTAGE"
-            ? (baseAmt * Number(offer.discountValue)) / 100
-            : Number(offer.discountValue);
-          appliedOfferId = offer.id;
+        if (eligible) {
+          // Atomically claim a usage slot: a conditional update guarded on
+          // usedCount prevents concurrent bookings from exceeding maxUses.
+          let claimed: boolean;
+          if (offer.maxUses == null) {
+            await prisma.offer.update({
+              where: { id: offer.id },
+              data:  { usedCount: { increment: 1 } },
+            });
+            claimed = true;
+          } else {
+            const res = await prisma.offer.updateMany({
+              where: { id: offer.id, usedCount: { lt: offer.maxUses } },
+              data:  { usedCount: { increment: 1 } },
+            });
+            claimed = res.count > 0;
+          }
 
-          await prisma.offer.update({
-            where: { id: offer.id },
-            data:  { usedCount: { increment: 1 } },
-          });
+          if (claimed) {
+            discountAmount = offer.discountType === "PERCENTAGE"
+              ? (baseAmt * Number(offer.discountValue)) / 100
+              : Number(offer.discountValue);
+            appliedOfferId = offer.id;
+          }
         }
       }
     }

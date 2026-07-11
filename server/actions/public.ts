@@ -6,6 +6,21 @@ import { sendPushToBranch } from "@/lib/push/send";
 import { siteConfig } from "@/config/site";
 import { rateLimit } from "@/lib/rate-limit";
 
+// Atomically claim one usage slot on an offer. Returns true if a slot was taken.
+// When maxUses is set, the conditional updateMany's WHERE guard on usedCount is
+// re-evaluated against the row lock, so concurrent callers can't exceed the cap.
+async function claimOfferSlot(offerId: string, maxUses: number | null): Promise<boolean> {
+  if (maxUses == null) {
+    await prisma.offer.update({ where: { id: offerId }, data: { usedCount: { increment: 1 } } });
+    return true;
+  }
+  const res = await prisma.offer.updateMany({
+    where: { id: offerId, usedCount: { lt: maxUses } },
+    data:  { usedCount: { increment: 1 } },
+  });
+  return res.count > 0;
+}
+
 export async function getPublicRooms() {
   return prisma.room.findMany({
     where: { status: { not: "BLOCKED" }, isActive: true },
@@ -434,10 +449,14 @@ export async function createPublicBooking(input: {
       expiresAt: { gte: new Date() },
     },
   });
-  if (grandOpeningOffer && (!grandOpeningOffer.maxUses || grandOpeningOffer.usedCount < grandOpeningOffer.maxUses)) {
-    discountAmount = Math.round((baseAmount * Number(grandOpeningOffer.discountValue)) / 100);
-    appliedOfferId = grandOpeningOffer.id;
-    await prisma.offer.update({ where: { id: grandOpeningOffer.id }, data: { usedCount: { increment: 1 } } });
+  if (grandOpeningOffer) {
+    // Atomically claim a usage slot: the WHERE guard on usedCount is re-checked
+    // against the locked row, so concurrent bookings can't exceed maxUses.
+    const claimed = await claimOfferSlot(grandOpeningOffer.id, grandOpeningOffer.maxUses);
+    if (claimed) {
+      discountAmount = Math.round((baseAmount * Number(grandOpeningOffer.discountValue)) / 100);
+      appliedOfferId = grandOpeningOffer.id;
+    }
   }
 
   const autoCode = !appliedOfferId ? (nights >= 30 ? "MONTHLY40" : nights >= 7 ? "WEEKLY14" : null) : null;
@@ -478,11 +497,14 @@ export async function createPublicBooking(input: {
       }
 
       if (eligible && hasCapacity && firstTimeEligible) {
-        discountAmount = offer.discountType === "PERCENTAGE"
-          ? Math.round((baseAmount * Number(offer.discountValue)) / 100)
-          : Number(offer.discountValue);
-        appliedOfferId = offer.id;
-        await prisma.offer.update({ where: { id: offer.id }, data: { usedCount: { increment: 1 } } });
+        // Atomically claim a usage slot before applying the discount.
+        const claimed = await claimOfferSlot(offer.id, offer.maxUses);
+        if (claimed) {
+          discountAmount = offer.discountType === "PERCENTAGE"
+            ? Math.round((baseAmount * Number(offer.discountValue)) / 100)
+            : Number(offer.discountValue);
+          appliedOfferId = offer.id;
+        }
       }
     }
   }
@@ -589,12 +611,23 @@ export async function createPublicBooking(input: {
 
 export async function lookupGuestByPhone(phone: string) {
   const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
-  if (!rateLimit(`guest-lookup:${ip}`, 10, 60_000)) {
+  // Per-IP throttle (tightened) plus a global cap, so IP rotation can't be used
+  // to harvest guest PII (name/email) by iterating the phone-number space.
+  if (!rateLimit(`guest-lookup:${ip}`, 5, 60_000)) {
+    return { found: false as const };
+  }
+  if (!rateLimit("guest-lookup:global", 60, 60_000)) {
     return { found: false as const };
   }
 
   const normalised = phone.trim().replace(/\D/g, "").slice(-10);
   if (normalised.length < 10) return { found: false as const };
+
+  // Per-phone throttle — repeated lookups of the same number are pointless for a
+  // legitimate returning guest and are the signature of enumeration.
+  if (!rateLimit(`guest-lookup-phone:${normalised}`, 3, 10 * 60 * 1000)) {
+    return { found: false as const };
+  }
 
   const customer = await prisma.customer.findFirst({
     where: { phone: { endsWith: normalised } },

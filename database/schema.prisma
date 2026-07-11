@@ -978,6 +978,7 @@ model CustomerOTP {
   otp       String
   expiresAt DateTime
   used      Boolean  @default(false)
+  attempts  Int      @default(0) // failed verify attempts — DB-backed brute-force lockout
   createdAt DateTime @default(now())
 
   @@index([phone, used])

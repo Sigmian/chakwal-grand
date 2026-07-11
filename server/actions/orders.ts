@@ -28,7 +28,18 @@ export async function getInRoomOrders(branchId?: string) {
 }
 
 export async function updateOrderStatus(orderId: string, status: "PENDING" | "PREPARING" | "DELIVERED" | "CANCELLED") {
-  await requirePermission("bookings:update");
+  const user = await requirePermission("bookings:update");
+
+  // Branch scope check — prevent acting on another branch's in-room order
+  // (cancelling reverses charges and restocks inventory).
+  const scopeCheck = await prisma.inRoomOrder.findUnique({
+    where:   { id: orderId },
+    select:  { booking: { select: { branchId: true } } },
+  });
+  if (!scopeCheck) return { success: false, error: "Order not found." };
+  if (getScopedBranchId(user, scopeCheck.booking.branchId) !== scopeCheck.booking.branchId) {
+    return { success: false, error: "Access denied" };
+  }
 
   if (status === "CANCELLED") {
     // Fetch order with items so we can reverse charges and restore stock
