@@ -34,7 +34,7 @@ interface BookingForExtend {
 }
 
 interface Props {
-  booking: { id: string; status: string; bookingRef: string };
+  booking: { id: string; status: string; bookingRef: string; checkInDate: string; checkOutDate: string };
   extendData?: BookingForExtend;
   showCancel?: boolean;
 }
@@ -42,11 +42,12 @@ interface Props {
 export function BookingActions({ booking, extendData, showCancel }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [cancelOpen,  setCancelOpen]  = useState(showCancel ?? false);
-  const [extendOpen,  setExtendOpen]  = useState(false);
-  const [reason, setReason]           = useState("");
+  const [cancelOpen,   setCancelOpen]   = useState(showCancel ?? false);
+  const [extendOpen,   setExtendOpen]   = useState(false);
+  const [reason,       setReason]       = useState("");
+  const [confirmWarn,  setConfirmWarn]  = useState<{ action: "checkin" | "checkout"; msg: string } | null>(null);
 
-  const handleAction = (action: "confirm" | "checkin" | "checkout") => {
+  const executeAction = (action: "confirm" | "checkin" | "checkout") => {
     startTransition(async () => {
       const result =
         action === "confirm"  ? await confirmBooking(booking.id)
@@ -60,6 +61,32 @@ export function BookingActions({ booking, extendData, showCancel }: Props) {
         toast.error(result.error ?? "Action failed");
       }
     });
+  };
+
+  const handleAction = (action: "confirm" | "checkin" | "checkout") => {
+    if (action === "checkin") {
+      const today     = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkIn   = new Date(booking.checkInDate);
+      checkIn.setHours(0, 0, 0, 0);
+      if (checkIn > today) {
+        const fmt = checkIn.toLocaleDateString("en-PK", { weekday: "long", day: "numeric", month: "long" });
+        setConfirmWarn({ action: "checkin", msg: `Guest's check-in date is ${fmt}. Checking in now is ${Math.round((checkIn.getTime() - today.getTime()) / 86_400_000)} day(s) early. Continue?` });
+        return;
+      }
+    }
+    if (action === "checkout") {
+      const today     = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkOut  = new Date(booking.checkOutDate);
+      checkOut.setHours(0, 0, 0, 0);
+      if (checkOut > today) {
+        const fmt = checkOut.toLocaleDateString("en-PK", { weekday: "long", day: "numeric", month: "long" });
+        setConfirmWarn({ action: "checkout", msg: `Guest's check-out date is ${fmt}. Checking out now is ${Math.round((checkOut.getTime() - today.getTime()) / 86_400_000)} day(s) early. Continue?` });
+        return;
+      }
+    }
+    executeAction(action);
   };
 
   const handleCancel = () => {
@@ -83,6 +110,39 @@ export function BookingActions({ booking, extendData, showCancel }: Props) {
     {extendOpen && extendData && (
       <ExtendStayModal booking={extendData} onClose={() => setExtendOpen(false)} />
     )}
+
+    {/* Early check-in / check-out warning dialog */}
+    {confirmWarn && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="bg-surface-elevated border border-amber-500/30 rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+              <LogIn className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">Early {confirmWarn.action === "checkin" ? "Check-In" : "Check-Out"}</p>
+              <p className="text-muted-foreground text-xs leading-relaxed">{confirmWarn.msg}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => setConfirmWarn(null)}
+              className="flex-1 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => { const a = confirmWarn.action; setConfirmWarn(null); executeAction(a); }}
+              disabled={isPending}
+              className="flex-1 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 text-sm font-semibold hover:bg-amber-500/30 disabled:opacity-50 transition-colors"
+            >
+              Yes, Proceed
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     <div className="card-luxury rounded-xl p-5 space-y-3">
       <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Actions</h3>
 

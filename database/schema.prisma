@@ -446,6 +446,9 @@ model Customer {
   specialRequests   String?
   notes             String?
 
+  // Loyalty rewards
+  freeNightCredits Int        @default(0)  // earned via 5 qualifying AC/premium stays
+
   // Flags
   isVIP           Boolean     @default(false)
   isBlacklisted   Boolean     @default(false)

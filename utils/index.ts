@@ -219,6 +219,31 @@ export function calculateItemMargin(selling: number, purchase: number): number {
   return Math.round(((selling - purchase) / selling) * 100);
 }
 
+// ─── Branch Color Helpers ─────────────────────────────────────
+
+const BRANCH_COLORS: Record<string, { badge: string; dot: string; border: string }> = {
+  "branch-chakwal": {
+    badge:  "bg-gold-500/15 text-gold-400 border-gold-500/30",
+    dot:    "bg-gold-400",
+    border: "border-gold-500/40",
+  },
+  "branch-madina": {
+    badge:  "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    dot:    "bg-emerald-400",
+    border: "border-emerald-500/40",
+  },
+};
+
+const BRANCH_COLOR_FALLBACK = {
+  badge:  "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  dot:    "bg-blue-400",
+  border: "border-blue-500/40",
+};
+
+export function getBranchColor(branchId: string) {
+  return BRANCH_COLORS[branchId] ?? BRANCH_COLOR_FALLBACK;
+}
+
 // ─── String Helpers ───────────────────────────────────────────
 
 export function slugify(text: string): string {

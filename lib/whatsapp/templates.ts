@@ -173,3 +173,17 @@ export async function sendAbandonedLeadFollowup(p: {
     [p.guestName],
   );
 }
+
+// Sent when a guest earns a free night via the loyalty programme (every 5 qualifying stays).
+// NOTE: Template "cgh_free_night_earned" requires Meta template approval before this will send.
+export async function sendFreeNightEarned(p: {
+  phone:     string;
+  guestName: string;
+  credits:   number;
+}) {
+  return sendTemplate(
+    p.phone,
+    "cgh_free_night_earned",
+    [p.guestName, String(p.credits)],
+  );
+}

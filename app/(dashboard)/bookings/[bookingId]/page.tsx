@@ -387,9 +387,11 @@ export default async function BookingDetailPage({ params, searchParams }: PagePr
           {/* Booking actions */}
           <BookingActions
             booking={{
-              id:     booking.id,
-              status: booking.status,
-              bookingRef: booking.bookingRef,
+              id:          booking.id,
+              status:      booking.status,
+              bookingRef:  booking.bookingRef,
+              checkInDate:  booking.checkInDate.toISOString(),
+              checkOutDate: booking.checkOutDate.toISOString(),
             }}
             extendData={{
               id:                   booking.id,

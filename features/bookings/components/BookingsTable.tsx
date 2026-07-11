@@ -19,7 +19,7 @@ import { Badge } from "@/components/shared";
 import {
   formatDate, formatPKR,
   BOOKING_STATUS_CONFIG, PAYMENT_STATUS_CONFIG,
-  ROOM_TYPE_CONFIG,
+  ROOM_TYPE_CONFIG, getBranchColor,
 } from "@/utils";
 import type { Booking } from "@/types";
 import { BookingStatus } from "@/types";
@@ -160,6 +160,7 @@ export function BookingsTable({ bookings, pagination }: Props) {
               {bookings.map((booking) => {
                 const statusCfg  = BOOKING_STATUS_CONFIG[booking.status];
                 const paymentCfg = PAYMENT_STATUS_CONFIG[booking.paymentStatus];
+                const branchColor = getBranchColor((booking as any).branchId ?? "");
 
                 return (
                   <tr key={booking.id} className="group">
@@ -198,8 +199,11 @@ export function BookingsTable({ bookings, pagination }: Props) {
                     </td>
 
                     {/* Branch */}
-                    <td className="text-sm text-muted-foreground">
-                      {booking.branch?.name ?? "—"}
+                    <td>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${branchColor.badge}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${branchColor.dot}`} />
+                        {booking.branch?.name ?? "—"}
+                      </span>
                     </td>
 
                     {/* Dates */}
