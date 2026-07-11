@@ -4,7 +4,7 @@ import {
   Users, BedDouble, MapPin, Snowflake, Wifi, Tv, Coffee,
   ChevronLeft, CheckCircle2, Mountain, CookingPot, Bath,
 } from "lucide-react";
-import { getPublicRoom, getRoomBookedDates, getGrandOpeningOffer } from "@/server/actions/public";
+import { getPublicRoom, getGrandOpeningOffer } from "@/server/actions/public";
 import { RoomGallery }           from "@/features/public/components/RoomGallery";
 import { AvailabilityCalendar }  from "@/features/public/components/AvailabilityCalendar";
 import { formatPKR }             from "@/utils";
@@ -46,10 +46,7 @@ export default async function RoomDetailPage({ params }: Props) {
   const room = await getPublicRoom(params.id);
   if (!room) notFound();
 
-  const [bookedDates, grandOpeningOffer] = await Promise.all([
-    getRoomBookedDates(params.id),
-    getGrandOpeningOffer(room.branchId),
-  ]);
+  const grandOpeningOffer = await getGrandOpeningOffer(room.branchId);
   const originalPrice   = Number(room.pricePerNight);
   const discountedPrice = grandOpeningOffer
     ? Math.round(originalPrice * (1 - Number(grandOpeningOffer.discountValue) / 100))
@@ -192,11 +189,7 @@ export default async function RoomDetailPage({ params }: Props) {
 
           {/* Right: calendar + book */}
           <div className="space-y-5">
-            <AvailabilityCalendar
-              roomId={room.id}
-              branchId={room.branchId}
-              bookedDates={bookedDates}
-            />
+            <AvailabilityCalendar roomId={room.id} />
 
             <Link
               href={bookUrl}

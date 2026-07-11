@@ -9,6 +9,9 @@ export const siteConfig = {
   phone:       "0334-7742767",
   phoneE164:   "+923347742767",
   whatsapp:    "923347742767",
+  // Zara — WhatsApp AI assistant (instant booking)
+  zaraPhone:   "0337-2699997",
+  zaraWhatsapp: "923372699997",
   email:       "chakwalguesthouse@gmail.com",
   currency:    "PKR",
   currencySymbol: "₨",

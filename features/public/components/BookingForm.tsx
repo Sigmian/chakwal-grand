@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -10,7 +10,7 @@ import {
   Loader2, AlertCircle, Search, Star, Home, Crown,
   Snowflake, Sunrise, Moon, Check, Tag, X, MapPin,
 } from "lucide-react";
-import { getAvailableRooms, createPublicBooking, lookupGuestByPhone, validatePromoCode } from "@/server/actions/public";
+import { getAvailableRooms, createPublicBooking, lookupGuestByPhone, validatePromoCode, saveAbandonedLead, markLeadFollowedUp } from "@/server/actions/public";
 import { useBranchContext } from "@/components/providers/BranchProvider";
 import { siteConfig } from "@/config/site";
 import { cn, formatPKR } from "@/utils";
@@ -105,6 +105,31 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
     discountAmount: number; discountLabel: string; offerName: string;
   } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
+
+  // Debounced abandoned-lead capture — fires 2 s after guest stops typing phone/name.
+  // Latest form state is read through a ref so the request always uses fresh
+  // dates/branch/room, not the values captured when phone/name last changed.
+  // The server action de-dupes per phone within a 4h window (see saveAbandonedLead)
+  // so multiple firings during one session collapse to a single lead row.
+  const leadStateRef = useRef({ guest, dates, selectedRoom });
+  leadStateRef.current = { guest, dates, selectedRoom };
+  useEffect(() => {
+    const digits = guest.phone.replace(/\D/g, "");
+    if (digits.length < 10) return;
+    const timer = setTimeout(() => {
+      const s = leadStateRef.current;
+      saveAbandonedLead({
+        phone:    s.guest.phone,
+        name:     s.guest.name    || undefined,
+        branchId: s.dates.branchId || undefined,
+        roomId:   s.selectedRoom?.id,
+        checkIn:  s.dates.checkIn  || undefined,
+        checkOut: s.dates.checkOut || undefined,
+      }).catch(() => {/* fire-and-forget */});
+    }, 2000);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guest.phone, guest.name]);
 
   const lookupGuest = async () => {
     if (!returningPhone.trim()) return;
@@ -230,6 +255,8 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
         structuredRequests:  hasStructured ? { ...structuredReqs, other: guest.notes || "" } : undefined,
       });
       if (res.success && res.ref) {
+        // Mark any pending abandoned leads for this phone as followed-up
+        markLeadFollowedUp(guest.phone).catch(() => {/* fire-and-forget */});
         router.push(`/booking-confirmation/${res.ref}`);
       } else {
         toast.error(res.error ?? "Booking failed. Please try again.");
@@ -268,6 +295,33 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
 
       {/* ─── Step 1: Search ─────────────────────────────────── */}
       {step === 1 && (
+        <>
+        {/* Prefer to book instantly? Zara + owner contact */}
+        <div className="rounded-2xl border border-gold-500/25 bg-gradient-to-br from-gold-500/10 via-surface-elevated to-emerald-500/5 p-5 mb-5">
+          <p className="text-sm font-semibold text-foreground mb-1">
+            Prefer to book instantly?
+          </p>
+          <p className="text-xs text-muted-foreground mb-4">
+            Chat with Zara — our AI assistant on WhatsApp — for an instant booking, or call the owner directly.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <a
+              href={`https://wa.me/${siteConfig.zaraWhatsapp}?text=${encodeURIComponent("السلام علیکم Zara! I want to book a room at Chakwal Guest House.")}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] text-sm font-semibold rounded-xl hover:bg-[#25D366]/25 transition-colors"
+            >
+              💬 Book Instantly via Zara ({siteConfig.zaraPhone})
+            </a>
+            <a
+              href={`tel:${siteConfig.phoneE164}`}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gold-500/10 border border-gold-500/30 text-gold-400 text-sm font-semibold rounded-xl hover:bg-gold-500/20 transition-colors"
+            >
+              📞 Call Owner ({siteConfig.phone})
+            </a>
+          </div>
+        </div>
+
         <div className="card-luxury rounded-2xl p-8 animate-fade-in">
           <h2 className="text-xl font-bold font-serif text-foreground mb-6">Find Available Rooms</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -365,6 +419,7 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
             </button>
           </div>
         </div>
+        </>
       )}
 
       {/* ─── Step 2: Choose Room ─────────────────────────────── */}

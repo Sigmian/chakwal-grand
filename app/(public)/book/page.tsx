@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: `${siteConfig.url}/book` },
   openGraph: {
     title:       "Book a Room | Chakwal Guest House",
-    description: "Reserve your room at Chakwal Guest House. Instant confirmation, free cancellation up to 24 hours.",
+    description: "Reserve your room at Chakwal Guest House. Fast WhatsApp confirmation, free cancellation up to 24 hours.",
     url:         `${siteConfig.url}/book`,
   },
 };
@@ -39,7 +39,7 @@ export default async function BookPage() {
           {[
             { Icon: CheckCircle2, label: "Free cancellation",    sub: "24h before check-in" },
             { Icon: Wallet,       label: "Pay on arrival",       sub: "No card required" },
-            { Icon: PhoneCall,    label: "Instant confirmation", sub: "Via call / WhatsApp" },
+            { Icon: PhoneCall,    label: "Fast confirmation",    sub: "WhatsApp within 2 hours" },
             { Icon: BadgePercent, label: "Best price",           sub: "Direct booking rate" },
           ].map(({ Icon, label, sub }) => (
             <div key={label} className="card-luxury rounded-xl p-3 text-center flex flex-col items-center">

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  CheckCircle2, MapPin, Phone, BedDouble,
+  MapPin, Phone, BedDouble,
   CalendarDays, Users, Clock, MessageSquare, Star,
 } from "lucide-react";
 import { getBookingByRef } from "@/server/actions/public";
@@ -41,6 +41,10 @@ export default async function BookingConfirmationPage({ params }: Props) {
   const checkInFmt  = booking.checkInDate.toLocaleDateString("en-PK",  { weekday: "long",  day: "numeric", month: "long", year: "numeric" });
   const checkOutFmt = booking.checkOutDate.toLocaleDateString("en-PK", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
 
+  // Guests only see receipt / calendar / cashback options once the booking is confirmed.
+  // Public bookings start as PENDING and are approved by staff.
+  const isConfirmed = booking.status !== "PENDING";
+
   const total    = Number(booking.totalAmount);
   const discount = Number(booking.discountAmount);
   const base     = Number(booking.baseAmount);
@@ -64,15 +68,35 @@ export default async function BookingConfirmationPage({ params }: Props) {
 
         {/* ── Header ── */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="w-20 h-20 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-10 h-10 text-green-400" />
+          <div className="w-20 h-20 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-10 h-10 text-amber-400" />
           </div>
           <h1 className="text-3xl font-bold font-serif text-foreground mb-2">
-            Booking Received!
+            Booking Received — Awaiting Confirmation
           </h1>
-          <p className="text-muted-foreground">
-            We&apos;ll call you within 30 minutes to confirm your stay.
+          <p className="text-muted-foreground max-w-md mx-auto">
+            You will receive a WhatsApp confirmation message once your booking is approved.
           </p>
+        </div>
+
+        {/* ── Awaiting-confirmation note ── */}
+        <div className="bg-amber-500/10 border border-amber-500/25 rounded-2xl p-5 mb-5">
+          <p className="text-amber-400 font-semibold text-sm mb-2 flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            What happens next?
+          </p>
+          <ul className="space-y-1.5 text-amber-400/90 text-xs leading-relaxed">
+            <li>• Our team will review your booking and confirm it shortly.</li>
+            <li>• You will receive a WhatsApp confirmation message once approved.</li>
+            <li>
+              • <span className="font-semibold">Not confirmed within 2 hours?</span>{" "}
+              Please contact us at{" "}
+              <a href={`tel:${siteConfig.phoneE164}`} className="underline font-bold text-amber-300 hover:text-amber-200">
+                {siteConfig.phone}
+              </a>
+              .
+            </li>
+          </ul>
         </div>
 
         {/* ── Booking Reference ── */}
@@ -91,10 +115,12 @@ export default async function BookingConfirmationPage({ params }: Props) {
           </div>
         </div>
 
-        {/* ── Countdown ── */}
-        <div className="mb-5">
-          <BookingCountdown checkInDate={checkInStr} />
-        </div>
+        {/* ── Countdown ── (only after confirmation) */}
+        {isConfirmed && (
+          <div className="mb-5">
+            <BookingCountdown checkInDate={checkInStr} />
+          </div>
+        )}
 
         {/* ── Room card ── */}
         <div className="card-luxury rounded-2xl overflow-hidden mb-5">
@@ -226,30 +252,34 @@ export default async function BookingConfirmationPage({ params }: Props) {
 
         {/* ── Action buttons ── */}
         <div className="flex flex-col sm:flex-row gap-3 mb-5">
-          <ReceiptDownload
-            bookingRef={booking.bookingRef}
-            guestName={customer.name}
-            guestPhone={customer.phone}
-            roomName={room.name}
-            roomNumber={room.number}
-            branchName={branch.name}
-            checkIn={checkInStr}
-            checkOut={checkOutStr}
-            nights={booking.nights}
-            adults={booking.adultCount}
-            children={booking.childCount}
-            pricePerNight={pricePer}
-            discountAmount={discount}
-            totalAmount={total}
-          />
-          <ICSDownload
-            bookingRef={booking.bookingRef}
-            roomName={room.name}
-            checkInDate={checkInStr}
-            checkOutDate={checkOutStr}
-            branchName={branch.name}
-            address={branchAddress}
-          />
+          {isConfirmed && (
+            <>
+              <ReceiptDownload
+                bookingRef={booking.bookingRef}
+                guestName={customer.name}
+                guestPhone={customer.phone}
+                roomName={room.name}
+                roomNumber={room.number}
+                branchName={branch.name}
+                checkIn={checkInStr}
+                checkOut={checkOutStr}
+                nights={booking.nights}
+                adults={booking.adultCount}
+                children={booking.childCount}
+                pricePerNight={pricePer}
+                discountAmount={discount}
+                totalAmount={total}
+              />
+              <ICSDownload
+                bookingRef={booking.bookingRef}
+                roomName={room.name}
+                checkInDate={checkInStr}
+                checkOutDate={checkOutStr}
+                branchName={branch.name}
+                address={branchAddress}
+              />
+            </>
+          )}
           <a
             href={`https://wa.me/${siteConfig.whatsapp}?text=${waMessage}`}
             target="_blank"
@@ -259,12 +289,13 @@ export default async function BookingConfirmationPage({ params }: Props) {
             <MessageSquare className="w-4 h-4" />
             WhatsApp Us
           </a>
-          {booking.shareToken && (
+          {isConfirmed && booking.shareToken && (
             <ShareBookingButton bookingRef={booking.bookingRef} shareToken={booking.shareToken} />
           )}
         </div>
 
-        {/* ── Review Card ── */}
+        {/* ── Review Card ── (only after booking is confirmed) */}
+        {isConfirmed && (
         <div className="relative overflow-hidden rounded-2xl mb-5 border border-gold-500/30 bg-gradient-to-br from-gold-500/10 via-surface-elevated to-amber-500/5 p-6">
           {/* decorative stars */}
           <div className="absolute top-3 right-4 flex gap-0.5 opacity-20">
@@ -319,8 +350,10 @@ export default async function BookingConfirmationPage({ params }: Props) {
             </div>
           </div>
         </div>
+        )}
 
-        {/* ── Guest Portal ── */}
+        {/* ── Guest Portal ── (only after booking is confirmed) */}
+        {isConfirmed && (
         <div className="bg-surface-elevated border border-gold-500/20 rounded-2xl p-5 mb-5 text-center">
           <p className="text-sm font-bold text-foreground mb-1">Track Orders & Your Stay</p>
           <p className="text-xs text-muted-foreground mb-4">
@@ -333,6 +366,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
             Open Guest Portal
           </Link>
         </div>
+        )}
 
         <div className="text-center">
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

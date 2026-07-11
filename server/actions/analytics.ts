@@ -361,6 +361,53 @@ export async function getRecentActivity(limit = 20, branchId?: string) {
   return logs;
 }
 
+// ---- REVENUE FORECAST (next 30 days) ----------------------------------
+export async function getRevenueForecast(branchId?: string) {
+  const user = await requirePermission("analytics:branch");
+  const scopedBranch = getScopedBranchId(user, branchId);
+  const branchFilter = scopedBranch ? { branchId: scopedBranch } : {};
+
+  const now = new Date();
+  const thirtyDaysLater = new Date(now.getTime() + 30 * 86_400_000);
+
+  // Get all confirmed/pending bookings in next 30 days
+  const bookings = await prisma.booking.findMany({
+    where: {
+      ...branchFilter,
+      status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] },
+      checkInDate: { gte: now, lte: thirtyDaysLater },
+    },
+    select: {
+      checkInDate: true,
+      totalAmount: true,
+      paidAmount: true,
+      nights: true,
+    },
+  });
+
+  // Group by week (week 1 = days 1-7, week 2 = 8-14, etc.)
+  const weeks = [
+    { label: "Week 1", days: "Days 1–7",   revenue: 0, bookings: 0, outstanding: 0 },
+    { label: "Week 2", days: "Days 8–14",  revenue: 0, bookings: 0, outstanding: 0 },
+    { label: "Week 3", days: "Days 15–21", revenue: 0, bookings: 0, outstanding: 0 },
+    { label: "Week 4", days: "Days 22–30", revenue: 0, bookings: 0, outstanding: 0 },
+  ];
+
+  for (const b of bookings) {
+    const daysAhead = Math.floor((b.checkInDate.getTime() - now.getTime()) / 86_400_000);
+    const weekIdx = daysAhead < 7 ? 0 : daysAhead < 14 ? 1 : daysAhead < 21 ? 2 : 3;
+    weeks[weekIdx].revenue += Number(b.totalAmount);
+    weeks[weekIdx].outstanding += Number(b.totalAmount) - Number(b.paidAmount);
+    weeks[weekIdx].bookings++;
+  }
+
+  const totalForecast   = weeks.reduce((s, w) => s + w.revenue, 0);
+  const totalOutstanding = weeks.reduce((s, w) => s + w.outstanding, 0);
+  const totalBookings   = weeks.reduce((s, w) => s + w.bookings, 0);
+
+  return { weeks, totalForecast, totalOutstanding, totalBookings };
+}
+
 // ---- TODAY'S SCHEDULE -------------------------------------------------
 export async function getTodaySchedule(branchId?: string) {
   const user         = await requirePermission("bookings:read");

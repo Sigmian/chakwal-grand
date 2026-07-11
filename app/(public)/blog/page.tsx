@@ -18,6 +18,27 @@ export const metadata: Metadata = {
 
 const BLOGS = [
   {
+    slug:    "things-to-do-chakwal",
+    title:   "10 Best Things to Do in Chakwal — Complete Travel Guide 2026",
+    excerpt: "Discover the best things to do in Chakwal — from exploring ancient Katas Raj Temples and boating at Kallar Kahar Lake to hiking Tilla Jogian and eating at local dhabas.",
+    date:    "2026-01-10",
+    tag:     "Activities",
+  },
+  {
+    slug:    "chakwal-guest-house-guide",
+    title:   "Best Guest House in Chakwal — Why Stay at Chakwal Guest House (CGH)",
+    excerpt: "Looking for the best guest house or hotel in Chakwal? This guide covers rooms, amenities, pricing, location, and how to book — with no advance payment required.",
+    date:    "2026-01-15",
+    tag:     "Accommodation",
+  },
+  {
+    slug:    "chakwal-from-islamabad",
+    title:   "Day Trip or Overnight Stay: Chakwal from Islamabad & Rawalpindi",
+    excerpt: "Chakwal is just 85 km (1.5 hours) from Islamabad. This guide covers the best route, what to see, sample itineraries, and why staying overnight beats a rushed day trip.",
+    date:    "2026-02-01",
+    tag:     "Day Trips",
+  },
+  {
     slug:    "places-to-visit-chakwal",
     title:   "Top 10 Places to Visit in Chakwal — Complete Tourist Guide 2025",
     excerpt: "Discover the most beautiful and historic places in Chakwal district — from Katas Raj Temples to Kallar Kahar Lake, Salt Range, and Choa Saidan Shah.",

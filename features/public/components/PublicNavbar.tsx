@@ -19,6 +19,7 @@ const NAV = [
   { label: "Contact",      href: "/contact"    },
   { label: "My Booking",   href: "/my-booking" },
   { label: "My Stay",      href: "/guest/login"},
+  { label: "My Account",   href: "/my-account" },
 ];
 
 export function PublicNavbar() {

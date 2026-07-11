@@ -21,7 +21,9 @@ import { siteConfig } from "@/config/site";
 
 // Vercel cron requests carry this header — reject anything else
 function isAuthorized(req: Request): boolean {
-  return req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false; // fail closed when secret is unset
+  return req.headers.get("authorization") === `Bearer ${secret}`;
 }
 
 function formatDate(d: Date): string {

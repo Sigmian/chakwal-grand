@@ -161,3 +161,15 @@ export async function sendWinback(p: {
     [p.guestName],
   );
 }
+
+// NOTE: Template "cgh_abandoned_lead" requires Meta template approval before this will send.
+export async function sendAbandonedLeadFollowup(p: {
+  phone:     string;
+  guestName: string;
+}) {
+  return sendTemplate(
+    p.phone,
+    "cgh_abandoned_lead",
+    [p.guestName],
+  );
+}

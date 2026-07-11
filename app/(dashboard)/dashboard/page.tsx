@@ -19,6 +19,7 @@ import {
   getTopRooms,
   getRecentActivity,
   getTodaySchedule,
+  getRevenueForecast,
 } from "@/server/actions/analytics";
 import {
   StatCard, SectionHeader, Badge, ProgressBar,
@@ -48,12 +49,13 @@ export default async function DashboardPage() {
   const canViewRooms     = hasPermission(user.role, "rooms:read");
 
   // Fetch data based on what the role can see
-  const [overview, chartData, topRooms, activity, schedule] = await Promise.all([
+  const [overview, chartData, topRooms, activity, schedule, forecast] = await Promise.all([
     canViewAnalytics ? getDashboardOverview(user.branchId)    : Promise.resolve(null),
     canViewAnalytics ? getRevenueChartData(user.branchId)     : Promise.resolve([]),
     canViewRooms     ? getTopRooms(user.branchId, 5)          : Promise.resolve([]),
     canViewAnalytics ? getRecentActivity(10)                  : Promise.resolve([]),
     canViewBookings  ? getTodaySchedule(user.branchId)        : Promise.resolve({ checkIns: [], checkOuts: [] }),
+    canViewAnalytics ? getRevenueForecast(user.branchId)      : Promise.resolve(null),
   ]);
 
   // Branch comparison only for super admin
@@ -151,6 +153,78 @@ export default async function DashboardPage() {
           icon={<Tag className="w-5 h-5 text-purple-400" />}
           iconBg="bg-purple-500/15"
         />
+      </div>
+      )}
+
+      {/* ── Revenue Forecast — Next 30 Days ── */}
+      {canViewAnalytics && forecast && forecast.totalBookings > 0 && (
+      <div className="card-luxury p-6">
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
+          </div>
+          <h2 className="font-bold text-foreground">Revenue Forecast — Next 30 Days</h2>
+        </div>
+
+        {/* Summary row */}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-5 pb-4 border-b border-border/50">
+          <div>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide mb-0.5">Total projected</p>
+            <p className="text-xl font-bold font-serif text-emerald-400">{formatPKR(forecast.totalForecast)}</p>
+          </div>
+          <div className="w-px h-8 bg-border/50 hidden sm:block" />
+          <div>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide mb-0.5">Outstanding</p>
+            <p className="text-xl font-bold font-serif text-amber-400">{formatPKR(forecast.totalOutstanding)}</p>
+          </div>
+          <div className="w-px h-8 bg-border/50 hidden sm:block" />
+          <div>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide mb-0.5">Bookings</p>
+            <p className="text-xl font-bold font-serif text-foreground">{forecast.totalBookings}</p>
+          </div>
+        </div>
+
+        {/* Week bars */}
+        {(() => {
+          const maxRev = Math.max(...forecast.weeks.map((w) => w.revenue), 1);
+          return (
+            <div className="space-y-3">
+              {forecast.weeks.map((week) => (
+                <div key={week.label} className="flex items-center gap-3">
+                  {/* Label */}
+                  <div className="w-16 flex-shrink-0">
+                    <p className="text-xs font-semibold text-foreground">{week.label}</p>
+                    <p className="text-2xs text-muted-foreground">{week.days}</p>
+                  </div>
+                  {/* Bar */}
+                  <div className="flex-1">
+                    <div className="h-5 bg-accent rounded-full overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all",
+                          week.bookings === 0
+                            ? "bg-accent"
+                            : week.outstanding > 0
+                            ? "bg-emerald-500/60"
+                            : "bg-emerald-500"
+                        )}
+                        style={{ width: week.revenue > 0 ? `${(week.revenue / maxRev) * 100}%` : "0%" }}
+                      />
+                    </div>
+                  </div>
+                  {/* Revenue + bookings */}
+                  <div className="w-36 flex-shrink-0 text-right">
+                    <span className="text-sm font-bold text-foreground">{formatPKRShort(week.revenue)}</span>
+                    <span className="text-2xs text-muted-foreground ml-1.5">
+                      {week.bookings} booking{week.bookings !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
       )}
 

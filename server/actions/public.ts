@@ -3,7 +3,6 @@
 import { headers } from "next/headers";
 import prisma from "@/lib/db/prisma";
 import { sendPushToBranch } from "@/lib/push/send";
-import { sendBookingConfirmed } from "@/lib/whatsapp/templates";
 import { siteConfig } from "@/config/site";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -49,6 +48,29 @@ export async function getRoomBookedDates(roomId: string): Promise<{ checkIn: str
   return bookings.map((b) => ({
     checkIn:  b.checkInDate.toISOString().split("T")[0],
     checkOut: b.checkOutDate.toISOString().split("T")[0],
+  }));
+}
+
+// Returns booked date ranges for a specific month — used by the two-month availability calendar
+export async function getRoomAvailability(roomId: string, year: number, month: number) {
+  const start = new Date(year, month - 1, 1);
+  const end   = new Date(year, month, 0, 23, 59, 59); // last moment of the month
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      roomId,
+      status: { in: ["CONFIRMED", "CHECKED_IN", "PENDING"] },
+      AND: [
+        { checkInDate:  { lte: end   } },
+        { checkOutDate: { gt:  start } },
+      ],
+    },
+    select: { checkInDate: true, checkOutDate: true },
+  });
+
+  return bookings.map((b) => ({
+    checkIn:  b.checkInDate.toISOString().slice(0, 10),
+    checkOut: b.checkOutDate.toISOString().slice(0, 10),
   }));
 }
 
@@ -521,19 +543,9 @@ export async function createPublicBooking(input: {
     data:  { url: "/dashboard/bookings" },
   }).catch(() => {/* ignore push errors */});
 
-  // Send WhatsApp booking confirmation template (non-blocking — never fails the booking)
-  sendBookingConfirmed({
-    phone:             cleanPhone,
-    guestName:         cleanName,
-    bookingRef:        ref,
-    roomName:          room.name,
-    branchName:        room.branch!.name,
-    checkIn:           ci.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
-    checkOut:          co.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }),
-    nights,
-    totalAmount,
-    estimatedArrival:  input.estimatedArrival || undefined,
-  }).catch((err) => console.error("[WhatsApp]", err));
+  // Note: WhatsApp confirmation is NOT sent here. Public bookings start as PENDING
+  // and the confirmation template only fires when the admin approves the booking
+  // (see `confirmBooking` in server/actions/bookings.ts).
 
   return { success: true, bookingId: booking.id, ref, shareToken, discountAmount };
 }
@@ -554,6 +566,54 @@ export async function lookupGuestByPhone(phone: string) {
   if (!customer) return { found: false as const };
   // Do NOT return CNIC in auto-fill — guests enter it manually for security
   return { found: true as const, name: customer.name, phone: customer.phone, email: customer.email ?? "", cnic: "" };
+}
+
+export async function saveAbandonedLead(data: {
+  phone:     string;
+  name?:     string;
+  branchId?: string;
+  roomId?:   string;
+  checkIn?:  string; // "YYYY-MM-DD"
+  checkOut?: string; // "YYYY-MM-DD"
+}): Promise<void> {
+  const phone = data.phone?.trim();
+  if (!phone) return;
+
+  // Per-IP throttle: prevents a script from flooding the AbandonedLead table
+  // and, via the hourly cron, spamming WhatsApp messages to arbitrary phones.
+  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
+  if (!rateLimit(`abandoned-lead:${ip}`, 20, 60 * 60 * 1000)) return;
+
+  // Dedup: if we already recorded a lead for this phone in the last 4 hours,
+  // update it in place instead of creating a duplicate row.
+  const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+  const recent = await prisma.abandonedLead.findFirst({
+    where: { phone, followedUp: false, createdAt: { gte: fourHoursAgo } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+
+  const payload = {
+    phone,
+    name:     data.name?.trim()     || null,
+    branchId: data.branchId?.trim() || null,
+    roomId:   data.roomId?.trim()   || null,
+    checkIn:  data.checkIn          || null,
+    checkOut: data.checkOut         || null,
+  };
+
+  if (recent) {
+    await prisma.abandonedLead.update({ where: { id: recent.id }, data: payload });
+  } else {
+    await prisma.abandonedLead.create({ data: payload });
+  }
+}
+
+export async function markLeadFollowedUp(phone: string): Promise<void> {
+  await prisma.abandonedLead.updateMany({
+    where: { phone, followedUp: false },
+    data:  { followedUp: true, followedUpAt: new Date() },
+  });
 }
 
 export async function lookupBooking(ref: string) {
