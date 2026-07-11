@@ -803,13 +803,12 @@ export async function getAISuggestions(branchId?: string) {
   const { start: lastStart, end: lastEnd }   = getPKTMonthPeriod(-1, now);
   const next7End   = new Date(now.getTime() + 7 * 86_400_000);
   const past30Start = new Date(now.getTime() - 30 * 86_400_000);
-  const past60Start = new Date(now.getTime() - 60 * 86_400_000);
 
   const [
     totalRooms, next7Bookings, thisRevenue, lastRevenue,
     pendingCount, lowStock, nearMilestone,
     thisExpenses, last6Expenses,
-    recentMaintenance, longAbsentCustomers,
+    recentMaintenance,
   ] = await Promise.all([
     prisma.room.count({ where: { isActive: true, ...branchFilter } }),
     prisma.booking.count({
@@ -823,7 +822,6 @@ export async function getAISuggestions(branchId?: string) {
     prisma.expense.aggregate({ where: { ...branchFilter, paidAt: { gte: thisStart, lte: thisEnd } }, _sum: { amount: true } }),
     prisma.expense.aggregate({ where: { ...branchFilter, paidAt: { gte: new Date(now.getTime() - 180 * 86_400_000), lte: lastEnd } }, _sum: { amount: true } }),
     prisma.maintenanceLog.count({ where: { createdAt: { gte: past30Start }, resolvedAt: null, room: branchFilter.branchId ? { branchId: branchFilter.branchId } : {} } }),
-    prisma.customer.count({ where: { companyId, totalVisits: { gte: 2 }, lastVisitAt: { lte: past60Start, gte: past60Start } } }),
   ]);
 
   const suggestions: { type: "warning" | "opportunity" | "info" | "action"; icon: string; title: string; body: string; priority: number }[] = [];

@@ -157,7 +157,8 @@ export function OccupancyHeatmapCalendar({ data }: { data: HeatmapDay[] }) {
   if (!data.length) return <ChartCard title="Occupancy Heatmap" icon={BedDouble}><EmptyState /></ChartCard>;
 
   // Pad first row so it aligns to Monday (weekday 0=Mon…6=Sun in our column headers)
-  const firstDate = new Date(data[0].date);
+  // Append T00:00:00 so "yyyy-MM-dd" parses as LOCAL midnight (not UTC) — keeps getDay() unambiguous
+  const firstDate = new Date(data[0].date + "T00:00:00");
   // getDay(): 0=Sun,1=Mon,…,6=Sat → convert to Mon=0
   const firstWeekday = (firstDate.getDay() + 6) % 7;
   const paddedNulls: (HeatmapDay | null)[] = Array(firstWeekday).fill(null);
@@ -553,7 +554,7 @@ export function GuestRetentionFunnelChart({ data }: { data: FunnelStage[] }) {
               <div
                 className="h-full rounded-xl flex items-center justify-end pr-3 transition-all duration-700"
                 style={{
-                  width:      `${Math.max(stage.pct, 3)}%`,
+                  width:      `${Math.min(100, Math.max(stage.pct, 3))}%`,
                   background: `linear-gradient(90deg, ${FUNNEL_COLORS[i]}99, ${FUNNEL_COLORS[i]})`,
                 }}
               >
@@ -650,12 +651,15 @@ export function BranchScorecardPanel({ data }: { data: BranchScore[] }) {
             {SCORE_METRICS.map(({ label, key, fmt, color, higherIsBetter }) => {
               const vals = data.map((b) => b[key as keyof BranchScore] as number);
               const best = higherIsBetter ? Math.max(...vals) : Math.min(...vals);
+              // Only crown a winner when exactly one branch holds the best value —
+              // avoids starring every branch on ties (e.g. company-wide complaint counts).
+              const bestIsUnique = vals.filter((v) => v === best).length === 1;
               return (
                 <tr key={key} className="hover:bg-accent/10 transition-colors group">
                   <td className="py-2.5 text-muted-foreground/70">{label}</td>
-                  {data.map((b, bi) => {
+                  {data.map((b) => {
                     const val    = b[key as keyof BranchScore] as number;
-                    const isBest = val === best && data.length > 1;
+                    const isBest = val === best && data.length > 1 && bestIsUnique;
                     return (
                       <td key={b.branchId} className="py-2.5 text-right font-bold" style={{ color: isBest ? color : "rgba(148,163,184,0.6)" }}>
                         {fmt(val)}
@@ -669,7 +673,7 @@ export function BranchScorecardPanel({ data }: { data: BranchScore[] }) {
           </tbody>
         </table>
       </div>
-      <p className="text-[10px] text-muted-foreground/50 mt-3">★ = top performer · For expenses & complaints, lower is better</p>
+      <p className="text-[10px] text-muted-foreground/50 mt-3">★ = top performer · Lower is better for expenses & complaints · Complaints are company-wide</p>
     </ChartCard>
   );
 }
