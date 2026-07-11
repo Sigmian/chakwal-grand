@@ -372,7 +372,15 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
 export async function executeAgentTool(
   toolName: string,
   input: Record<string, unknown>,
+  authedPhone?: string,
 ): Promise<unknown> {
+  // The authenticated sender phone comes from the signature-verified WhatsApp
+  // webhook (via runAgentLoop's sessionHint). Only treat it as an identity when
+  // it's a real phone — the web channel passes "web"/"unknown" and has none.
+  const authed = authedPhone && normalizePhone(authedPhone).length >= 10
+    ? normalizePhone(authedPhone)
+    : null;
+
   switch (toolName) {
     case "lookup_customer":        return lookupCustomerTool(input);
     case "log_complaint":          return logComplaintTool(input);
@@ -382,10 +390,12 @@ export async function executeAgentTool(
     case "validate_coupon":        return validateCouponTool(input);
     case "create_booking":         return createBookingTool(input);
     case "get_booking":            return getBookingTool(input);
-    case "cancel_booking":         return cancelBookingTool(input);
-    case "modify_booking_dates":   return modifyBookingDatesTool(input);
-    case "checkout_guest":         return checkoutGuestTool(input);
-    case "extend_stay":            return extendStayTool(input);
+    // Identity-sensitive mutations: bind to the authenticated sender, never the
+    // LLM-supplied guest_phone (which an attacker could set to a victim's number).
+    case "cancel_booking":         return cancelBookingTool(input, authed);
+    case "modify_booking_dates":   return modifyBookingDatesTool(input, authed);
+    case "checkout_guest":         return checkoutGuestTool(input, authed);
+    case "extend_stay":            return extendStayTool(input, authed);
     case "update_customer_memory": return updateCustomerMemoryTool(input);
     default:                       return { error: "Unknown tool: " + toolName };
   }
@@ -786,9 +796,8 @@ async function getBookingTool(input: Record<string, unknown>) {
   };
 }
 
-async function cancelBookingTool(input: Record<string, unknown>) {
-  const ref   = input.booking_ref as string;
-  const phone = input.guest_phone as string;
+async function cancelBookingTool(input: Record<string, unknown>, authedPhone?: string | null) {
+  const ref = input.booking_ref as string;
 
   const booking = await prisma.booking.findUnique({
     where:   { bookingRef: ref },
@@ -797,8 +806,9 @@ async function cancelBookingTool(input: Record<string, unknown>) {
 
   if (!booking) return { success: false, error: "Booking not found." };
 
-  if (normalizePhone(phone) !== normalizePhone(booking.customer.phone)) {
-    return { success: false, error: "Phone number does not match booking records. Cannot cancel." };
+  const identity = ownerIdentity(authedPhone, input);
+  if (!identity || identity !== normalizePhone(booking.customer.phone)) {
+    return { success: false, error: "This booking is registered to a different number, so I can't cancel it from here. Please message from the number on the booking or call 0334-7742767." };
   }
 
   if (booking.status === BookingStatus.CANCELLED) {
@@ -818,12 +828,16 @@ async function cancelBookingTool(input: Record<string, unknown>) {
 
 // ── Booking modification helpers ──────────────────────────────
 
-const verifyPhone = (input: string, stored: string) =>
-  normalizePhone(input) === normalizePhone(stored);
+// Resolve the phone used to prove ownership of a booking. Prefer the
+// authenticated WhatsApp sender (already normalized, from the signature-verified
+// webhook); fall back to the self-asserted guest_phone only for channels with no
+// authenticated identity (e.g. anonymous web chat). Returns "" if neither exists.
+function ownerIdentity(authedPhone: string | null | undefined, input: Record<string, unknown>): string {
+  return authedPhone || normalizePhone((input.guest_phone as string) || "");
+}
 
-async function modifyBookingDatesTool(input: Record<string, unknown>) {
+async function modifyBookingDatesTool(input: Record<string, unknown>, authedPhone?: string | null) {
   const ref       = input.booking_ref  as string;
-  const phone     = input.guest_phone  as string;
   const newCheckIn  = input.new_check_in  as string;
   const newCheckOut = input.new_check_out as string;
 
@@ -832,8 +846,9 @@ async function modifyBookingDatesTool(input: Record<string, unknown>) {
     include: { customer: { select: { phone: true } }, room: { select: { id: true, pricePerNight: true, name: true } } },
   });
   if (!booking) return { success: false, error: "Booking not found." };
-  if (!verifyPhone(phone, booking.customer.phone))
-    return { success: false, error: "Phone number does not match booking records." };
+  const identity = ownerIdentity(authedPhone, input);
+  if (!identity || identity !== normalizePhone(booking.customer.phone))
+    return { success: false, error: "This booking is registered to a different number, so I can't change it from here. Please message from the number on the booking or call 0334-7742767." };
   if ([BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT, BookingStatus.CANCELLED].includes(booking.status as BookingStatus))
     return { success: false, error: `Cannot modify a booking in ${booking.status} status.` };
 
@@ -885,17 +900,17 @@ async function modifyBookingDatesTool(input: Record<string, unknown>) {
   };
 }
 
-async function checkoutGuestTool(input: Record<string, unknown>) {
-  const ref   = input.booking_ref as string;
-  const phone = input.guest_phone as string;
+async function checkoutGuestTool(input: Record<string, unknown>, authedPhone?: string | null) {
+  const ref = input.booking_ref as string;
 
   const booking = await prisma.booking.findUnique({
     where:   { bookingRef: ref },
     include: { customer: { select: { phone: true, name: true } }, room: { select: { name: true } } },
   });
   if (!booking) return { success: false, error: "Booking not found." };
-  if (!verifyPhone(phone, booking.customer.phone))
-    return { success: false, error: "Phone number does not match booking records." };
+  const identity = ownerIdentity(authedPhone, input);
+  if (!identity || identity !== normalizePhone(booking.customer.phone))
+    return { success: false, error: "This booking is registered to a different number, so I can't check it out from here. Please message from the number on the booking or call 0334-7742767." };
   if (booking.status === BookingStatus.CHECKED_OUT)
     return { success: false, error: "Booking is already checked out." };
   if (booking.status === BookingStatus.CANCELLED)
@@ -915,9 +930,8 @@ async function checkoutGuestTool(input: Record<string, unknown>) {
   };
 }
 
-async function extendStayTool(input: Record<string, unknown>) {
+async function extendStayTool(input: Record<string, unknown>, authedPhone?: string | null) {
   const ref          = input.booking_ref  as string;
-  const phone        = input.guest_phone  as string;
   const extraNights  = Number(input.extra_nights ?? 0);
   if (extraNights < 1) return { success: false, error: "extra_nights must be 1 or more." };
 
@@ -926,8 +940,9 @@ async function extendStayTool(input: Record<string, unknown>) {
     include: { customer: { select: { phone: true } }, room: { select: { id: true, pricePerNight: true, name: true } } },
   });
   if (!booking) return { success: false, error: "Booking not found." };
-  if (!verifyPhone(phone, booking.customer.phone))
-    return { success: false, error: "Phone number does not match booking records." };
+  const identity = ownerIdentity(authedPhone, input);
+  if (!identity || identity !== normalizePhone(booking.customer.phone))
+    return { success: false, error: "This booking is registered to a different number, so I can't extend it from here. Please message from the number on the booking or call 0334-7742767." };
   if ([BookingStatus.CHECKED_OUT, BookingStatus.CANCELLED].includes(booking.status as BookingStatus))
     return { success: false, error: `Cannot extend a booking in ${booking.status} status.` };
 

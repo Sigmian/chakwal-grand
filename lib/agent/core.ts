@@ -501,6 +501,7 @@ export async function runAgentLoop(
         result = await executeAgentTool(
           block.name,
           block.input as Record<string, unknown>,
+          sessionHint, // authenticated sender phone (from the verified WhatsApp webhook)
         );
       } catch (err) {
         result = { error: "Tool failed — " + String(err) };
