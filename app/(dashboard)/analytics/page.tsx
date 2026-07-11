@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { SectionHeader } from "@/components/shared";
 import {
   getDailyRevenuePulse,
