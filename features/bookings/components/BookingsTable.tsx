@@ -104,6 +104,22 @@ export function BookingsTable({ bookings, pagination }: Props) {
   const [pending, startTransition] = useTransition();
 
   const handleAction = (id: string, action: string) => {
+    // Early check-in / check-out guard — mirrors BookingActions.tsx
+    if (action === "checkin" || action === "checkout") {
+      const bk = bookings.find((b) => b.id === id);
+      if (bk) {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const target  = new Date(action === "checkin" ? bk.checkInDate : bk.checkOutDate);
+        target.setHours(0, 0, 0, 0);
+        if (target > today) {
+          const days  = Math.round((target.getTime() - today.getTime()) / 86_400_000);
+          const label = action === "checkin" ? "check-in" : "check-out";
+          const fmt   = target.toLocaleDateString("en-PK", { weekday: "long", day: "numeric", month: "long" });
+          if (!window.confirm(`Guest ${label} date is ${fmt} (${days} day${days !== 1 ? "s" : ""} away).\n\nCheck ${action === "checkin" ? "in" : "out"} early?`)) return;
+        }
+      }
+    }
+
     startTransition(async () => {
       let result: { success: boolean; error?: string } | undefined;
 

@@ -117,7 +117,9 @@ export function BookingActions({ booking, extendData, showCancel }: Props) {
         <div className="bg-surface-elevated border border-amber-500/30 rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0">
-              <LogIn className="w-5 h-5 text-amber-400" />
+              {confirmWarn.action === "checkin"
+                ? <LogIn className="w-5 h-5 text-amber-400" />
+                : <LogOut className="w-5 h-5 text-amber-400" />}
             </div>
             <div>
               <p className="font-bold text-foreground text-sm mb-1">Early {confirmWarn.action === "checkin" ? "Check-In" : "Check-Out"}</p>

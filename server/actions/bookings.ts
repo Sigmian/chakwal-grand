@@ -462,39 +462,51 @@ export async function checkOutBooking(bookingId: string) {
     // ── Loyalty: free night reward ─────────────────────────────
     // A booking qualifies when it's a premium room (VIP, SUITE, DELUXE) or has
     // AC in amenities, AND the guest paid full price (no discount applied).
+    // IMPORTANT: AC_AMENITIES must stay in sync with the hasSome list in the
+    // count query below — both use exact case-insensitive matching.
+    const AC_AMENITIES = ["AC", "Air Conditioning", "A/C", "AC Room", "Air Conditioned"];
     const roomAmenities: string[] = (booking.room.amenities as string[]) ?? [];
-    const isPremiumType  = ["VIP", "SUITE", "DELUXE"].includes(booking.room.type);
-    const hasAC          = roomAmenities.some((a) => a.toLowerCase().includes("ac") || a.toLowerCase().includes("air"));
-    const noDiscount     = Number(booking.discountAmount) === 0;
+    const isPremiumType = ["VIP", "SUITE", "DELUXE"].includes(booking.room.type);
+    const hasAC         = roomAmenities.some(
+      (a) => AC_AMENITIES.some((ac) => a.toLowerCase() === ac.toLowerCase()),
+    );
+    const noDiscount    = Number(booking.discountAmount) === 0;
 
     if ((isPremiumType || hasAC) && noDiscount) {
-      // Count all past qualifying CHECKED_OUT stays for this customer (including this one)
-      const qualifyingCount = await prisma.booking.count({
-        where: {
-          customerId: booking.customerId,
-          status:     BookingStatus.CHECKED_OUT,
-          discountAmount: 0,
-          room: {
-            OR: [
-              { type: { in: ["VIP", "SUITE", "DELUXE"] } },
-              { amenities: { hasSome: ["AC", "Air Conditioning", "A/C", "AC Room"] } },
-            ],
+      // Wrap count + conditional update in a Serializable transaction so two
+      // concurrent checkouts for the same customer can't both read the same
+      // qualifyingCount and award a double credit.
+      const earnedCredit = await prisma.$transaction(async (tx) => {
+        const qualifyingCount = await tx.booking.count({
+          where: {
+            customerId: booking.customerId,
+            status:     BookingStatus.CHECKED_OUT,
+            discountAmount: 0,
+            room: {
+              OR: [
+                { type: { in: ["VIP", "SUITE", "DELUXE"] } },
+                { amenities: { hasSome: AC_AMENITIES } },
+              ],
+            },
           },
-        },
-      });
-
-      // Award one credit on each multiple of 5 (5th, 10th, 15th... stay)
-      if (qualifyingCount > 0 && qualifyingCount % 5 === 0) {
-        const updatedCustomer = await prisma.customer.update({
-          where: { id: booking.customerId },
-          data:  { freeNightCredits: { increment: 1 } },
-          select: { freeNightCredits: true, name: true, phone: true },
         });
 
+        // Award one credit on each multiple of 5 (5th, 10th, 15th... stay)
+        if (qualifyingCount > 0 && qualifyingCount % 5 === 0) {
+          return tx.customer.update({
+            where:  { id: booking.customerId },
+            data:   { freeNightCredits: { increment: 1 } },
+            select: { freeNightCredits: true },
+          });
+        }
+        return null;
+      }, { isolationLevel: "Serializable" });
+
+      if (earnedCredit) {
         sendFreeNightEarned({
           phone:     booking.customer.phone,
           guestName: booking.customer.name,
-          credits:   updatedCustomer.freeNightCredits,
+          credits:   earnedCredit.freeNightCredits,
         }).catch((e) => console.error("[FreeNight] WhatsApp notify failed:", e));
       }
     }
