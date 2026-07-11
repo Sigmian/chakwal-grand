@@ -54,12 +54,16 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PR
 
     const orderTotal = Number(order.totalAmount);
 
+    let cancelled = false;
     await prisma.$transaction(async (tx) => {
-      // Mark order cancelled
-      await tx.inRoomOrder.update({
-        where: { id: orderId },
+      // Atomically claim the cancellation so a staff cancel racing a guest cancel
+      // (or a double-click) can't restore stock / reverse charges twice.
+      const claim = await tx.inRoomOrder.updateMany({
+        where: { id: orderId, status: { in: ["PENDING", "PREPARING"] } },
         data:  { status: "CANCELLED" },
       });
+      if (claim.count === 0) return; // already cancelled by a concurrent request
+      cancelled = true;
 
       // Reverse the charge from the booking
       await tx.booking.update({
@@ -70,21 +74,24 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PR
         },
       });
 
-      // Restore stock for each item
+      // Restore stock for each item (atomic increment)
       for (const item of order.items) {
-        const inv = await tx.inventoryItem.findUnique({ where: { id: item.inventoryItemId } });
-        if (!inv) continue;
-        const newStock = inv.currentStock + item.quantity;
         await tx.inventoryItem.update({
           where: { id: item.inventoryItemId },
-          data:  { currentStock: newStock },
+          data:  { currentStock: { increment: item.quantity } },
         });
+        const updated = await tx.inventoryItem.findUnique({
+          where:  { id: item.inventoryItemId },
+          select: { currentStock: true },
+        });
+        if (!updated) continue;
+        const newStock = updated.currentStock;
         await tx.stockMovement.create({
           data: {
             inventoryItemId: item.inventoryItemId,
             type:            "ADJUSTMENT",
             quantity:        item.quantity,
-            previousStock:   inv.currentStock,
+            previousStock:   newStock - item.quantity,
             newStock,
             reference:       orderId,
             notes:           `Cancelled room order (staff) — order #${orderId.slice(-6)}`,
@@ -92,6 +99,8 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PR
         });
       }
     });
+
+    if (!cancelled) return { success: false, error: "Order is no longer pending." };
   } else {
     await prisma.inRoomOrder.update({
       where: { id: orderId },

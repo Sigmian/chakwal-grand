@@ -409,10 +409,12 @@ export async function checkOutBooking(bookingId: string) {
       return { success: false, error: "Guest must be checked in first" };
     }
 
-    // Calculate total extra charges from attached POS sales
-    const extraCharges = booking.salesAttached.reduce(
-      (sum, sale) => sum + Number(sale.totalAmount), 0
-    );
+    // Use the running extraCharges as the source of truth. Both in-room canteen
+    // orders (placeRoomOrder) and room-attached POS sales (createSale) increment
+    // booking.extraCharges when created and decrement it on cancel, so it already
+    // reflects the full extras bill. Recomputing from salesAttached alone would
+    // silently DROP every in-room canteen order → lost revenue at checkout.
+    const extraCharges = Number(booking.extraCharges);
 
     const newTotal = calculateBookingTotal({
       baseAmount:    Number(booking.baseAmount),

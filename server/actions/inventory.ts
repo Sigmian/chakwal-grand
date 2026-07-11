@@ -364,24 +364,27 @@ export async function createSale(rawInput: CreateSaleInput) {
         include: { lineItems: true },
       });
 
-      // Deduct stock for each item
+      // Deduct stock atomically — the conditional updateMany only decrements when
+      // enough stock remains, so concurrent sales can't oversell below zero.
       for (const lineItem of lineItems) {
-        const item = inventoryItems.find(
-          (i) => i?.id === lineItem.inventoryItemId
-        )!;
-        const newStock = item.currentStock - lineItem.quantity;
-
-        await tx.inventoryItem.update({
-          where: { id: lineItem.inventoryItemId },
-          data:  { currentStock: newStock },
+        const dec = await tx.inventoryItem.updateMany({
+          where: { id: lineItem.inventoryItemId, currentStock: { gte: lineItem.quantity } },
+          data:  { currentStock: { decrement: lineItem.quantity } },
         });
+        if (dec.count === 0) throw new Error("INSUFFICIENT_STOCK");
+
+        const updated = await tx.inventoryItem.findUnique({
+          where:  { id: lineItem.inventoryItemId },
+          select: { currentStock: true },
+        });
+        const newStock = updated!.currentStock;
 
         await tx.stockMovement.create({
           data: {
             inventoryItemId: lineItem.inventoryItemId,
             type:            "SALE",
             quantity:        -lineItem.quantity,
-            previousStock:   item.currentStock,
+            previousStock:   newStock + lineItem.quantity,
             newStock,
             reference:       newSale.id,
             createdById:     user.id,
@@ -425,6 +428,9 @@ export async function createSale(rawInput: CreateSaleInput) {
 
     return { success: true, data: sale };
   } catch (error) {
+    if ((error as Error)?.message === "INSUFFICIENT_STOCK") {
+      return { success: false, error: "Insufficient stock — another sale may have just used the last units. Please refresh and retry." };
+    }
     console.error("[createSale]", error);
     return { success: false, error: "Failed to process sale" };
   }

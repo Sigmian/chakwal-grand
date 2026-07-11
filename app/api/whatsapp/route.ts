@@ -6,6 +6,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { processWhatsAppMessage } from "@/lib/agent/whatsapp-agent";
 import { runGroupAgent } from "@/lib/agent/group-agent";
 import { checkRateLimit } from "@/lib/agent/rate-limiter";
@@ -45,11 +46,38 @@ const pendingTimers = new Map<string, ReturnType<typeof setTimeout>>(); // phone
 // Meta retries within ~30 seconds, so 5-minute memory is sufficient.
 setInterval(() => { processedIds.clear(); }, 5 * 60 * 1000);
 
+// ── Verify Meta's HMAC signature over the RAW request body ────
+// Without this, anyone who knows the URL can POST a fake inbound message with an
+// arbitrary `msg.from`, driving the agent as any guest. `msg.from` is only
+// trustworthy once this passes.
+function verifyMetaSignature(rawBody: string, signature: string | null): boolean {
+  const secret = clean(process.env.WHATSAPP_APP_SECRET);
+  if (!secret) {
+    // Not configured — we cannot verify. Warn loudly and allow (so a live bot
+    // isn't taken offline), but WHATSAPP_APP_SECRET MUST be set in production.
+    console.warn("[WhatsApp] ⚠️ WHATSAPP_APP_SECRET not set — inbound webhook is NOT signature-verified. Set it in Vercel to secure the agent.");
+    return true;
+  }
+  if (!signature) return false;
+  const expected = "sha256=" + crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 // ── Incoming message handler ──────────────────────────────────
 export async function POST(req: NextRequest) {
+  // Read the raw body first — HMAC must be computed over the exact bytes Meta signed.
+  const rawBody = await req.text();
+
+  if (!verifyMetaSignature(rawBody, req.headers.get("x-hub-signature-256"))) {
+    console.warn("[WhatsApp] Rejected inbound webhook — invalid signature");
+    return NextResponse.json({ status: "ok" }); // 200 so Meta won't retry, but process nothing
+  }
+
   let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = JSON.parse(rawBody);
   } catch (err) {
     console.error("[WhatsApp] JSON parse error:", err);
     return NextResponse.json({ status: "ok" }); // always 200 to Meta

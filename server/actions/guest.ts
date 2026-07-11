@@ -273,6 +273,15 @@ export async function placeRoomOrder(
 
   if (!cartItems.length) return { success: false, error: "Your cart is empty." };
 
+  // Validate quantities are positive integers — a negative/zero/fractional
+  // quantity would otherwise pass the stock check and DECREMENT the bill while
+  // INFLATING stock (client-supplied, so never trust it).
+  for (const ci of cartItems) {
+    if (!Number.isInteger(ci.quantity) || ci.quantity < 1 || ci.quantity > 99) {
+      return { success: false, error: "Invalid item quantity." };
+    }
+  }
+
   // Fetch inventory items for validation
   const itemIds = cartItems.map((c) => c.inventoryItemId);
   const invItems = await prisma.inventoryItem.findMany({
@@ -305,56 +314,70 @@ export async function placeRoomOrder(
 
   const orderTotal = orderItems.reduce((s, i) => s + i.totalPrice, 0);
 
-  // Transactional: create order + deduct stock + update booking extraCharges
-  const order = await prisma.$transaction(async (tx) => {
-    const newOrder = await tx.inRoomOrder.create({
-      data: {
-        bookingId:   booking.id,
-        status:      "PENDING",
-        totalAmount: orderTotal,
-        notes:       notes || null,
-        items: {
-          create: orderItems.map((i) => ({
-            inventoryItemId: i.inventoryItemId,
-            productName:     i.productName,
-            quantity:        i.quantity,
-            unitPrice:       i.unitPrice,
-            totalPrice:      i.totalPrice,
-          })),
-        },
-      },
-      include: { items: true },
-    });
-
-    // Deduct stock for each item
-    for (const ci of cartItems) {
-      const inv = invItems.find((i) => i.id === ci.inventoryItemId)!;
-      const newStock = inv.currentStock - ci.quantity;
-      await tx.inventoryItem.update({
-        where: { id: ci.inventoryItemId },
-        data:  { currentStock: newStock },
-      });
-      await tx.stockMovement.create({
+  // Transactional: create order + deduct stock + update booking extraCharges.
+  let order;
+  try {
+    order = await prisma.$transaction(async (tx) => {
+      const newOrder = await tx.inRoomOrder.create({
         data: {
-          inventoryItemId: ci.inventoryItemId,
-          type:            "SALE",
-          quantity:        -ci.quantity,
-          previousStock:   inv.currentStock,
-          newStock,
-          reference:       newOrder.id,
-          notes:           `Room order #${newOrder.id.slice(-6)} — Room ${booking.room.number}`,
+          bookingId:   booking.id,
+          status:      "PENDING",
+          totalAmount: orderTotal,
+          notes:       notes || null,
+          items: {
+            create: orderItems.map((i) => ({
+              inventoryItemId: i.inventoryItemId,
+              productName:     i.productName,
+              quantity:        i.quantity,
+              unitPrice:       i.unitPrice,
+              totalPrice:      i.totalPrice,
+            })),
+          },
         },
+        include: { items: true },
       });
-    }
 
-    // Add to booking extraCharges immediately (bill on order placed)
-    await tx.booking.update({
-      where: { id: booking.id },
-      data:  { extraCharges: { increment: orderTotal }, totalAmount: { increment: orderTotal } },
+      // Deduct stock atomically: the conditional updateMany only decrements when
+      // enough stock remains, so concurrent orders can't oversell below zero.
+      for (const ci of cartItems) {
+        const dec = await tx.inventoryItem.updateMany({
+          where: { id: ci.inventoryItemId, currentStock: { gte: ci.quantity } },
+          data:  { currentStock: { decrement: ci.quantity } },
+        });
+        if (dec.count === 0) throw new Error("INSUFFICIENT_STOCK");
+
+        const updated = await tx.inventoryItem.findUnique({
+          where:  { id: ci.inventoryItemId },
+          select: { currentStock: true },
+        });
+        const newStock = updated!.currentStock;
+        await tx.stockMovement.create({
+          data: {
+            inventoryItemId: ci.inventoryItemId,
+            type:            "SALE",
+            quantity:        -ci.quantity,
+            previousStock:   newStock + ci.quantity,
+            newStock,
+            reference:       newOrder.id,
+            notes:           `Room order #${newOrder.id.slice(-6)} — Room ${booking.room.number}`,
+          },
+        });
+      }
+
+      // Add to booking extraCharges immediately (bill on order placed)
+      await tx.booking.update({
+        where: { id: booking.id },
+        data:  { extraCharges: { increment: orderTotal }, totalAmount: { increment: orderTotal } },
+      });
+
+      return newOrder;
     });
-
-    return newOrder;
-  });
+  } catch (err) {
+    if ((err as Error)?.message === "INSUFFICIENT_STOCK") {
+      return { success: false, error: "Sorry, one of your items just went out of stock. Please review your cart." };
+    }
+    throw err;
+  }
 
   // Notify staff via push (non-blocking)
   const itemLines = orderItems
@@ -432,24 +455,35 @@ export async function cancelGuestOrder(orderId: string) {
 
   const orderTotal = Number(order.totalAmount);
 
+  let cancelled = false;
   await prisma.$transaction(async (tx) => {
-    await tx.inRoomOrder.update({
-      where: { id: orderId },
+    // Atomically claim the cancellation: only one caller can flip PENDING→CANCELLED,
+    // so concurrent cancels can't each restore stock / reverse charges twice.
+    const claim = await tx.inRoomOrder.updateMany({
+      where: { id: orderId, status: "PENDING" },
       data:  { status: "CANCELLED" },
     });
+    if (claim.count === 0) return; // already cancelled by a concurrent request
+    cancelled = true;
 
-    // Restore stock
+    // Restore stock (atomic increment)
     for (const item of order.items) {
-      const inv = await tx.inventoryItem.findUnique({ where: { id: item.inventoryItemId } });
-      if (!inv) continue;
-      const newStock = inv.currentStock + item.quantity;
-      await tx.inventoryItem.update({ where: { id: item.inventoryItemId }, data: { currentStock: newStock } });
+      await tx.inventoryItem.update({
+        where: { id: item.inventoryItemId },
+        data:  { currentStock: { increment: item.quantity } },
+      });
+      const updated = await tx.inventoryItem.findUnique({
+        where:  { id: item.inventoryItemId },
+        select: { currentStock: true },
+      });
+      if (!updated) continue;
+      const newStock = updated.currentStock;
       await tx.stockMovement.create({
         data: {
           inventoryItemId: item.inventoryItemId,
           type:            "ADJUSTMENT",
           quantity:        item.quantity,
-          previousStock:   inv.currentStock,
+          previousStock:   newStock - item.quantity,
           newStock,
           reference:       orderId,
           notes:           `Cancelled room order — Room ${session.booking.room.number}`,
@@ -464,6 +498,7 @@ export async function cancelGuestOrder(orderId: string) {
     });
   });
 
+  if (!cancelled) return { success: false, error: "Order is no longer pending." };
   return { success: true };
 }
 
