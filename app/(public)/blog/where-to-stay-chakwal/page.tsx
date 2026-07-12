@@ -282,7 +282,7 @@ export default function WhereToStayPage() {
                   "Confirm your booking via WhatsApp after booking online to ensure room availability and get the exact address.",
                   "For groups of 5 or more, call directly to ask about group rates and special room arrangements.",
                   "If visiting Katas Raj or Kallar Kahar, book at the Chakwal city branch for the most convenient access to both sites.",
-                  "Keep PKR cash handy — most accommodation in Chakwal is cash-only. The nearest ATM is at Habib Bank, 5 min from the guest house.",
+                  "Confirm the accepted payment method before arrival and use a current map if you need an ATM.",
                 ].map((tip, i) => (
                   <li key={i} className="flex items-start gap-3 card-luxury rounded-xl p-4 list-none">
                     <span className="text-gold-400 font-bold flex-shrink-0 text-sm">{String(i+1).padStart(2, "0")}</span>
@@ -312,9 +312,10 @@ export default function WhereToStayPage() {
             {/* Final CTA */}
             <section className="card-luxury rounded-2xl p-8 text-center border border-gold-500/20">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Book Your Stay in Chakwal Today</h2>
-              <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Compare current rooms at Chakwal Guest House, review the selected branch and terms, and call if an essential requirement needs confirmation.
-              </p>
+               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
+                 Compare current rooms at Chakwal Guest House, review the selected branch and terms, and call if an essential requirement needs confirmation.
+               </p>
+               <p className="text-sm mb-6"><Link href="/blog/top-hotels-guest-houses-chakwal" className="text-gold-400 font-semibold hover:underline">Compare five publicly listed Chakwal accommodation options</Link></p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
                   Check Current Availability <ArrowRight className="w-4 h-4" />

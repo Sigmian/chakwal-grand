@@ -376,12 +376,13 @@ export default function ChakwalGuestHouseGuidePage() {
             {/* CTA */}
             <section className="card-luxury rounded-2xl p-8 text-center border border-gold-500/20">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Ready to Book Your Stay in Chakwal?</h2>
-              <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Compare current rooms and prices, then review the selected branch, facilities and booking terms before confirming.
-              </p>
+               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
+                 Compare current rooms and prices, then review the selected branch, facilities and booking terms before confirming.
+               </p>
+               <p className="text-sm mb-6"><Link href="/blog/top-hotels-guest-houses-chakwal" className="text-gold-400 font-semibold hover:underline">See the transparent Top 5 Chakwal accommodation guide</Link></p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all text-sm">
-                  Book Now — It&apos;s Free <ArrowRight className="w-4 h-4" />
+                  Check Current Availability <ArrowRight className="w-4 h-4" />
                 </Link>
                 <a href={`tel:${siteConfig.phoneE164}`} className="inline-flex items-center gap-2 px-6 py-3 border border-gold-500/30 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 transition-colors text-sm">
                   <Phone className="w-4 h-4" /> {siteConfig.phone}

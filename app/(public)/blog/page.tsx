@@ -18,6 +18,13 @@ export const metadata: Metadata = {
 
 const BLOGS = [
   {
+    slug:    "top-hotels-guest-houses-chakwal",
+    title:   "Top 5 Hotels & Guest Houses in Chakwal — 2026 Guide",
+    excerpt: "A transparent, source-linked comparison of five real accommodation options in Chakwal, plus the checks to make before booking.",
+    date:    "2026-07-12",
+    tag:     "Accommodation",
+  },
+  {
     slug:    "things-to-do-chakwal",
     title:   "10 Best Things to Do in Chakwal — Complete Travel Guide 2026",
     excerpt: "Discover the best things to do in Chakwal — from exploring ancient Katas Raj Temples and boating at Kallar Kahar Lake to hiking Tilla Jogian and eating at local dhabas.",

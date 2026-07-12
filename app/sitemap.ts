@@ -26,5 +26,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/blog/chakwal-travel-guide`,                    lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/blog/katas-raj-temples-visitor-guide`,         lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/blog/where-to-stay-chakwal`,                   lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/blog/top-hotels-guest-houses-chakwal`,         lastModified: NOW, changeFrequency: "monthly", priority: 0.9 },
   ];
 }

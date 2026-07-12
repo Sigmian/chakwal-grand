@@ -28,41 +28,43 @@ export function StatCard({
   if (loading) return <StatCardSkeleton />;
 
   return (
-    <div className={cn("card-luxury card-lift p-5 group relative overflow-hidden", className)}>
+    <div className={cn("card-luxury card-lift p-4 sm:p-5 group relative overflow-hidden", className)}>
       {/* Decorative corner glow — brightens on hover */}
       <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-gold-500/[0.05] blur-2xl pointer-events-none transition-colors duration-300 group-hover:bg-gold-500/[0.09]" />
 
-      <div className="flex items-start justify-between gap-4 relative">
-        <div className="flex-1 min-w-0">
-          <p className="text-2xs sm:text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+      <div className="relative">
+        {/* Title + icon share the top row so the value gets full card width */}
+        <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+          <p className="text-2xs sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground pt-1 min-w-0">
             {title}
           </p>
-          <p className="text-2xl sm:text-[1.7rem] font-bold text-foreground font-serif truncate leading-tight">{value}</p>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground mt-1.5 truncate">{subtitle}</p>
-          )}
-          {trend && (
-            <div className={cn(
-              "inline-flex items-center gap-1 mt-2.5 text-2xs font-bold px-2 py-0.5 rounded-full border",
-              trend.value > 0 ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-              : trend.value < 0 ? "text-red-400 bg-red-500/10 border-red-500/20"
-              : "text-muted-foreground bg-accent/50 border-border"
-            )}>
-              {trend.value > 0 ? <TrendingUp className="w-3 h-3" /> :
-               trend.value < 0 ? <TrendingDown className="w-3 h-3" /> :
-               <Minus className="w-3 h-3" />}
-              <span>
-                {trend.value > 0 ? "+" : ""}{trend.value}% {trend.label}
-              </span>
-            </div>
-          )}
+          <div className={cn(
+            "w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3",
+            iconBg
+          )}>
+            {icon}
+          </div>
         </div>
-        <div className={cn(
-          "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3",
-          iconBg
-        )}>
-          {icon}
-        </div>
+
+        <p className="text-xl sm:text-2xl lg:text-[1.7rem] font-bold text-foreground font-serif truncate leading-tight">{value}</p>
+        {subtitle && (
+          <p className="text-2xs sm:text-xs text-muted-foreground mt-1 sm:mt-1.5 truncate">{subtitle}</p>
+        )}
+        {trend && (
+          <div className={cn(
+            "inline-flex items-center gap-1 mt-2 sm:mt-2.5 text-2xs font-bold px-2 py-0.5 rounded-full border",
+            trend.value > 0 ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+            : trend.value < 0 ? "text-red-400 bg-red-500/10 border-red-500/20"
+            : "text-muted-foreground bg-accent/50 border-border"
+          )}>
+            {trend.value > 0 ? <TrendingUp className="w-3 h-3" /> :
+             trend.value < 0 ? <TrendingDown className="w-3 h-3" /> :
+             <Minus className="w-3 h-3" />}
+            <span className="truncate">
+              {trend.value > 0 ? "+" : ""}{trend.value}% {trend.label}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

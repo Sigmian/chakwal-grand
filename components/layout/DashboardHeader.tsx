@@ -114,7 +114,7 @@ export function DashboardHeader({ user }: Props) {
       {/* Gold hairline under the header */}
       <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-gold-500/25 to-transparent pointer-events-none" />
       {/* ── Breadcrumbs — offset on mobile to clear hamburger button ── */}
-      <nav className="flex items-center gap-1.5 text-sm min-w-0 pl-10 md:pl-0">
+      <nav className="flex items-center gap-1.5 text-sm min-w-0 pl-12 md:pl-0">
         {segments.map((seg, idx) => (
           <span key={idx} className="flex items-center gap-1.5 min-w-0">
             {idx > 0 && (
