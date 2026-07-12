@@ -47,7 +47,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-bold text-foreground mb-3">4. Cancellation Policy</h2>
             <ul className="list-disc pl-5 space-y-1 text-sm">
-              <li>Free cancellation up to 24 hours before your check-in date.</li>
+              <li>The cancellation terms shown on your booking confirmation apply to that reservation. Contact us before cancelling if the terms are unclear.</li>
               <li>Late cancellations or no-shows may be subject to a one-night charge at management&apos;s discretion.</li>
               <li>To cancel, call or WhatsApp us at {siteConfig.phone}.</li>
             </ul>

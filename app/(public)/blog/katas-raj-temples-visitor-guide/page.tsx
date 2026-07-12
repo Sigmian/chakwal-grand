@@ -46,7 +46,7 @@ const FAQ_SCHEMA = {
     { "@type": "Question", "name": "How far is Katas Raj from Rawalpindi/Islamabad?", "acceptedAnswer": { "@type": "Answer", "text": "Katas Raj is approximately 120–130 km from Rawalpindi and Islamabad. The journey takes about 2 hours via the M-2 motorway and Kallar Kahar interchange." } },
     { "@type": "Question", "name": "What is the best time to visit Katas Raj Temples?", "acceptedAnswer": { "@type": "Answer", "text": "The best time to visit is October to March when the weather is cool and pleasant. Visit early morning (7–9 AM) for the best photography light and fewer crowds." } },
     { "@type": "Question", "name": "How old are the Katas Raj Temples?", "acceptedAnswer": { "@type": "Answer", "text": "The Katas Raj Temple complex dates back to the 7th–10th centuries CE during the Hindu Shahi period, though some structures have origins going back 2,500–5,000 years. The site is mentioned in the ancient Hindu epic Mahabharata." } },
-    { "@type": "Question", "name": "Where to stay near Katas Raj Temples?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House in Chakwal city is the most convenient accommodation for visiting Katas Raj, located just 40 km away. Rooms start from PKR 2,000/night." } },
+    { "@type": "Question", "name": "Where can I compare accommodation for a Katas Raj visit?", "acceptedAnswer": { "@type": "Answer", "text": "Compare current Chakwal accommodation using live map routes, room listings and booking terms. Do not rely on a fixed article distance or price." } },
     { "@type": "Question", "name": "Is Katas Raj open all week?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, Katas Raj Temples are open every day of the week from sunrise to sunset. There are no fixed closing days." } },
   ],
 };
@@ -366,13 +366,13 @@ export default function KatasRajPage() {
                     <p className="text-xs text-muted-foreground">Near District Courts, Talagang Road, Chakwal</p>
                     <div className="flex items-center gap-1 mt-1">
                       {[1,2,3,4,5].map(i => <Star key={i} className="w-3 h-3 text-gold-400 fill-gold-400" />)}
-                      <span className="text-xs text-muted-foreground ml-1">5.0 — 20 Google Reviews</span>
+                      <span className="text-xs text-muted-foreground ml-1">Check current verified reviews</span>
                     </div>
                   </div>
-                  <span className="text-gold-400 font-bold text-sm flex-shrink-0">From PKR 2,000/night</span>
+                  <span className="text-gold-400 font-bold text-sm flex-shrink-0">View current room prices</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-5 text-xs text-muted-foreground">
-                  {["Free WiFi", "Hot Water 24/7", "AC Rooms Available", "Family Rooms", "Cash on Arrival", "Free Cancellation"].map(f => (
+                  {["Current room listings", "Branch details", "Occupancy information", "Live prices", "Booking terms", "Call for arrival help"].map(f => (
                     <div key={f} className="flex items-center gap-1.5"><span className="text-gold-400">✓</span>{f}</div>
                   ))}
                 </div>
@@ -409,7 +409,7 @@ export default function KatasRajPage() {
             <section className="card-luxury rounded-2xl p-8 text-center border border-gold-500/20">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Planning to Visit Katas Raj?</h2>
               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Stay at Chakwal Guest House — just 40 km from Katas Raj Temples. Clean rooms, free WiFi, 24/7 service, and no advance payment required. The most trusted accommodation in Chakwal district.
+                Compare current rooms at Chakwal Guest House and use live navigation to plan a Katas Raj visit. Confirm access and opening information with the relevant authority.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">

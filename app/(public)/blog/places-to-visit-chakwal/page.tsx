@@ -243,7 +243,7 @@ export default function PlacesToVisitPage() {
           </div>
           <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Planning a Trip to Chakwal?</h2>
           <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-            Stay at Chakwal Guest House — the most trusted accommodation in Chakwal district. AC rooms, family suites, free WiFi from PKR 2,000/night. Pay cash on arrival, no advance payment required.
+            Compare current rooms at Chakwal Guest House, including the selected branch, occupancy, listed facilities, price and booking terms.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">

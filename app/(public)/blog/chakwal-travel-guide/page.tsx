@@ -210,13 +210,13 @@ export default function ChakwalTravelGuidePage() {
                 <Image src="/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg" alt="Clean comfortable AC room Chakwal Guest House Punjab Pakistan" fill className="object-cover" />
               </div>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                For accommodation in Chakwal, <strong className="text-foreground">Chakwal Guest House</strong> is the most popular and trusted option — rated 5.0 stars on Google with 20+ verified reviews. It has two locations in Chakwal: Main Branch near District Courts and the new Madina Town Branch.
+                <strong className="text-foreground">Chakwal Guest House</strong> has two locations in Chakwal: the Main Branch near District Courts and the Madina Town Branch. Compare live rooms and current verified reviews before booking.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                 {[
-                  { room: "Classic Room", price: "PKR 2,000", cap: "2 Adults" },
-                  { room: "Family Room", price: "PKR 2,500", cap: "4 Adults + Kids" },
-                  { room: "Executive AC", price: "PKR 4,000", cap: "2 Adults + AC" },
+                  { room: "Classic Room", price: "Check live price", cap: "Check room occupancy" },
+                  { room: "Family Room", price: "Check live price", cap: "Check room occupancy" },
+                  { room: "Executive AC", price: "Check live price", cap: "Check room occupancy" },
                 ].map(r => (
                   <div key={r.room} className="card-luxury rounded-xl p-4 text-center">
                     <p className="font-bold text-foreground text-sm">{r.room}</p>
@@ -371,7 +371,7 @@ export default function ChakwalTravelGuidePage() {
             <section className="card-luxury rounded-2xl p-8 text-center border border-gold-500/20">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Ready to Plan Your Chakwal Trip?</h2>
               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Book your stay at Chakwal Guest House — clean rooms, 24/7 service, free WiFi, and the warmest hospitality in Chakwal. No advance payment required.
+                Compare current rooms at Chakwal Guest House and review the branch, occupancy, listed facilities, price and booking terms before confirmation.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">

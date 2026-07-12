@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const coverImage = room.images.find(i => i.isCover) ?? room.images[0];
   return {
     title:       room.name,
-    description: room.description ?? `Book ${room.name} at Chakwal Guest House from ${formatPKR(Number(room.pricePerNight))}/night. Free WiFi, AC, 24/7 service.`,
+    description: room.description ?? `View ${room.name} at Chakwal Guest House from ${formatPKR(Number(room.pricePerNight))}/night, including its branch, occupancy and current availability.`,
     alternates:  { canonical: `${siteConfig.url}/rooms/${params.id}` },
     openGraph: {
       title:       `${room.name} | Chakwal Guest House`,

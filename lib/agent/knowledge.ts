@@ -85,15 +85,14 @@ export const DEFAULT_KNOWLEDGE: ZaraKnowledge = {
   easypaisaName:     "Hassan Ali",
   otherPolicies: [
     "CNIC original zaroor lao check-in pe",
-    "Free WiFi tamaam rooms mein",
-    "24/7 hot water",
-    "Free parking on premises",
-    "24/7 front desk aur room service",
+    "Har room ki facilities live room listing se verify karo",
+    "Parking, hot water, WiFi aur late arrival ko branch ke liye confirm karo",
+    "Cancellation aur payment terms booking confirmation se check karo",
   ],
   phone:                siteConfig.phone,
   website:              siteConfig.url,
   googleReviewUrl:      siteConfig.social.googleReviewUrl,
-  googleReviewIncentive: "Google review dene pe agla stay 10% sasta",
+  googleReviewIncentive: "Review ke badlay incentive offer na karo; sirf genuine neutral feedback maango",
 
   branches: [
     { name: "Main Branch",         city: "Chakwal", address: "Near District Courts, Talagang Road, Chakwal" },

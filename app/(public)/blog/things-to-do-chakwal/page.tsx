@@ -173,9 +173,9 @@ const ACTIVITIES = [
     body: [
       "The single best thing you can do in Chakwal is not rush it. Many visitors make the mistake of treating Chakwal as a quick day trip from Islamabad and end up missing half of what makes the district special. An overnight stay completely changes the experience.",
       "When you wake up in Chakwal in the morning — especially in winter — the city has a quiet, misty calm that feels miles from the chaos of the twin cities. You can eat a proper nihari breakfast, visit Katas Raj when it opens and have it nearly to yourself, and then head to Kallar Kahar for sunset without being constrained by a long drive home.",
-      "Chakwal Guest House is the most trusted accommodation option in the city, with two branches — one near District Courts on Talagang Road and one in Madina Town. Rooms start from PKR 2,000/night with free WiFi, hot water, and 24/7 service.",
+      "Chakwal Guest House has two Chakwal branches — one near District Courts on Talagang Road and one in Madina Town. Use the live rooms page for current prices and facilities.",
     ],
-    tip: "Book 2–3 days in advance for weekend visits. No advance payment needed — pay cash on arrival.",
+    tip: "For weekend visits, check live availability early and review the payment and cancellation terms shown during booking.",
   },
 ];
 
@@ -331,7 +331,7 @@ export default function ThingsToDoChakwalPage() {
             <section className="card-luxury rounded-2xl p-8 text-center border border-gold-500/20">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Visiting Chakwal? Stay at Chakwal Guest House</h2>
               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Chakwal Guest House is the most trusted accommodation in Chakwal — clean rooms, free WiFi, 24/7 service, and two convenient locations. Rooms from PKR 2,000/night. No advance payment required.
+                Chakwal Guest House has two Chakwal locations. Compare current rooms, branch details, prices, facilities and booking terms before confirming.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all text-sm">

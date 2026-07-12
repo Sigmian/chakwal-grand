@@ -30,6 +30,7 @@ const WELCOME: Message = {
 export function ChatWidget() {
   const [open, setOpen]         = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [showHint, setShowHint] = useState(false);
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput]       = useState("");
   const [isPending, start]      = useTransition();
@@ -41,6 +42,20 @@ export function ChatWidget() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // "Chat with Zara" nudge — appears once per session, a moment after load
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("cgh_zara_hint")) return;
+    } catch { /* storage unavailable — still show the hint */ }
+    const timer = setTimeout(() => setShowHint(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const dismissHint = () => {
+    setShowHint(false);
+    try { sessionStorage.setItem("cgh_zara_hint", "1"); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     if (open) {
@@ -120,7 +135,7 @@ export function ChatWidget() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-foreground text-sm">Contact Zara</p>
-                <p className="text-muted-foreground text-xs">Available 24/7 · Instant reply</p>
+                <p className="text-muted-foreground text-xs">Ask about rooms, branches and booking details</p>
               </div>
               <div className="w-5 h-5 rounded-full bg-[#25D366] flex items-center justify-center flex-shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -146,10 +161,35 @@ export function ChatWidget() {
           </div>
         )}
 
+        {/* "Chat with Zara" nudge */}
+        {showHint && !open && !showOptions && (
+          <div className="absolute bottom-1.5 right-[4.25rem] flex items-center animate-fade-in">
+            <button
+              onClick={() => { dismissHint(); setShowOptions(true); }}
+              className="flex items-center gap-2.5 pl-2 pr-3.5 py-2 rounded-2xl rounded-br-sm bg-surface-elevated/95 backdrop-blur border border-gold-500/25 shadow-card-lg whitespace-nowrap hover:border-gold-500/50 transition-colors"
+            >
+              <span className="w-8 h-8 rounded-full bg-gold-gradient flex items-center justify-center text-sm flex-shrink-0">
+                👋
+              </span>
+              <span className="text-left">
+                <span className="block text-xs font-bold text-foreground">Chat with Zara</span>
+                <span className="block text-[10px] text-muted-foreground">Rooms, rates &amp; booking help</span>
+              </span>
+            </button>
+            <button
+              onClick={dismissHint}
+              aria-label="Dismiss chat hint"
+              className="ml-1.5 w-5 h-5 rounded-full bg-accent border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+
         <button
           onClick={() => {
             if (open) { setOpen(false); }
-            else { setShowOptions(v => !v); }
+            else { if (!showOptions) dismissHint(); setShowOptions(v => !v); }
           }}
           className={cn(
             "relative w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300",
@@ -166,11 +206,15 @@ export function ChatWidget() {
               {unread}
             </span>
           )}
+          {/* Online dot — Zara is always awake */}
+          {!open && !showOptions && (
+            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#25D366] border-2 border-surface-base" />
+          )}
         </button>
 
-        {/* Pulse ring */}
+        {/* Pulse ring — slow, classy */}
         {!open && !showOptions && (
-          <span className="absolute inset-0 rounded-full bg-gold-500/30 animate-ping pointer-events-none" />
+          <span className="absolute inset-0 rounded-full bg-gold-500/40 animate-ping-slow pointer-events-none" />
         )}
       </div>
 

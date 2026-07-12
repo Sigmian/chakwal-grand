@@ -42,7 +42,7 @@ const FAQ_SCHEMA = {
     { "@type": "Question", "name": "How far is Chakwal from Islamabad?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal city is approximately 80–90 km from Islamabad/Rawalpindi. The drive takes about 1.5 hours via the M-2 motorway to the Chakwal motorway exit, then 20–25 minutes on the Chakwal city road. Alternatively, the older Talagang Road via Fateh Jang takes about 2 hours but passes through more scenic terrain." } },
     { "@type": "Question", "name": "Can I do a day trip from Islamabad to Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, a day trip from Islamabad to Chakwal is possible, but you will only have time for one or two attractions if you want to avoid rushing. Katas Raj Temples or Kallar Kahar Lake as the main destination works well as a day trip. For both sites plus the Salt Range, an overnight stay is strongly recommended." } },
     { "@type": "Question", "name": "What bus service goes from Rawalpindi to Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Daewoo Express, Faisal Movers, and Skyways all operate regular services from Rawalpindi (Rawalpindi Mor / Pirwadhai terminal) to Chakwal. The journey takes about 1.5–2 hours and tickets cost PKR 200–350. Buses run from early morning until late evening." } },
-    { "@type": "Question", "name": "Is it worth staying overnight in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Absolutely yes. An overnight stay lets you see Katas Raj in the early morning calm, visit Kallar Kahar Lake the next day, eat a proper Chakwal breakfast, and return to Islamabad without feeling rushed. Chakwal Guest House offers clean rooms from PKR 2,000/night with no advance payment required." } },
+    { "@type": "Question", "name": "How can I compare an overnight stay in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Compare the exact location, room occupancy, current price and booking terms for your dates. Use live navigation and room listings because article estimates can become outdated." } },
     { "@type": "Question", "name": "What is the best route from Rawalpindi to Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "The fastest route is via the M-2 motorway (Islamabad–Lahore motorway), exiting at the Chakwal interchange and then following the Chakwal city road for approximately 22 km. Total distance from Rawalpindi is about 85 km and takes 1.5 hours. Toll charges apply on the motorway." } },
   ],
 };
@@ -217,7 +217,7 @@ export default function ChakwalFromIslamabadPage() {
                 {[
                   { val: "85 km", label: "From Rawalpindi" },
                   { val: "1.5 hr", label: "Drive via M-2" },
-                  { val: "PKR 2K", label: "Room from (overnight)" },
+                  { val: "Live", label: "Current room price" },
                   { val: "2 days", label: "Ideal trip length" },
                 ].map(s => (
                   <div key={s.label} className="card-luxury rounded-xl p-3 text-center">
@@ -352,12 +352,12 @@ export default function ChakwalFromIslamabadPage() {
                     <div className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Time for nihari breakfast, bazaar evening, local life</div>
                     <div className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Add Pharwala Fort or Tilla Jogian without rushing</div>
                     <div className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" /> Return Islamabad refreshed, not exhausted</div>
-                    <div className="flex items-start gap-2 mt-3"><span className="text-amber-400 flex-shrink-0">+</span> Extra cost: PKR 2,000–4,000 for room</div>
+                    <div className="flex items-start gap-2 mt-3"><span className="text-amber-400 flex-shrink-0">+</span> Extra cost: check current room prices for your dates</div>
                   </div>
                 </div>
               </div>
               <div className="mt-4 px-4 py-3 rounded-xl bg-gold-500/5 border border-gold-500/20">
-                <p className="text-sm text-muted-foreground"><span className="text-gold-400 font-bold">Our recommendation:</span> If you have never been to Chakwal before, spend at least one night. The room at Chakwal Guest House costs from PKR 2,000 — a fraction of what you would pay anywhere in Islamabad for a comparable room. It is genuinely worth it.</p>
+                <p className="text-sm text-muted-foreground"><span className="text-gold-400 font-bold">Planning note:</span> If considering an overnight stay, compare the live room price, branch location and booking terms with the cost and timing of a same-day return.</p>
               </div>
             </section>
 
@@ -449,9 +449,9 @@ export default function ChakwalFromIslamabadPage() {
 
             {/* CTA */}
             <section className="card-luxury rounded-2xl p-8 text-center border border-gold-500/20">
-              <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Stay in Chakwal — From PKR 2,000/Night</h2>
+              <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Check Current Rooms in Chakwal</h2>
               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Chakwal Guest House is 85 km from Rawalpindi — the most trusted accommodation in Chakwal. Clean rooms, free WiFi, 24/7 service. Book online free, pay cash on arrival.
+                Compare current rooms at Chakwal Guest House and use live navigation for your route. Review the selected branch, price, facilities and booking terms before confirming.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all text-sm">

@@ -19,11 +19,11 @@ const FAQS = [
       },
       {
         q: "What is your cancellation policy?",
-        a: `We offer free cancellation up to 24 hours before your check-in time. For cancellations within 24 hours, please call us at ${siteConfig.phone} to discuss your situation — we're flexible with genuine emergencies.`,
+        a: `Cancellation terms can vary by booking. Review the terms shown before confirmation and call ${siteConfig.phone} before cancelling if anything is unclear.`,
       },
       {
         q: "Do I need to pay anything online to book?",
-        a: "No online payment is required. Simply make your booking and pay in cash on arrival. We do not charge your card or collect any payment online.",
+        a: "The payment method and amount due are shown during the booking process. Review those details before confirming, or call us if you need another arrangement.",
       },
     ],
   },
@@ -32,19 +32,19 @@ const FAQS = [
     items: [
       {
         q: "What is included in the room rate?",
-        a: "All rooms include free WiFi, 24/7 hot water, attached bathroom, TV, and wardrobe. A/C rooms include air conditioning available for 12 hours daily. Executive rooms additionally include a work desk and sofa. The Apartment includes a kitchen and mini fridge.",
+        a: "Facilities differ by room and branch. Open the room details to review the listed facilities, occupancy and branch, and confirm any essential requirement before booking.",
       },
       {
         q: "Do you have air-conditioned rooms?",
-        a: "Yes! We have A/C Classic Room (₨2,500), A/C Executive Room (₨4,000), and A/C Apartment (₨4,500). Air conditioning is available for 12 hours daily (typically evening/night). Standard rooms without AC are also available from ₨2,000.",
+        a: "Air-conditioned options are identified in the current room listings when available. Check the room details for the selected branch and dates.",
       },
       {
         q: "Are meals included?",
-        a: "Meals are not included in the room rate. However, there are several good restaurants and dhabas within walking distance of all our branches. We can help direct you to the best local eateries.",
+        a: "Do not assume meals are included. Check the selected room and booking details, or call us to confirm current meal options for your branch.",
       },
       {
         q: "Do you have family rooms?",
-        a: "Yes, our Family Room (₨2,500/night) can comfortably accommodate 4 adults and 2 children. It includes extra beds, a sitting area, and all standard amenities. For larger groups, our Apartment (₨4,500) is also an excellent option.",
+        a: "Family options may be listed when available. Check each room's exact adult and child occupancy, branch, bed details and current price before booking.",
       },
     ],
   },
@@ -53,7 +53,7 @@ const FAQS = [
     items: [
       {
         q: "What are the check-in and check-out times?",
-        a: "Check-in is flexible — you are welcome to arrive at any time. Check-out is 12:00 PM (noon). Please share your estimated arrival time while booking so we can have your room ready.",
+        a: "Check-out is 12:00 PM. Confirm the available check-in time during booking and contact us in advance for a late or unusual arrival.",
       },
       {
         q: "What documents do I need at check-in?",
@@ -70,15 +70,15 @@ const FAQS = [
     items: [
       {
         q: "Where are you located?",
-        a: "We have two branches in Chakwal: Main Branch (Near Dist. Complex, Talagang Road) and Madina Town Branch (Madina Town, Chakwal). Each branch has its own dedicated team available 24/7.",
+        a: "We have two Chakwal locations: the Main Branch near District Courts on Talagang Road and the Madina Town branch. Use the confirmed pin on the Madina Town branch page for directions.",
       },
       {
         q: "Is parking available?",
-        a: "Yes, parking is available at all our branches. Please inform us in advance if you're arriving with a large vehicle so we can ensure adequate space is reserved for you.",
+        a: "Parking arrangements can differ by branch and vehicle size. Call before arrival to confirm suitable space for your vehicle.",
       },
       {
         q: "Is the guest house suitable for families?",
-        a: "Absolutely! We are family-friendly with 24/7 security, clean rooms, and staff available round the clock. Our Family Room and Apartment are specifically designed for families. Children are welcome at all our branches.",
+        a: "Check the current family-room occupancy and facilities for your selected branch. For children, older relatives or accessibility needs, call to confirm the exact room setup before booking.",
       },
     ],
   },
@@ -155,7 +155,7 @@ export function FAQSection() {
             </div>
             <div>
               <p className="font-semibold text-foreground text-sm">Still have questions?</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Our AI assistant and team are available 24/7</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Use WhatsApp or call to confirm a requirement</p>
             </div>
           </div>
           <div className="flex gap-3 flex-wrap justify-center">

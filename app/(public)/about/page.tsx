@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, MapPin, Phone, Star, Shield, Clock, Users } from "lucide-react";
+import { CheckCircle2, MapPin, Phone, CalendarCheck, Building2, Users } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { Reveal } from "@/features/public/components/Reveal";
-import { CountUp } from "@/features/public/components/CountUp";
 
 export const metadata: Metadata = {
-  title: "About Us — Best Stay in Chakwal",
-  description: "Learn about Chakwal Guest House — Chakwal's most trusted guest house with two locations in Chakwal. Affordable luxury, family-friendly, 24/7 service.",
-  keywords: ["about Chakwal Guest House", "best guest house Chakwal", "trusted guest house Pakistan", "family guest house Chakwal Punjab"],
+  title: "About Chakwal Guest House",
+  description: "Learn about Chakwal Guest House and compare its Main Branch near District Courts with its Madina Town branch in Chakwal.",
+  keywords: ["about Chakwal Guest House", "family guest house Chakwal Punjab"],
   alternates: { canonical: `${siteConfig.url}/about` },
   openGraph: {
-    title: "About Chakwal Guest House | Best Guest House in Chakwal",
-    description: "Chakwal's most trusted guest house with two locations in Chakwal — Main Branch & Madina Town. Family-friendly, affordable, 24/7 service.",
+    title: "About Chakwal Guest House | Two Chakwal Locations",
+    description: "Learn about Chakwal Guest House's Main Branch and Madina Town branch.",
     url: `${siteConfig.url}/about`,
   },
 };
@@ -22,7 +21,7 @@ const ABOUT_SCHEMA = {
   "@type": "AboutPage",
   "name": "About Chakwal Guest House",
   "url": `${siteConfig.url}/about`,
-  "description": "Chakwal Guest House is the premier accommodation provider in Chakwal, Punjab — two locations in Chakwal city serving thousands of guests.",
+  "description": "Chakwal Guest House offers rooms at two locations in Chakwal, Punjab.",
   "mainEntity": {
     "@type": "LodgingBusiness",
     "name": "Chakwal Guest House",
@@ -39,15 +38,15 @@ const ABOUT_SCHEMA = {
 };
 
 const VALUES = [
-  { icon: Shield,       title: "Safe & Secure",       desc: "CNIC-verified guests, CCTV security, and a safe environment for solo travelers, couples, and families." },
-  { icon: Star,         title: "Premium Comfort",      desc: "Every room is furnished with quality beds, hot water, attached bathroom, TV, and free WiFi." },
-  { icon: Clock,        title: "24/7 Service",         desc: "Our staff is available round the clock to ensure your stay is comfortable at any hour." },
-  { icon: Users,        title: "Family Friendly",      desc: "Spacious family rooms with separate sitting areas, ideal for family trips and group stays." },
+  { icon: CalendarCheck, title: "Current Availability", desc: "Available rooms and listed prices come from the active room inventory." },
+  { icon: Building2, title: "Room-Level Details", desc: "Each room listing identifies its branch, occupancy and currently recorded facilities." },
+  { icon: MapPin, title: "Two Locations", desc: "Choose the Main Branch near District Courts or the Madina Town branch." },
+  { icon: Users, title: "Direct Assistance", desc: "Call or WhatsApp to confirm bed setup, arrival directions or another essential requirement." },
 ];
 
 const BRANCHES = [
   { name: "Main Branch",         address: "Near District Courts, Talagang Road, Chakwal", city: "Chakwal",      label: "Flagship" },
-  { name: "Madina Town Branch",  address: "Madina Town, Chakwal",                         city: "Chakwal",      label: "New — Grand Opening" },
+  { name: "Madina Town Branch",  address: "Madina Town, Chakwal — confirmed map pin available", city: "Chakwal", label: "Madina Town" },
 ];
 
 export default function AboutPage() {
@@ -60,12 +59,11 @@ export default function AboutPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-4">Our Story</p>
             <h1 className="text-4xl sm:text-5xl font-bold font-serif text-foreground mb-6">
-              Chakwal&apos;s Most Trusted<br />Guest House
+              About Chakwal<br />Guest House
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              Chakwal Guest House was established with one mission: to provide clean, safe, and affordable
-              accommodation for travelers across Punjab. From solo businessmen to families visiting Katas Raj Temples
-              and Kallar Kahar Lake, we have been the preferred choice for thousands of guests.
+              Chakwal Guest House provides room options at two locations in Chakwal. This website lets guests compare
+              current rooms, identify the correct branch and check availability before travelling.
             </p>
           </div>
         </section>
@@ -77,20 +75,18 @@ export default function AboutPage() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Who We Are</p>
                 <h2 className="text-3xl font-bold font-serif text-foreground mb-5">
-                  Premium Accommodation in Chakwal, Punjab
+                  Accommodation at Two Chakwal Locations
                 </h2>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Chakwal Guest House is a chain of premium guest houses operating across Punjab, Pakistan.
-                  We offer rooms ranging from classic budget rooms to fully air-conditioned executive suites and
-                  family apartments — all at honest, transparent prices with no hidden charges.
+                  Chakwal Guest House operates a Main Branch near District Courts on Talagang Road and a branch in
+                  Madina Town, Chakwal. Current room options vary by branch and availability.
                 </p>
                 <p className="text-muted-foreground leading-relaxed mb-6">
-                  Whether you are visiting Chakwal for business, tourism, or a family trip, our guest houses
-                  provide a clean, comfortable, and safe home away from home. All rooms include free WiFi,
-                  24/7 hot water, attached bathrooms, and round-the-clock staff assistance.
+                  Compare the branch, occupancy, price and listed facilities on each room page. If a facility is
+                  essential to your stay, call before booking so the team can confirm it for the selected room.
                 </p>
                 <div className="space-y-3">
-                  {["No advance payment required — pay cash on arrival", "CNIC-verified, secure guest environment", "Free cancellation up to 24 hours before check-in"].map(point => (
+                  {["Current room prices shown during booking", "Selected branch shown before confirmation", "Booking terms available for review"].map(point => (
                     <div key={point} className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-gold-400 flex-shrink-0 mt-0.5" />
                       <span className="text-sm text-foreground">{point}</span>
@@ -104,15 +100,15 @@ export default function AboutPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { num: 3,  suffix: "",  label: "Branches in Punjab" },
-                  { num: 10, suffix: "+", label: "Room Types" },
-                  { text: "24/7",         label: "Staff Available" },
-                  { text: "PKR 2,000",    label: "Starting Price/Night" },
+                  { text: "2", label: "Chakwal Locations" },
+                  { text: "Live", label: "Room Availability" },
+                  { text: "Direct", label: "Online Booking" },
+                  { text: "Call", label: "Arrival Assistance" },
                 ].map((s, i) => (
                   <Reveal key={s.label} delay={i * 0.08}>
                     <div className="card-luxury rounded-2xl p-6 text-center h-full hover:border-gold-500/20 transition-colors">
                       <p className="text-3xl font-bold text-gold-400 font-serif mb-2">
-                        {"text" in s ? s.text : <CountUp value={s.num} suffix={s.suffix} />}
+                        {s.text}
                       </p>
                       <p className="text-sm text-muted-foreground">{s.label}</p>
                     </div>
@@ -178,7 +174,7 @@ export default function AboutPage() {
         <section className="py-16 bg-surface-elevated">
           <div className="max-w-2xl mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold font-serif text-foreground mb-4">Ready to Book Your Stay?</h2>
-            <p className="text-muted-foreground mb-8">Join thousands of satisfied guests who chose Chakwal Guest House for their stay in Punjab.</p>
+            <p className="text-muted-foreground mb-8">Compare current rooms and confirm the branch and booking details for your stay.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/book" className="px-8 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
                 Book a Room

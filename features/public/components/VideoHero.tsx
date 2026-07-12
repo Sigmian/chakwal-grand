@@ -2,18 +2,17 @@
 
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
-import { Wifi, Snowflake, Shield, Clock, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { Building2, CalendarCheck, MapPin, Phone, ChevronRight, Volume2, VolumeX, Star } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { CountUp } from "@/features/public/components/CountUp";
 
 interface Props {
   branches:     { id: string; name: string; city: string }[];
   startingFrom?: number;
-  totalGuests?:  number;
   avgRating?:    number;
 }
 
-export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRating }: Props) {
+export function VideoHero({ branches, startingFrom, avgRating }: Props) {
   const videoRef   = useRef<HTMLVideoElement>(null);
   const [muted, setMuted]     = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -81,18 +80,19 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
 
           {/* Subheading */}
           <p className="text-lg sm:text-xl text-white/75 leading-relaxed mb-8 max-w-2xl">
-            Premium accommodation in Chakwal with clean rooms, fast WiFi, 24/7 service, and unbeatable value.
-            Starting from just{" "}
-            <strong className="text-gold-400 font-bold">PKR {startingFrom.toLocaleString("en-PK")} / night</strong>.
+            Compare current rooms at our Main Branch near District Courts and our Madina Town branch.
+            {startingFrom !== undefined && (
+              <> Current listed rooms start from <strong className="text-gold-400 font-bold">PKR {startingFrom.toLocaleString("en-PK")} / night</strong>, subject to availability.</>
+            )}
           </p>
 
           {/* Feature pills */}
           <div className="flex flex-wrap gap-3 mb-10">
             {[
-              { icon: Wifi,      label: "Free WiFi"    },
-              { icon: Snowflake, label: "A/C Rooms"    },
-              { icon: Shield,    label: "Safe & Secure" },
-              { icon: Clock,     label: "24/7 Service" },
+              { icon: Building2, label: "Two Locations" },
+              { icon: CalendarCheck, label: "Live Availability" },
+              { icon: MapPin, label: "Branch Details" },
+              { icon: Phone, label: "Call or WhatsApp" },
             ].map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-2 text-sm text-white/80 bg-white/10 backdrop-blur-sm border border-white/10 px-4 py-2 rounded-full">
                 <Icon className="w-4 h-4 text-gold-400" />
@@ -128,21 +128,18 @@ export function VideoHero({ branches, startingFrom = 2000, totalGuests, avgRatin
 
           {/* Stats */}
           <div className="flex flex-wrap gap-8">
-            {[
-              { num: totalGuests ?? 500,        decimals: 0, suffix: "+", label: "Happy Guests"   },
-              { num: avgRating ?? 4.8,          decimals: 1, suffix: "★", label: "Average Rating" },
-              { num: branches.length || 3,      decimals: 0, suffix: "",  label: "Prime Locations" },
-              { text: "24/7",                                             label: "Support"         },
-            ].map((s) => (
-              <div key={s.label}>
-                <p className="text-2xl font-bold font-serif text-gold-400">
-                  {"text" in s
-                    ? s.text
-                    : <CountUp value={s.num} decimals={s.decimals} suffix={s.suffix} />}
-                </p>
-                <p className="text-xs text-white/60 mt-0.5">{s.label}</p>
+            {branches.length > 0 && (
+              <div>
+                <p className="text-2xl font-bold font-serif text-gold-400"><CountUp value={branches.length} decimals={0} suffix="" /></p>
+                <p className="text-xs text-white/60 mt-0.5">Chakwal Locations</p>
               </div>
-            ))}
+            )}
+            {avgRating !== undefined && (
+              <div>
+                <p className="text-2xl font-bold font-serif text-gold-400 flex items-center gap-1"><CountUp value={avgRating} decimals={1} suffix="" /><Star className="w-5 h-5 fill-current" /></p>
+                <p className="text-xs text-white/60 mt-0.5">Verified Site Reviews</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

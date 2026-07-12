@@ -5,27 +5,27 @@ import Link from "next/link";
 import { CheckCircle2, ArrowRight, Star, ChevronRight, Phone } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
-  description: "Complete guide to the best accommodation in Chakwal, Punjab. Chakwal Guest House — top-rated, AC rooms, family suites, free WiFi from PKR 2,000/night. Book now, pay on arrival.",
+  title: "Where to Stay in Chakwal — Guest House & Hotel Guide",
+  description: "A practical guide to comparing accommodation areas, rooms, current prices and arrival details in Chakwal, Punjab.",
   keywords: [
-    "where to stay in Chakwal", "best guest house Chakwal", "hotel in Chakwal Punjab",
+    "where to stay in Chakwal", "guest house Chakwal", "hotel in Chakwal Punjab",
     "accommodation Chakwal", "Chakwal rooms booking", "cheap stay Chakwal",
     "guest house near Katas Raj", "Chakwal Guest House", "family guest house Chakwal",
     "budget hotel Chakwal", "Chakwal hotel price", "safe guest house Chakwal",
   ],
   alternates: { canonical: `${siteConfig.url}/blog/where-to-stay-chakwal` },
   openGraph: {
-    title: "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
-    description: "Chakwal Guest House — top-rated accommodation in Chakwal. AC rooms, family suites, free WiFi from PKR 2,000/night.",
+    title: "Where to Stay in Chakwal — Guest House & Hotel Guide",
+    description: "Compare accommodation areas, rooms, current prices and arrival details in Chakwal.",
     url: `${siteConfig.url}/blog/where-to-stay-chakwal`,
-    images: [{ url: `${siteConfig.url}/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg`, width: 1200, height: 630, alt: "Best guest house room Chakwal Punjab" }],
+    images: [{ url: `${siteConfig.url}/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg`, width: 1200, height: 630, alt: "Room listed by Chakwal Guest House in Chakwal Punjab" }],
   },
 };
 
 const ARTICLE_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "Where to Stay in Chakwal 2025 — Best Guest Houses & Hotels",
+  "headline": "Where to Stay in Chakwal — Guest House & Hotel Guide",
   "description": "Complete guide to the best accommodation options in Chakwal, Punjab, Pakistan.",
   "image": `${siteConfig.url}/images/rooms/air-conditioned-room-chakwal-grand-guest-house.jpg`,
   "url": `${siteConfig.url}/blog/where-to-stay-chakwal`,
@@ -39,20 +39,20 @@ const FAQ_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
-    { "@type": "Question", "name": "What is the cheapest guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House offers the most affordable quality accommodation in Chakwal, with rooms starting from PKR 2,000/night for a non-AC classic room. No advance payment required — pay cash on arrival." } },
-    { "@type": "Question", "name": "Is there a family guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — Chakwal Guest House has dedicated family rooms accommodating 4 adults + 2 children starting from PKR 2,500/night. They also have apartment suites with kitchenettes for longer family stays." } },
-    { "@type": "Question", "name": "Which is the best hotel in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House is rated the best accommodation in Chakwal with a 5.0 Google rating from 20+ reviews. It has two branches in Chakwal — Main Branch (Talagang Road) and Madina Town Branch." } },
+    { "@type": "Question", "name": "How can I compare current room prices in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Compare rooms for the same dates, occupancy, branch and cancellation terms. Use the live rooms page for Chakwal Guest House rather than an old article price." } },
+    { "@type": "Question", "name": "Is there a family guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Family room options may be available at Chakwal Guest House. Check the live room listing for current occupancy, facilities, branch and price." } },
+    { "@type": "Question", "name": "Where are Chakwal Guest House's branches?", "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House has a Main Branch near District Courts on Talagang Road and a Madina Town branch with a confirmed Google Maps pin on its branch page." } },
     { "@type": "Question", "name": "Do Chakwal guest houses require CNIC?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, by law all registered guest houses in Pakistan must collect a copy of the guest's CNIC at check-in. Always carry your original CNIC when travelling." } },
-    { "@type": "Question", "name": "Is there an AC guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — Chakwal Guest House has AC rooms available (Classic AC Room from PKR 2,500/night and Executive AC Room from PKR 4,000/night). AC is available for 12 hours per day as standard." } },
+    { "@type": "Question", "name": "Is there an AC guest house in Chakwal?", "acceptedAnswer": { "@type": "Answer", "text": "Air-conditioned options are identified in the current room listings when available. Confirm the exact room and branch before booking." } },
   ],
 };
 
 const ROOMS = [
-  { type: "Classic Room (Non-AC)", price: "PKR 2,000", capacity: "2 Adults", features: ["Free WiFi", "Hot Water 24/7", "Attached Bathroom", "TV", "Clean Linen"], best: "Budget travelers, solo visitors" },
-  { type: "Classic Room (AC)", price: "PKR 2,500", capacity: "2 Adults", features: ["Free WiFi", "Hot Water", "Air Conditioning (12 hrs)", "TV", "Attached Bath"], best: "Couples, business professionals" },
-  { type: "Family Room (Non-AC)", price: "PKR 2,500", capacity: "4 Adults + 2 Children", features: ["Spacious Layout", "Sitting Area", "Hot Water", "TV", "Extra Bedding"], best: "Families visiting Chakwal" },
-  { type: "Executive Room (AC)", price: "PKR 4,000", capacity: "2 Adults", features: ["Work Desk", "Sofa Chair", "AC (12 hrs)", "Free WiFi", "Premium Linen"], best: "Business travelers, longer stays" },
-  { type: "Apartment Suite (AC)", price: "PKR 4,500", capacity: "4 Adults", features: ["Kitchenette", "Living Area", "AC", "Mini Fridge", "Full Attached Bath"], best: "Long stays, extended family visits" },
+  { type: "Classic Room", price: "Check current price", capacity: "Check room listing", features: ["Confirm branch", "Confirm occupancy", "Review listed facilities"], best: "Guests comparing current room options" },
+  { type: "Air-Conditioned Room", price: "Check current price", capacity: "Check room listing", features: ["Confirm branch", "Confirm occupancy", "Review listed facilities"], best: "Guests who require air conditioning" },
+  { type: "Family Room", price: "Check current price", capacity: "Check room listing", features: ["Confirm bed setup", "Confirm occupancy", "Review listed facilities"], best: "Families comparing room options" },
+  { type: "Executive Room", price: "Check current price", capacity: "Check room listing", features: ["Confirm branch", "Confirm occupancy", "Review listed facilities"], best: "Guests comparing current room options" },
+  { type: "Apartment", price: "Check current price", capacity: "Check room listing", features: ["Confirm facilities", "Confirm occupancy", "Review booking terms"], best: "Guests considering a longer stay" },
 ];
 
 const TOC = [
@@ -84,7 +84,7 @@ export default function WhereToStayPage() {
           </div>
           <span className="text-xs font-bold uppercase tracking-wider text-gold-400 bg-gold-500/10 border border-gold-500/20 px-3 py-1 rounded-full">Accommodation Guide</span>
           <h1 className="text-3xl sm:text-5xl font-bold font-serif text-foreground mt-3 mb-3 leading-tight">
-            Where to Stay in Chakwal 2025<br className="hidden sm:block" /> — Best Guest Houses & Hotels
+            Where to Stay in Chakwal<br className="hidden sm:block" /> — Guest House & Hotel Guide
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">
             From budget rooms to family suites — your complete guide to accommodation in Chakwal, Punjab. Updated for 2025.
@@ -123,7 +123,7 @@ export default function WhereToStayPage() {
                 Chakwal is rapidly becoming one of Punjab&apos;s most visited districts — with tourists flocking to <Link href="/blog/katas-raj-temples-visitor-guide" className="text-gold-400 hover:underline">Katas Raj Temples</Link>, Kallar Kahar Lake, and the scenic Salt Range hills. As tourism has grown, so has the demand for reliable, clean, and affordable accommodation. But not all options in Chakwal meet the standard — many small hotels lack proper facilities, security, or even hot water.
               </p>
               <p className="text-muted-foreground leading-relaxed mt-3">
-                This guide covers everything you need to know about <strong className="text-foreground">where to stay in Chakwal</strong> — what to look for, the best options available, room types, prices, and booking tips for 2025.
+                This guide covers how to compare <strong className="text-foreground">where to stay in Chakwal</strong> — including area, room details, current prices and booking terms.
               </p>
             </section>
 
@@ -135,12 +135,12 @@ export default function WhereToStayPage() {
               <p className="text-muted-foreground leading-relaxed mb-4">Before choosing your accommodation in Chakwal, check these key factors:</p>
               <div className="space-y-3">
                 {[
-                  { title: "Safety & Security", icon: "🔒", desc: "Reputable guest houses verify guests with CNIC copies and have CCTV security cameras. Always choose registered, ETPB-verified or publicly reviewed properties." },
+                  { title: "Safety Questions", icon: "🔒", desc: "Ask the selected property about entrance, reception and parking arrangements that matter to your party." },
                   { title: "Hot Water & Cleanliness", icon: "🚿", desc: "Hot water availability is crucial, especially in winter when Chakwal gets very cold. Attached bathrooms with clean linen are a must." },
                   { title: "Central Location", icon: "📍", desc: "Choose accommodation near Chakwal city center for easy access to local restaurants, transport hubs, and roads to attractions like Katas Raj and Kallar Kahar." },
                   { title: "Transparent Pricing", icon: "💰", desc: "Avoid guest houses with hidden charges for WiFi, extra guests, or utilities. Look for clear published prices — what you see online should be what you pay." },
-                  { title: "24/7 Reception", icon: "⏰", desc: "A guest house with round-the-clock staff ensures you have help for late check-ins, early departures, or any issues during your stay." },
-                  { title: "Online Reviews", icon: "⭐", desc: "Check Google reviews before booking. A property with 15+ reviews and 4.5+ stars is generally trustworthy. Read recent reviews (last 6 months) for current conditions." },
+                  { title: "Reception Arrangements", icon: "⏰", desc: "Confirm current reception hours and late-arrival arrangements directly before travelling." },
+                  { title: "Online Reviews", icon: "⭐", desc: "Read recent reviews across relevant sources, look for repeated themes and check how the property responds." },
                 ].map(item => (
                   <div key={item.title} className="card-luxury rounded-xl p-4 flex items-start gap-3">
                     <span className="text-2xl flex-shrink-0">{item.icon}</span>
@@ -159,24 +159,24 @@ export default function WhereToStayPage() {
               </h2>
               <div className="flex items-center gap-1 mb-4">
                 {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 text-gold-400 fill-gold-400" />)}
-                <span className="text-sm text-muted-foreground ml-2">5.0 Google Rating — 20 verified reviews</span>
+                <span className="text-sm text-muted-foreground ml-2">Check current verified reviews on the linked profile</span>
               </div>
               <div className="relative h-56 rounded-2xl overflow-hidden mb-5">
                 <Image src="/images/rooms/executive-room-chakwal-grand-guest-house.jpg" alt="Executive premium room Chakwal Guest House modern interior design" fill className="object-cover" />
               </div>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  <strong className="text-foreground">Chakwal Guest House</strong> is the most popular and trusted accommodation in Chakwal district. With <strong className="text-foreground">two locations</strong> — Main Branch near District Courts and the new Madina Town Branch — it has served thousands of guests annually since its founding, from solo travelers and business professionals to large family groups.
+                  <strong className="text-foreground">Chakwal Guest House</strong> has <strong className="text-foreground">two locations</strong> — the Main Branch near District Courts and a Madina Town branch. Compare their current room listings and arrival details before booking.
                 </p>
                 <p>
-                  Located near the District Courts on Talagang Road, the Chakwal city branch is the most convenient for tourists — positioned centrally with easy access to all major attractions, the Chakwal bus terminal, and local restaurants.
+                  The Main Branch is listed near District Courts on Talagang Road. Compare its live map route with your own destination rather than assuming it is the closest option.
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
-                    ["⭐ Google Rating", "5.0 / 5.0"],
-                    ["👥 Reviews", "20+ verified"],
+                    ["⭐ Google Rating", "Check current profile"],
+                    ["👥 Reviews", "Check current profile"],
                     ["🏠 Branches", "3 across Punjab"],
-                    ["💰 Starting Rate", "PKR 2,000/night"],
+                    ["💰 Current Rates", "See live rooms page"],
                     ["💳 Payment", "Cash on arrival"],
                     ["🚫 Advance Payment", "Not required"],
                   ].map(([label, val]) => (
@@ -227,12 +227,12 @@ export default function WhereToStayPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
                   { icon: "📶", facility: "Free WiFi", desc: "High-speed internet in all rooms" },
-                  { icon: "🚿", facility: "Hot Water 24/7", desc: "Round-the-clock hot water supply" },
+                  { icon: "🚿", facility: "Room Facilities", desc: "Review the room listing and confirm essential facilities" },
                   { icon: "❄️", facility: "Air Conditioning", desc: "AC rooms available (12 hrs/day)" },
                   { icon: "📺", facility: "Cable TV", desc: "Local and international channels" },
                   { icon: "🧹", facility: "Daily Housekeeping", desc: "Fresh linen and room cleaning" },
-                  { icon: "📞", facility: "24/7 Reception", desc: "Staff always available to assist" },
-                  { icon: "🔒", facility: "CCTV Security", desc: "Full premises under surveillance" },
+                  { icon: "📞", facility: "Arrival Assistance", desc: "Call to confirm current response and arrival arrangements" },
+                  { icon: "🔒", facility: "Booking Details", desc: "Review branch, occupancy, price and terms before confirmation" },
                   { icon: "🅿️", facility: "Parking", desc: "Vehicle parking on premises" },
                   { icon: "🍽️", facility: "Nearby Dining", desc: "Restaurants within 2 min walk" },
                 ].map(item => (
@@ -313,11 +313,11 @@ export default function WhereToStayPage() {
             <section className="card-luxury rounded-2xl p-8 text-center border border-gold-500/20">
               <h2 className="text-2xl font-bold font-serif text-foreground mb-3">Book Your Stay in Chakwal Today</h2>
               <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
-                Chakwal Guest House — the most trusted accommodation in Chakwal Punjab. Book online in 2 minutes. No advance payment required. Pay cash on arrival. Free cancellation.
+                Compare current rooms at Chakwal Guest House, review the selected branch and terms, and call if an essential requirement needs confirmation.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/book" className="inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
-                  Book Now — Free Cancellation <ArrowRight className="w-4 h-4" />
+                  Check Current Availability <ArrowRight className="w-4 h-4" />
                 </Link>
                 <a href={`tel:${siteConfig.phoneE164}`} className="inline-flex items-center gap-2 px-6 py-3 border border-gold-500/30 text-gold-400 font-semibold rounded-xl hover:bg-gold-500/10 transition-colors">
                   <Phone className="w-4 h-4" /> Call {siteConfig.phone}

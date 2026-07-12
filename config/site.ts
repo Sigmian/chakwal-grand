@@ -4,7 +4,7 @@ export const siteConfig = {
   name:        "Chakwal Guest House",
   shortName:   "CGH",
   tagline:     "Stay Comfortably. Feel at Home.",
-  description: "Chakwal Guest House offers clean, comfortable and affordable rooms in Chakwal with two convenient branches — Main Branch near District Courts and our new Madina Town Branch. Modern facilities, 24/7 support and an exceptional guest experience.",
+  description: "Compare current rooms and availability at Chakwal Guest House, with a Main Branch near District Courts on Talagang Road and a Madina Town branch in Chakwal.",
   url:         "https://www.staychakwal.de",
   phone:       "0334-7742767",
   phoneE164:   "+923347742767",
@@ -16,7 +16,7 @@ export const siteConfig = {
   currency:    "PKR",
   currencySymbol: "₨",
 
-  checkInTime:  "Flexible (anytime)",
+  checkInTime:  "Confirm during booking",
   checkOutTime: "12:00 PM",
   acHoursDaily: 12,
 
@@ -43,6 +43,9 @@ export const siteConfig = {
       address: "Near District Courts, Talagang Road, Chakwal",
       slug:    "chakwal",
       label:   "Flagship Location",
+      pageUrl: "/locations/main-branch-talagang-road",
+      mapUrl:  "https://maps.google.com/?q=Near+District+Courts+Talagang+Road+Chakwal+Punjab",
+      addressNote: "Use the map or call before arrival to confirm the entrance.",
     },
     {
       id:      "branch-madina",
@@ -50,7 +53,10 @@ export const siteConfig = {
       city:    "Chakwal",
       address: "Madina Town, Chakwal",
       slug:    "madina-town",
-      label:   "New — Grand Opening",
+      label:   "Madina Town Location",
+      pageUrl: "/locations/madina-town",
+      mapUrl:  "https://maps.app.goo.gl/XwdyMoE1VWSjJfWDA",
+      addressNote: "Use the confirmed map pin for directions. Call if you need help identifying the entrance.",
     },
   ],
 } as const;

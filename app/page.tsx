@@ -2,7 +2,7 @@
 import Link from "next/link";
 import {
   Star, MapPin, Phone, CheckCircle2, ChevronRight,
-  Award, Wifi, Snowflake, ShowerHead, ShieldCheck, Users,
+  Wifi, Snowflake, CalendarCheck, ShieldCheck,
 } from "lucide-react";
 import { PublicNavbar }   from "@/features/public/components/PublicNavbar";
 import { PublicFooter }   from "@/features/public/components/PublicFooter";
@@ -12,16 +12,17 @@ import { Reveal }         from "@/features/public/components/Reveal";
 import { GallerySection } from "@/features/public/components/GallerySection";
 import { FAQSection }     from "@/features/public/components/FAQSection";
 import { ChatWidget }            from "@/features/public/components/ChatWidget";
+import { ReviewsCarousel }       from "@/features/public/components/ReviewsCarousel";
 import { GrandOpeningFireworks } from "@/features/public/components/GrandOpeningFireworks";
 import { getPublicBranches, getPublicReviews, getPublicRooms, getGrandOpeningOffer } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Chakwal Guest House | Best Guest House in Chakwal",
+  title: "Chakwal Guest House | Rooms at Two Chakwal Locations",
   description: siteConfig.description,
   alternates: { canonical: siteConfig.url },
   openGraph: {
-    title:       "Chakwal Guest House | Best Guest House in Chakwal",
+    title:       "Chakwal Guest House | Rooms at Two Chakwal Locations",
     description: siteConfig.description,
     url:         siteConfig.url,
     siteName:    siteConfig.name,
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card:        "summary_large_image",
-    title:       "Chakwal Guest House | Best Guest House in Chakwal",
+    title:       "Chakwal Guest House | Rooms at Two Chakwal Locations",
     description: siteConfig.description,
     images:      [`${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`],
   },
@@ -47,7 +48,6 @@ const LOCAL_BUSINESS_SCHEMA = {
   "url":         siteConfig.url,
   "telephone":   siteConfig.phoneE164,
   "email":       siteConfig.email,
-  "priceRange":  "PKR 2,000 - PKR 5,000",
   "image":       `${siteConfig.url}/images/blogs/chakwal-travel-mountains-punjab.webp`,
   "logo":        `${siteConfig.url}/images/logo.png`,
   "address": {
@@ -57,23 +57,8 @@ const LOCAL_BUSINESS_SCHEMA = {
     "addressRegion":   "Punjab",
     "addressCountry":  "PK",
   },
-  "geo": {
-    "@type":     "GeoCoordinates",
-    "latitude":  "32.9318",
-    "longitude": "72.8560",
-  },
-  "amenityFeature": [
-    { "@type": "LocationFeatureSpecification", "name": "Free WiFi",        "value": true },
-    { "@type": "LocationFeatureSpecification", "name": "Air Conditioning", "value": true },
-    { "@type": "LocationFeatureSpecification", "name": "24/7 Room Service","value": true },
-    { "@type": "LocationFeatureSpecification", "name": "Family Rooms",     "value": true },
-    { "@type": "LocationFeatureSpecification", "name": "Online Booking",   "value": true },
-  ],
-  "checkinTime":  "00:00",
   "checkoutTime": "12:00",
   "currenciesAccepted": "PKR",
-  "paymentAccepted":    "Cash",
-  "openingHours": "Mo-Su 00:00-23:59",
   "hasMap": siteConfig.social.googleBusinessUrl,
   "sameAs": [
     siteConfig.url,
@@ -110,23 +95,23 @@ const FAQ_SCHEMA = {
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "What is the best guest house in Chakwal?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Chakwal Guest House is the most popular and highly-rated guest house in Chakwal, Punjab. It offers AC rooms, family suites, free WiFi, and 24/7 service from PKR 2,000/night." }
+      "name": "Where can I view rooms at Chakwal Guest House?",
+      "acceptedAnswer": { "@type": "Answer", "text": `Current room options and availability are shown at ${siteConfig.url}/rooms. Confirm branch-specific facilities before booking.` }
     },
     {
       "@type": "Question",
       "name": "How much does a room cost at Chakwal Guest House?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Room rates start from PKR 2,000/night for a Classic room, going up to PKR 4,500/night for an AC Apartment. All rooms include free WiFi, hot water, and attached bathroom." }
+      "acceptedAnswer": { "@type": "Answer", "text": `Room prices depend on the active room inventory and dates. View current prices at ${siteConfig.url}/rooms or call ${siteConfig.phone}.` }
     },
     {
       "@type": "Question",
       "name": "Is there a family room available in Chakwal?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Yes, Chakwal Guest House has spacious family rooms that can accommodate 4 adults and 2 children. Available from PKR 2,500/night." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Family room availability and capacity vary by room and branch. Check the current room details for exact occupancy before booking." }
     },
     {
       "@type": "Question",
       "name": "How do I book a room at Chakwal Guest House?",
-      "acceptedAnswer": { "@type": "Answer", "text": `You can book online instantly at ${siteConfig.url.replace("https://", "")}, or call/WhatsApp us at ${siteConfig.phone}. No advance payment required — pay cash on arrival.` }
+      "acceptedAnswer": { "@type": "Answer", "text": `You can check availability online at ${siteConfig.url.replace("https://", "")}, or call/WhatsApp us at ${siteConfig.phone}. Payment and cancellation terms are shown during booking.` }
     },
     {
       "@type": "Question",
@@ -136,7 +121,7 @@ const FAQ_SCHEMA = {
     {
       "@type": "Question",
       "name": "What is the check-in and check-out time?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Check-in is flexible — you are welcome to arrive at any time. Check-out is 12:00 PM (noon). CNIC is required at check-in." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Check-out is 12:00 PM. Confirm the available check-in time and required documents during booking, especially for a late arrival." }
     },
   ],
 };
@@ -144,11 +129,10 @@ const FAQ_SCHEMA = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [branches, reviews, rooms, guestCount, grandOpeningOffer] = await Promise.all([
+  const [branches, reviews, rooms, grandOpeningOffer] = await Promise.all([
     getPublicBranches(),
     getPublicReviews(),
     getPublicRooms(),
-    import("@/lib/db/prisma").then(m => m.default.customer.count()),
     getGrandOpeningOffer(siteConfig.branchIds.madinaTown),
   ]);
 
@@ -202,8 +186,7 @@ export default async function HomePage() {
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HERO (VIDEO) */}
         <VideoHero
           branches={branches as { id: string; name: string; city: string }[]}
-          startingFrom={rooms.length > 0 ? Math.min(...rooms.map(r => Number(r.pricePerNight))) : 2000}
-          totalGuests={guestCount > 0 ? guestCount : undefined}
+          startingFrom={rooms.length > 0 ? Math.min(...rooms.map(r => Number(r.pricePerNight))) : undefined}
           avgRating={avgRating}
         />
 
@@ -212,10 +195,10 @@ export default async function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { icon: Star,        title: avgRating ? `${avgRating.toFixed(1)} / 5` : "4.8 / 5", sub: `${reviews.length || "120"}+ guest reviews` },
-                { icon: Users,       title: guestCount > 0 ? `${guestCount}+` : "500+",            sub: "Happy guests hosted" },
-                { icon: CheckCircle2, title: "No prepayment",                                       sub: "Pay cash on arrival" },
-                { icon: ShieldCheck, title: "Free cancellation",                                   sub: "Up to 24h before" },
+                ...(avgRating && reviews.length ? [{ icon: Star, title: `${avgRating.toFixed(1)} / 5`, sub: `${reviews.length} verified site review${reviews.length === 1 ? "" : "s"}` }] : []),
+                { icon: MapPin, title: `${branches.length || siteConfig.branches.length} locations`, sub: "Choose the branch that suits your visit" },
+                { icon: CalendarCheck, title: "Live availability", sub: "Check current rooms and prices" },
+                { icon: ShieldCheck, title: "Clear booking details", sub: "Review terms before confirmation" },
               ].map(({ icon: Icon, title, sub }) => (
                 <div key={title} className="flex items-center gap-3 justify-center md:justify-start">
                   <div className="w-9 h-9 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center flex-shrink-0">
@@ -289,12 +272,12 @@ export default async function HomePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { Icon: Award,       title: "Best Value",      body: "Transparent pricing with no hidden charges. Rates from PKR 2,000/night for fully-equipped rooms." },
-                { Icon: Wifi,        title: "Fast WiFi",       body: "High-speed internet in all rooms — perfect for business travellers and long stays." },
-                { Icon: Snowflake,   title: "A/C Available",   body: "Air conditioning in select rooms, included in the room rate (12 hours daily)." },
-                { Icon: ShowerHead,  title: "Hot Water 24/7",  body: "Attached bathrooms with reliable hot water available around the clock." },
-                { Icon: ShieldCheck, title: "Safe & Secure",   body: "CCTV coverage, front-desk staffed 24/7, secure key access to all rooms." },
-                { Icon: MapPin,      title: "Two Locations",   body: "Main Branch near District Courts & new Madina Town Branch — both centrally located in Chakwal." },
+                { Icon: CalendarCheck, title: "Current Prices", body: "Room prices come from active inventory so you can compare the options currently listed." },
+                { Icon: Wifi, title: "Room Details", body: "Review the facilities shown for each room and confirm any essential requirement before booking." },
+                { Icon: Snowflake, title: "A/C Options", body: "Air-conditioned options are identified on their room listings when available." },
+                { Icon: ShieldCheck, title: "Booking Clarity", body: "Review the selected branch, occupancy, dates, price and terms before confirmation." },
+                { Icon: MapPin, title: "Two Chakwal Locations", body: "Choose the Main Branch near District Courts or the Madina Town branch." },
+                { Icon: Phone, title: "Direct Assistance", body: `Call or WhatsApp ${siteConfig.phone} to confirm a requirement or request arrival directions.` },
               ].map(({ Icon, title, body }, i) => (
                 <Reveal key={title} delay={i * 0.06}>
                   <div className="card-luxury rounded-2xl p-6 h-full hover:-translate-y-1 hover:border-gold-500/30 transition-all group">
@@ -337,6 +320,11 @@ export default async function HomePage() {
                           {branch.phone}
                         </a>
                       )}
+                      {siteConfig.branches.find((item) => item.id === branch.id)?.pageUrl && (
+                        <Link href={siteConfig.branches.find((item) => item.id === branch.id)!.pageUrl} className="inline-flex items-center gap-1 mt-4 text-xs font-semibold text-gold-400 hover:underline">
+                          View branch details <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      )}
                     </div>
                   </Reveal>
                 ))}
@@ -364,29 +352,18 @@ export default async function HomePage() {
                   </div>
                 )}
               </Reveal>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {reviews.map((review, i) => (
-                  <Reveal key={review.id} delay={i * 0.06}>
-                    <div className={`card-luxury rounded-2xl p-6 h-full ${review.isFeatured ? "border border-gold-500/20" : ""}`}>
-                      <div className="flex items-center gap-1 mb-3">
-                        {Array.from({ length: 5 }).map((_, idx) => (
-                          <Star key={idx} className={`w-4 h-4 ${idx < review.rating ? "text-gold-400 fill-gold-400" : "text-border"}`} />
-                        ))}
-                      </div>
-                      <p className="text-sm text-foreground leading-relaxed mb-4 line-clamp-4">&ldquo;{review.body}&rdquo;</p>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gold-500/20 border border-gold-500/30 flex items-center justify-center text-xs font-bold text-gold-400">
-                          {review.customer?.name?.[0]?.toUpperCase() ?? "G"}
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-foreground">{review.customer?.name ?? "Guest"}</p>
-                          {review.customer?.city && <p className="text-[10px] text-muted-foreground">{review.customer.city}</p>}
-                        </div>
-                      </div>
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
+              <Reveal>
+                <ReviewsCarousel
+                  reviews={reviews.map((r) => ({
+                    id:         r.id,
+                    rating:     r.rating,
+                    body:       r.body,
+                    isFeatured: r.isFeatured ?? false,
+                    name:       r.customer?.name ?? "Guest",
+                    city:       r.customer?.city ?? null,
+                  }))}
+                />
+              </Reveal>
             </div>
           </section>
         )}
@@ -399,7 +376,7 @@ export default async function HomePage() {
               Ready to Plan Your Stay?
             </h2>
             <p className="text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Book online for instant confirmation, or call us directly — our team is available 24/7 to help you find the perfect room.
+              Check current availability online, or call us directly to confirm a room requirement or arrival detail.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Link href="/book"
@@ -419,9 +396,9 @@ export default async function HomePage() {
 
             <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
               {[
-                "No payment required online",
-                "Pay cash on arrival",
-                "Free cancellation",
+                "Current prices shown during booking",
+                "Branch shown before confirmation",
+                "Call or WhatsApp for assistance",
                 "CNIC required at check-in",
               ].map(item => (
                 <span key={item} className="flex items-center gap-1.5">

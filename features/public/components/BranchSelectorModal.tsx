@@ -21,10 +21,10 @@ const BRANCHES = [
     subtitle:    "Flagship Location",
     address:     "Near District Courts, Talagang Road",
     city:        "Chakwal",
-    description: "Our original guest house — trusted by thousands of guests. Prime location, premium rooms, 24/7 service.",
+    description: "Our Main Branch near District Courts on Talagang Road. Review its current room listings and arrival details.",
     tag:         "Flagship",
     tagColor:    "bg-gold-500/20 text-gold-300 border-gold-500/30",
-    facilities:  ["Free WiFi", "AC Rooms", "Free Parking"],
+    facilities:  ["Current room listings", "Branch details", "Call for facilities"],
     badge:       null,
     gradient:    "from-stone-800 via-stone-700 to-stone-900",
     accentColor: "gold",
@@ -274,7 +274,7 @@ export function BranchSelectorModal({ grandOpeningActive, minPriceMain, minPrice
                         {branch.facilities.map((f) => (
                           <span key={f} className="flex items-center gap-1 text-[10px] text-muted-foreground bg-surface-base/80 border border-border rounded-full px-2 py-0.5">
                             {f === "Free WiFi"    && <Wifi className="w-2.5 h-2.5" />}
-                            {f === "Free Parking" && <Car  className="w-2.5 h-2.5" />}
+                            {f === "Call for facilities" && <Car  className="w-2.5 h-2.5" />}
                             {f === "AC Rooms"     && <Zap  className="w-2.5 h-2.5" />}
                             {f === "Private Lawn" && <Star className="w-2.5 h-2.5" />}
                             {f}

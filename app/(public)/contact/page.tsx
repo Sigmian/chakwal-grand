@@ -35,7 +35,6 @@ const CONTACT_SCHEMA = {
       "addressRegion": "Punjab",
       "addressCountry": "PK",
     },
-    "openingHours": "Mo-Su 00:00-23:59",
   },
 };
 
@@ -48,8 +47,8 @@ const BRANCHES = [
   },
   {
     name:    "Madina Town Branch",
-    address: "Madina Town, Chakwal, Punjab",
-    mapUrl:  "https://maps.google.com/?q=Madina+Town+Chakwal+Punjab",
+    address: "Madina Town, Chakwal, Punjab — confirmed map pin available",
+    mapUrl:  "https://maps.app.goo.gl/XwdyMoE1VWSjJfWDA",
     mapEmbed: "https://www.google.com/maps?q=Madina+Town+Chakwal,Punjab,Pakistan&z=14&output=embed",
   },
 ];
@@ -67,8 +66,7 @@ export default function ContactPage() {
               Contact Chakwal<br />Guest House
             </h1>
             <p className="text-lg text-muted-foreground">
-              For room bookings, availability queries, or any assistance — we are available 24/7.
-              Call us, WhatsApp us, or book online instantly.
+              For room availability, branch directions or booking questions, call, WhatsApp or use the online booking form.
             </p>
           </div>
         </section>
@@ -83,7 +81,7 @@ export default function ContactPage() {
                 </div>
                 <h2 className="font-bold text-foreground mb-1">Call Us</h2>
                 <p className="text-gold-400 font-mono font-semibold">{siteConfig.phone}</p>
-                <p className="text-xs text-muted-foreground mt-1">Available 24/7</p>
+                <p className="text-xs text-muted-foreground mt-1">Call to confirm current response hours</p>
               </a>
 
               <a href={siteConfig.social.whatsappUrl} target="_blank" rel="noreferrer"
@@ -93,23 +91,23 @@ export default function ContactPage() {
                 </div>
                 <h2 className="font-bold text-foreground mb-1">WhatsApp</h2>
                 <p className="text-[#25D366] font-mono font-semibold">{siteConfig.phone}</p>
-                <p className="text-xs text-muted-foreground mt-1">Instant reply</p>
+                <p className="text-xs text-muted-foreground mt-1">Response time may vary</p>
               </a>
 
               <div className="card-luxury rounded-2xl p-6 text-center">
                 <div className="w-12 h-12 rounded-xl bg-gold-500/10 flex items-center justify-center mx-auto mb-4">
                   <Clock className="w-6 h-6 text-gold-400" />
                 </div>
-                <h2 className="font-bold text-foreground mb-1">Reception Hours</h2>
-                <p className="text-foreground font-semibold">Open 24 Hours</p>
-                <p className="text-xs text-muted-foreground mt-1">7 days a week</p>
+                <h2 className="font-bold text-foreground mb-1">Arrival Details</h2>
+                <p className="text-foreground font-semibold">Confirm before travel</p>
+                <p className="text-xs text-muted-foreground mt-1">Especially for late arrivals</p>
               </div>
             </Reveal>
 
             {/* Branch Locations */}
             <div className="text-center mb-10">
               <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Our Locations</p>
-              <h2 className="text-3xl font-bold font-serif text-foreground">Find Us in Punjab</h2>
+              <h2 className="text-3xl font-bold font-serif text-foreground">Find Us in Chakwal</h2>
             </div>
 
             <div className="space-y-10">
@@ -190,7 +188,7 @@ export default function ContactPage() {
         <section className="py-12 bg-surface-base border-t border-border">
           <div className="max-w-xl mx-auto px-4 text-center">
             <h2 className="text-2xl font-bold font-serif text-foreground mb-4">Book Your Room Online</h2>
-            <p className="text-muted-foreground mb-6">No advance payment needed. Reserve your room in 2 minutes.</p>
+            <p className="text-muted-foreground mb-6">Review the current room, branch, price and booking terms before confirming.</p>
             <Link href="/book" className="inline-flex items-center gap-2 px-8 py-3 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all">
               Book a Room Now
             </Link>

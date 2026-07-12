@@ -26,8 +26,8 @@ const BLOGS = [
   },
   {
     slug:    "chakwal-guest-house-guide",
-    title:   "Best Guest House in Chakwal — Why Stay at Chakwal Guest House (CGH)",
-    excerpt: "Looking for the best guest house or hotel in Chakwal? This guide covers rooms, amenities, pricing, location, and how to book — with no advance payment required.",
+    title:   "Chakwal Guest House Guide — Rooms, Locations & Booking",
+    excerpt: "A guide to comparing Chakwal Guest House rooms, current pricing, branch details and the booking process.",
     date:    "2026-01-15",
     tag:     "Accommodation",
   },
@@ -68,8 +68,8 @@ const BLOGS = [
   },
   {
     slug:    "where-to-stay-chakwal",
-    title:   "Where to Stay in Chakwal — Best Guest Houses & Hotels 2025",
-    excerpt: "A comprehensive guide to the best accommodation options in Chakwal — from budget rooms to executive suites. Find out why Chakwal Guest House is the top-rated guest house in the city.",
+    title:   "Where to Stay in Chakwal — Guest House & Hotel Guide",
+    excerpt: "A practical guide to comparing accommodation areas, room details, current prices and booking terms in Chakwal.",
     date:    "2025-02-20",
     tag:     "Accommodation",
   },

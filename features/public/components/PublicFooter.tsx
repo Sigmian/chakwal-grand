@@ -47,7 +47,7 @@ export async function PublicFooter() {
               {siteConfig.tagline}
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed mt-2">
-              Clean, comfortable and affordable rooms in Chakwal with modern facilities and 24/7 support.
+              Compare current rooms at our Main Branch and Madina Town branch in Chakwal.
             </p>
             <div className="flex items-center gap-3 mt-5">
               <a href={siteConfig.social.whatsappUrl} target="_blank" rel="noreferrer" aria-label="WhatsApp"
@@ -81,6 +81,8 @@ export async function PublicFooter() {
                 { label: "About Us",    href: "/about"      },
                 { label: "Contact Us",  href: "/contact"    },
                 { label: "Our Location",href: "/location"   },
+                { label: "Main Branch", href: "/locations/main-branch-talagang-road" },
+                { label: "Madina Town", href: "/locations/madina-town" },
                 { label: "Travel Blog",  href: "/blog"        },
                 { label: "Guest Portal", href: "/guest/login" },
               ].map(({ label, href }) => (

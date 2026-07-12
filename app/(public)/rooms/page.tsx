@@ -7,12 +7,12 @@ import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Rooms & Suites",
-  description: "Explore AC rooms, family suites and VIP rooms at Chakwal Guest House in Chakwal, Punjab. Rates from PKR 2,000/night. View availability and book online.",
+  description: "Compare current room types, branch, occupancy, prices and availability at Chakwal Guest House in Chakwal, Punjab.",
   keywords: ["rooms in Chakwal", "AC room Chakwal", "family suite Chakwal", "VIP room Chakwal", "cheap hotel room Chakwal", "Chakwal Guest House rooms"],
   alternates: { canonical: `${siteConfig.url}/rooms` },
   openGraph: {
     title:       `Rooms & Suites | ${siteConfig.name}`,
-    description: "AC rooms, family suites & VIP rooms from PKR 2,000/night in Chakwal, Punjab.",
+    description: "Compare current rooms, branch details, prices and availability in Chakwal, Punjab.",
     url:         `${siteConfig.url}/rooms`,
   },
 };
@@ -34,7 +34,7 @@ export default async function RoomsPage() {
           Find Your Perfect Room
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-          From cozy classic rooms to spacious family suites — all with complimentary WiFi, hot water, and 24/7 service.
+          Compare the branch, occupancy, listed facilities and current price for each available room. Confirm any essential requirement before booking.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
@@ -68,7 +68,7 @@ export default async function RoomsPage() {
             Ready to Book Your Stay?
           </h2>
           <p className="text-muted-foreground mb-8">
-            Check availability for your dates and confirm your room in minutes. No payment required online — pay on arrival.
+            Check availability for your dates and review the selected branch, room, price and booking terms before confirming.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/book"

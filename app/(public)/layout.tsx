@@ -10,12 +10,12 @@ import { getActiveAnnouncement, getGrandOpeningOffer, getPublicRooms } from "@/s
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: { default: "Chakwal Guest House | Best Stay in Chakwal Punjab", template: "%s | Chakwal Guest House" },
-  description: "Stay at Chakwal Guest House — the most trusted accommodation in Chakwal, Punjab. AC rooms, family suites & VIP rooms from PKR 2,000/night. Online booking available.",
+  title: { default: "Chakwal Guest House | Rooms in Chakwal", template: "%s | Chakwal Guest House" },
+  description: "Compare current rooms and availability at Chakwal Guest House's Main Branch and Madina Town branch in Chakwal.",
   keywords: [
     "guest house Chakwal", "hotel Chakwal", "accommodation Chakwal", "room booking Chakwal",
     "family rooms Chakwal", "AC rooms Chakwal", "cheap stay Chakwal", "Chakwal Guest House",
-    "best hotel Chakwal Punjab", "overnight stay Chakwal", "CGH Chakwal",
+    "overnight stay Chakwal", "CGH Chakwal",
   ],
 };
 

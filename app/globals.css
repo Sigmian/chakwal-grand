@@ -332,6 +332,26 @@
   }
 }
 
+/* Infinite testimonial marquee — track holds two identical copies,
+   so translating -50% loops seamlessly */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+  will-change: transform;
+}
+
+/* Gentler attention pulse for the floating chat button */
+@keyframes ping-slow {
+  0%        { transform: scale(1);    opacity: 0.4; }
+  70%, 100% { transform: scale(1.55); opacity: 0;   }
+}
+.animate-ping-slow {
+  animation: ping-slow 2.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 /* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .stagger-children > * {
@@ -339,5 +359,19 @@
   }
   .card-lift:hover {
     transform: none;
+  }
+  .animate-marquee {
+    animation: none;
+  }
+  /* Frozen marquee becomes a swipeable strip; hide the loop clone */
+  .reviews-marquee {
+    overflow-x: auto;
+  }
+  .reviews-marquee .marquee-clone {
+    display: none;
+  }
+  .animate-ping-slow {
+    animation: none;
+    opacity: 0;
   }
 }

@@ -13,6 +13,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/about`,      lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/contact`,    lastModified: NOW, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/location`,   lastModified: NOW, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/locations/main-branch-talagang-road`, lastModified: NOW, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${BASE}/locations/madina-town`, lastModified: NOW, changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE}/gallery`,    lastModified: NOW, changeFrequency: "weekly",  priority: 0.7 },
     { url: `${BASE}/privacy-policy`, lastModified: NOW, changeFrequency: "yearly",  priority: 0.3 },
     { url: `${BASE}/terms`,          lastModified: NOW, changeFrequency: "yearly",  priority: 0.3 },

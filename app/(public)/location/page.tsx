@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MapPin, Navigation, Phone, Clock, Car } from "lucide-react";
+import { MapPin, Navigation, Phone } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { Reveal } from "@/features/public/components/Reveal";
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: `${siteConfig.url}/location` },
   openGraph: {
     title: "Location | Chakwal Guest House — Near District Courts, Chakwal",
-    description: "We are located near District Courts, Talagang Road, Chakwal. Easy access from Rawalpindi, Islamabad, and Lahore via GT Road.",
+    description: "Compare the Main Branch near District Courts on Talagang Road with the Madina Town branch and confirm arrival details before travel.",
     url: `${siteConfig.url}/location`,
   },
 };
@@ -27,13 +27,7 @@ const LOCATION_SCHEMA = {
     "streetAddress": "Near District Courts, Talagang Road",
     "addressLocality": "Chakwal",
     "addressRegion": "Punjab",
-    "postalCode": "48800",
     "addressCountry": "PK",
-  },
-  "geo": {
-    "@type": "GeoCoordinates",
-    "latitude":  "32.9318",
-    "longitude": "72.8560",
   },
   "hasMap": siteConfig.social.googleBusinessUrl,
 };
@@ -42,26 +36,21 @@ const BRANCHES = [
   {
     name:        "Main Branch — Near District Courts",
     address:     "Near District Courts, Talagang Road, Chakwal",
-    description: "Our flagship location in the heart of Chakwal city, easily accessible from the main GT Road and city center. Trusted by thousands of guests since our founding.",
-    distance:    "2 km from Chakwal Bus Stand",
+    description: "Review the Main Branch page for current room listings, booking details and arrival guidance.",
+    distance:    "Near District Courts on Talagang Road",
     mapUrl:      "https://maps.google.com/?q=Near+District+Courts+Talagang+Road+Chakwal+Punjab",
     label:       "Flagship",
+    pageUrl:     "/locations/main-branch-talagang-road",
   },
   {
     name:        "Madina Town Branch — New Location",
     address:     "Madina Town, Chakwal",
-    description: "Our brand-new Madina Town branch featuring spacious rooms, a private apartment with lawn and garage, and modern standard rooms. Perfect for families and extended stays.",
-    distance:    "Madina Town, Chakwal",
-    mapUrl:      "https://maps.google.com/?q=Madina+Town+Chakwal+Punjab",
-    label:       "New — Grand Opening",
+    description: "Use the confirmed Google Maps pin for directions and call if you need help identifying the entrance.",
+    distance:    "Madina Town, Chakwal — confirmed map pin available",
+    mapUrl:      "https://maps.app.goo.gl/XwdyMoE1VWSjJfWDA",
+    label:       "Madina Town",
+    pageUrl:     "/locations/madina-town",
   },
-];
-
-const HOW_TO_REACH = [
-  { from: "Rawalpindi / Islamabad", via: "GT Road → Chakwal Road", time: "~1.5 hours" },
-  { from: "Lahore",                 via: "GT Road → Chakwal Bypass", time: "~3 hours" },
-  { from: "Jhelum",                 via: "Pind Dadan Khan Road", time: "~1 hour" },
-  { from: "Faisalabad",             via: "Sargodha Road → Chakwal", time: "~3 hours" },
 ];
 
 export default function LocationPage() {
@@ -78,7 +67,7 @@ export default function LocationPage() {
             </h1>
             <p className="text-lg text-muted-foreground">
               Chakwal Guest House has two locations in Chakwal — our Main Branch near
-              District Courts and our new Madina Town Branch. Both are easily accessible.
+              District Courts and our Madina Town Branch. Confirm the correct branch and arrival pin before travelling.
             </p>
           </div>
         </section>
@@ -158,34 +147,11 @@ export default function LocationPage() {
                   </a>
                 </div>
                 <p className="text-sm text-muted-foreground">{b.description}</p>
+                <Link href={b.pageUrl} className="inline-flex mt-4 text-sm font-semibold text-gold-400 hover:underline">
+                  View branch rooms and details
+                </Link>
               </Reveal>
             ))}
-          </div>
-        </section>
-
-        {/* How to Reach */}
-        <section className="py-16 bg-surface-elevated">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <p className="text-xs font-bold uppercase tracking-widest text-gold-400 mb-3">Directions</p>
-              <h2 className="text-3xl font-bold font-serif text-foreground">How to Reach Chakwal</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {HOW_TO_REACH.map(({ from, via, time }, i) => (
-                <Reveal key={from} delay={i * 0.06} className="card-luxury rounded-2xl p-5 flex items-start gap-4 hover:border-gold-500/20 transition-colors">
-                  <div className="w-10 h-10 rounded-xl bg-gold-500/10 flex items-center justify-center flex-shrink-0">
-                    <Car className="w-5 h-5 text-gold-400" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-foreground text-sm">From {from}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">via {via}</p>
-                    <p className="text-xs text-gold-400 mt-1 flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {time}
-                    </p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
           </div>
         </section>
 
