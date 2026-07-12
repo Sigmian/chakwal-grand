@@ -28,20 +28,25 @@ export function StatCard({
   if (loading) return <StatCardSkeleton />;
 
   return (
-    <div className={cn("card-luxury p-5 group hover:border-gold-500/20 transition-all", className)}>
-      <div className="flex items-start justify-between gap-4">
+    <div className={cn("card-luxury card-lift p-5 group relative overflow-hidden", className)}>
+      {/* Decorative corner glow — brightens on hover */}
+      <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-gold-500/[0.05] blur-2xl pointer-events-none transition-colors duration-300 group-hover:bg-gold-500/[0.09]" />
+
+      <div className="flex items-start justify-between gap-4 relative">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+          <p className="text-2xs sm:text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
             {title}
           </p>
-          <p className="text-2xl font-bold text-foreground font-serif truncate">{value}</p>
+          <p className="text-2xl sm:text-[1.7rem] font-bold text-foreground font-serif truncate leading-tight">{value}</p>
           {subtitle && (
-            <p className="text-xs text-muted-foreground mt-1 truncate">{subtitle}</p>
+            <p className="text-xs text-muted-foreground mt-1.5 truncate">{subtitle}</p>
           )}
           {trend && (
             <div className={cn(
-              "flex items-center gap-1 mt-2 text-xs font-medium",
-              trend.value > 0 ? "text-green-400" : trend.value < 0 ? "text-red-400" : "text-muted-foreground"
+              "inline-flex items-center gap-1 mt-2.5 text-2xs font-bold px-2 py-0.5 rounded-full border",
+              trend.value > 0 ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+              : trend.value < 0 ? "text-red-400 bg-red-500/10 border-red-500/20"
+              : "text-muted-foreground bg-accent/50 border-border"
             )}>
               {trend.value > 0 ? <TrendingUp className="w-3 h-3" /> :
                trend.value < 0 ? <TrendingDown className="w-3 h-3" /> :
@@ -53,7 +58,7 @@ export function StatCard({
           )}
         </div>
         <div className={cn(
-          "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110",
+          "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3",
           iconBg
         )}>
           {icon}
@@ -99,8 +104,9 @@ export function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div>
         <h1 className="text-2xl font-bold text-foreground font-serif">{title}</h1>
+        <div className="h-0.5 w-10 bg-gold-gradient rounded-full mt-1.5" />
         {subtitle && (
-          <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+          <p className="text-sm text-muted-foreground mt-1.5">{subtitle}</p>
         )}
       </div>
       {actions && (
@@ -159,10 +165,10 @@ interface EmptyStateProps {
 export function EmptyState({ icon, title, body, action, className }: EmptyStateProps) {
   return (
     <div className={cn("flex flex-col items-center justify-center py-16 text-center", className)}>
-      <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mb-4 text-muted-foreground">
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-surface-overlay border border-border ring-4 ring-accent/20 flex items-center justify-center mb-4 text-muted-foreground">
         {icon}
       </div>
-      <h3 className="text-base font-semibold text-foreground mb-1">{title}</h3>
+      <h3 className="text-base font-semibold text-foreground mb-1 font-serif">{title}</h3>
       <p className="text-sm text-muted-foreground max-w-xs mb-6">{body}</p>
       {action}
     </div>

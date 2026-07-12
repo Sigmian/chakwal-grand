@@ -146,8 +146,32 @@
 
   /* ── Luxury card ── */
   .card-luxury {
-    @apply bg-card border border-border rounded-xl shadow-card;
+    @apply bg-card border border-border rounded-xl;
     background: linear-gradient(145deg, hsl(var(--card)) 0%, #16161E 100%);
+    /* Inner top highlight gives the card a subtle machined edge */
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 1px 3px rgba(0, 0, 0, 0.4),
+      0 1px 2px rgba(0, 0, 0, 0.6);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .card-luxury:hover {
+    border-color: rgba(201, 168, 76, 0.18);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 8px 28px rgba(0, 0, 0, 0.45);
+  }
+
+  /* ── Opt-in hover lift for interactive cards ── */
+  .card-lift {
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 12px 32px rgba(0, 0, 0, 0.5),
+      0 2px 12px rgba(201, 168, 76, 0.08);
   }
 
   /* ── Glass card ── */
@@ -224,6 +248,7 @@
   }
   .data-table th {
     @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border;
+    background: rgba(255, 255, 255, 0.015);
   }
   .data-table td {
     @apply px-4 py-3.5 border-b border-border/50;
@@ -242,6 +267,26 @@
     background-image: var(--tw-bg-grid-pattern);
     background-size: 60px 60px;
   }
+
+  /* Ambient glow behind dashboard content — warm gold top-right, cool blue bottom-left */
+  .page-ambient {
+    background-image:
+      radial-gradient(640px 320px at 88% -8%, rgba(201, 168, 76, 0.055), transparent 60%),
+      radial-gradient(520px 280px at -8% 108%, rgba(59, 130, 246, 0.04), transparent 60%);
+  }
+
+  /* Staggered entrance — apply to a container; direct children fade in one after another */
+  .stagger-children > * {
+    animation: stagger-fade-up 0.45s ease-out both;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0.02s; }
+  .stagger-children > *:nth-child(2) { animation-delay: 0.06s; }
+  .stagger-children > *:nth-child(3) { animation-delay: 0.10s; }
+  .stagger-children > *:nth-child(4) { animation-delay: 0.14s; }
+  .stagger-children > *:nth-child(5) { animation-delay: 0.18s; }
+  .stagger-children > *:nth-child(6) { animation-delay: 0.22s; }
+  .stagger-children > *:nth-child(7) { animation-delay: 0.26s; }
+  .stagger-children > *:nth-child(n+8) { animation-delay: 0.30s; }
 
   .text-balance {
     text-wrap: balance;
@@ -272,5 +317,27 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* ─── Keyframes ──────────────────────────────────────────────── */
+@keyframes stagger-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .stagger-children > * {
+    animation: none;
+  }
+  .card-lift:hover {
+    transform: none;
   }
 }

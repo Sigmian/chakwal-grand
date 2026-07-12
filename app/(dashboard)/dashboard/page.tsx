@@ -96,7 +96,7 @@ export default async function DashboardPage() {
   } as const;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 stagger-children">
       {/* ── Greeting ── */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:justify-between">
         <div>

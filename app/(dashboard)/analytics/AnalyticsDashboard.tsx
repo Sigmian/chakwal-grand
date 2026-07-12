@@ -68,7 +68,7 @@ export function AnalyticsDashboard({
   ] : [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 stagger-children">
       {/* ── AI Suggestions (top priority) ── */}
       <AISuggestionsPanel suggestions={suggestions} />
 

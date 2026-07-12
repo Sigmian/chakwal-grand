@@ -79,7 +79,7 @@ export function DashboardSidebar({ user }: Props) {
           alt="Chakwal Guest House"
           width={36}
           height={36}
-          className="rounded-xl flex-shrink-0 shadow-gold-sm"
+          className="rounded-xl flex-shrink-0 shadow-gold-sm ring-1 ring-gold-500/30"
         />
         {!collapsed && (
           <div className="min-w-0">
@@ -109,7 +109,7 @@ export function DashboardSidebar({ user }: Props) {
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
                     collapsed ? "justify-center" : "justify-between",
                     childActive
-                      ? "bg-gold-500/10 text-gold-400"
+                      ? "bg-gradient-to-r from-gold-500/15 to-gold-500/[0.03] text-gold-400 ring-1 ring-inset ring-gold-500/10"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground"
                   )}
                 >
@@ -169,7 +169,7 @@ export function DashboardSidebar({ user }: Props) {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
                 collapsed && "justify-center",
                 active
-                  ? "bg-gold-500/15 text-gold-400 shadow-sm"
+                  ? "bg-gradient-to-r from-gold-500/15 to-gold-500/[0.03] text-gold-400 shadow-sm ring-1 ring-inset ring-gold-500/10"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
@@ -211,10 +211,10 @@ export function DashboardSidebar({ user }: Props) {
 
         {/* User info + logout */}
         <div className={cn(
-          "flex items-center gap-3",
+          "flex items-center gap-3 bg-accent/30 border border-border/50 rounded-xl p-2",
           collapsed ? "flex-col" : ""
         )}>
-          <div className="w-8 h-8 rounded-full bg-gold-gradient flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-gold-gradient flex items-center justify-center flex-shrink-0 ring-2 ring-gold-500/20">
             <span className="text-background text-xs font-bold">
               {getInitials(user.name)}
             </span>

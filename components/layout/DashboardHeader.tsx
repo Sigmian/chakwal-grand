@@ -110,7 +110,9 @@ export function DashboardHeader({ user }: Props) {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-surface-elevated/80 backdrop-blur-sm flex items-center justify-between px-3 sm:px-6 flex-shrink-0 z-30">
+    <header className="relative h-16 border-b border-border/70 bg-surface-elevated/70 backdrop-blur-xl flex items-center justify-between px-3 sm:px-6 flex-shrink-0 z-30">
+      {/* Gold hairline under the header */}
+      <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-gold-500/25 to-transparent pointer-events-none" />
       {/* ── Breadcrumbs — offset on mobile to clear hamburger button ── */}
       <nav className="flex items-center gap-1.5 text-sm min-w-0 pl-10 md:pl-0">
         {segments.map((seg, idx) => (
@@ -134,7 +136,7 @@ export function DashboardHeader({ user }: Props) {
       <div className="flex items-center gap-3 flex-shrink-0">
         {/* Branch badge (non-super-admin) */}
         {user.role !== UserRole.SUPER_ADMIN && user.branchId && (
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-accent rounded-lg border border-border text-xs text-muted-foreground">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gold-500/10 rounded-lg border border-gold-500/20 text-xs text-gold-400/90 font-medium">
             <Building2 className="w-3.5 h-3.5" />
             <span>Your Branch</span>
           </div>
@@ -146,9 +148,9 @@ export function DashboardHeader({ user }: Props) {
         </div>
 
         {/* Clock */}
-        <div className="hidden lg:flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Clock className="w-3.5 h-3.5" />
-          <span className="font-mono">{time}</span>
+        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 bg-accent/40 border border-border/60 rounded-lg text-xs text-muted-foreground">
+          <Clock className="w-3.5 h-3.5 text-gold-400/70" />
+          <span className="font-mono tabular-nums">{time}</span>
         </div>
 
         {/* Notifications */}
