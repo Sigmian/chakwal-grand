@@ -5,16 +5,17 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell, ChevronRight, Building2, Check, Clock, Search,
+  Bell, ChevronRight, Building2, Check, Clock, CheckCircle2, RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn, formatTime } from "@/utils";
+import { cn, formatTime, timeAgo } from "@/utils";
 import type { SessionUser } from "@/types";
 import { UserRole } from "@/types";
 import { PushNotificationToggle } from "@/features/dashboard/components/PushNotificationToggle";
+import { getHeaderNotifications, type HeaderNotification } from "@/server/actions/notifications";
 
 interface Props {
   user: SessionUser;
@@ -50,27 +51,63 @@ const NEW_LABELS: Record<string, string> = {
   branches:  "New Branch",
 };
 
-const MOCK_NOTIFICATIONS = [
-  { id: "1", type: "warning", title: "Low stock alert",  body: "Mineral water running low in Branch 1", time: "5m ago", read: false },
-  { id: "2", type: "info",    title: "New booking",      body: "BK-2026-A3F9K2 — Room 201 confirmed",  time: "12m ago", read: false },
-  { id: "3", type: "success", title: "Check-out done",   body: "Ali Hassan checked out of Room 103",   time: "1h ago",  read: true  },
-  { id: "4", type: "warning", title: "Maintenance due",  body: "Room 305 — AC filter replacement",     time: "2h ago",  read: true  },
-];
+// Client-side read tracking — notifications are derived from live data,
+// so "read" state lives in localStorage keyed by stable notification ids.
+const READ_KEY = "cgh_notif_read";
+
+function loadReadIds(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(READ_KEY) ?? "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveReadIds(ids: Set<string>) {
+  try {
+    localStorage.setItem(READ_KEY, JSON.stringify([...ids].slice(-200)));
+  } catch { /* storage unavailable */ }
+}
 
 export function DashboardHeader({ user }: Props) {
   const pathname = usePathname();
-  const [time, setTime]         = useState<string>("");
+  const router   = useRouter();
+  const [time, setTime]           = useState<string>("");
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
+  const [readIds, setReadIds]     = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      const items = await getHeaderNotifications();
+      setNotifications(items);
+    } catch { /* keep whatever we had */ }
+    finally { setRefreshing(false); }
+  }, []);
+
+  // Load read-state, fetch on mount, refresh every 60s
+  useEffect(() => {
+    setReadIds(loadReadIds());
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   // Auto-mark all as read 2s after opening panel
   useEffect(() => {
     if (!notifOpen) return;
     const timer = setTimeout(() => {
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setReadIds(prev => {
+        const next = new Set(prev);
+        notifications.forEach(n => next.add(n.id));
+        saveReadIds(next);
+        return next;
+      });
     }, 2000);
     return () => clearTimeout(timer);
-  }, [notifOpen]);
+  }, [notifOpen, notifications]);
 
   // Live clock
   useEffect(() => {
@@ -94,13 +131,29 @@ export function DashboardHeader({ user }: Props) {
     };
   });
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
 
   const markAllRead = () =>
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setReadIds(prev => {
+      const next = new Set(prev);
+      notifications.forEach(n => next.add(n.id));
+      saveReadIds(next);
+      return next;
+    });
 
   const markOneRead = (id: string) =>
-    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
+    setReadIds(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      saveReadIds(next);
+      return next;
+    });
+
+  const openNotification = (n: HeaderNotification) => {
+    markOneRead(n.id);
+    setNotifOpen(false);
+    router.push(n.href);
+  };
 
   const NOTIF_COLORS: Record<string, string> = {
     warning: "text-amber-400 bg-amber-400/10",
@@ -200,38 +253,52 @@ export function DashboardHeader({ user }: Props) {
                   </div>
 
                   <div className="divide-y divide-border/50 max-h-80 overflow-y-auto">
-                    {notifications.map((n) => (
-                      <button
-                        key={n.id}
-                        onClick={() => markOneRead(n.id)}
-                        className={cn(
-                          "w-full text-left px-4 py-3 transition-colors hover:bg-accent/50 cursor-pointer",
-                          !n.read && "bg-accent/20"
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          <span className={cn(
-                            "text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 mt-0.5",
-                            NOTIF_COLORS[n.type]
-                          )}>
-                            {n.type}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-foreground">{n.title}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{n.body}</p>
-                          </div>
-                          {!n.read && (
-                            <div className="w-2 h-2 bg-gold-500 rounded-full flex-shrink-0 mt-1" />
+                    {notifications.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-400 mb-2" />
+                        <p className="text-sm font-semibold text-foreground">All caught up</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Nothing needs your attention right now.</p>
+                      </div>
+                    ) : notifications.map((n) => {
+                      const isUnread = !readIds.has(n.id);
+                      return (
+                        <button
+                          key={n.id}
+                          onClick={() => openNotification(n)}
+                          className={cn(
+                            "w-full text-left px-4 py-3 transition-colors hover:bg-accent/50 cursor-pointer",
+                            isUnread && "bg-accent/20"
                           )}
-                        </div>
-                        <p className="text-2xs text-muted-foreground mt-1.5 ml-0">{n.time}</p>
-                      </button>
-                    ))}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className={cn(
+                              "text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 mt-0.5",
+                              NOTIF_COLORS[n.type]
+                            )}>
+                              {n.type}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground">{n.title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{n.body}</p>
+                            </div>
+                            {isUnread && (
+                              <div className="w-2 h-2 bg-gold-500 rounded-full flex-shrink-0 mt-1" />
+                            )}
+                          </div>
+                          <p className="text-2xs text-muted-foreground mt-1.5 ml-0">{timeAgo(n.at)}</p>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="px-4 py-2.5 border-t border-border text-center">
-                    <button className="text-xs text-gold-400 hover:text-gold-300">
-                      View all notifications
+                    <button
+                      onClick={fetchNotifications}
+                      disabled={refreshing}
+                      className="text-xs text-gold-400 hover:text-gold-300 inline-flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <RefreshCw className={cn("w-3 h-3", refreshing && "animate-spin")} />
+                      {refreshing ? "Refreshing…" : "Refresh"}
                     </button>
                   </div>
                 </motion.div>

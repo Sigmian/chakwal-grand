@@ -56,6 +56,23 @@ export function formatAmount(
 
 // ─── Date Formatting ──────────────────────────────────────────
 
+/**
+ * Compact relative time for notification feeds.
+ * Past: "just now", "5m ago", "3h ago", "2d ago" — Future: "in 3h".
+ */
+export function timeAgo(date: Date | string): string {
+  const d    = typeof date === "string" ? new Date(date) : date;
+  const diff = Date.now() - d.getTime();
+  const mins = Math.round(Math.abs(diff) / 60_000);
+  if (mins < 1) return "just now";
+  const label =
+    mins < 60    ? `${mins}m` :
+    mins < 1_440 ? `${Math.round(mins / 60)}h` :
+    `${Math.round(mins / 1_440)}d`;
+  return diff >= 0 ? `${label} ago` : `in ${label}`;
+}
+
+
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "—";
   const d = typeof date === "string" ? parseISO(date) : date;
