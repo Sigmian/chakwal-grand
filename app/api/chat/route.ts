@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSystemPrompt, runAgentLoop, type MessageParam } from "@/lib/agent/core";
 import { siteConfig } from "@/config/site";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Keep at most 20 messages (10 turns) to cap token usage.
 // The client holds the full visible history for display; we only
@@ -19,6 +20,14 @@ import { siteConfig } from "@/config/site";
 const MAX_WEB_HISTORY = 20;
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown";
+  if (!rateLimit(`web-chat:${ip}`, 20, 60_000)) {
+    return NextResponse.json(
+      { error: "Too many messages. Please wait a moment before sending more." },
+      { status: 429 },
+    );
+  }
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       { error: `AI chat is not configured. Please call us at ${siteConfig.phone}.` },

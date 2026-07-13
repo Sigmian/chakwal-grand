@@ -18,6 +18,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
 
+  // Validate the endpoint is an HTTPS push service URL, not an arbitrary host.
+  try {
+    const url = new URL(endpoint);
+    if (url.protocol !== "https:") throw new Error("not https");
+    const KNOWN_PUSH_HOSTS = ["fcm.googleapis.com", "updates.push.services.mozilla.com", "push.apple.com", "web.push.apple.com", "notify.windows.com", "push.microsoft.com", "pushpad.xyz"];
+    const isKnownHost = KNOWN_PUSH_HOSTS.some((h) => url.hostname === h || url.hostname.endsWith(`.${h}`));
+    if (!isKnownHost) throw new Error("unknown push host");
+  } catch {
+    return NextResponse.json({ error: "Invalid push endpoint" }, { status: 400 });
+  }
+
   await prisma.pushSubscription.upsert({
     where: { endpoint },
     update: { p256dh: keys.p256dh, auth: keys.auth, userId: user.id },

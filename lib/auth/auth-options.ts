@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          throw new Error("No account found with this email");
+          throw new Error("Invalid email or password");
         }
 
         if (!user.isActive) {
@@ -95,7 +95,7 @@ export const authOptions: NextAuthOptions = {
           user.passwordHash
         );
         if (!isPasswordValid) {
-          throw new Error("Incorrect password");
+          throw new Error("Invalid email or password");
         }
 
         // 3. Update last login timestamp

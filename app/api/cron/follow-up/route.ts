@@ -19,12 +19,7 @@ import {
 } from "@/lib/whatsapp/templates";
 import { siteConfig } from "@/config/site";
 
-// Vercel cron requests carry this header — reject anything else
-function isAuthorized(req: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false; // fail closed when secret is unset
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 function formatDate(d: Date): string {
   return d.toLocaleDateString("en-PK", {
@@ -49,7 +44,7 @@ function endOfDayPKT(offsetDays: number): Date {
 }
 
 export async function GET(req: Request) {
-  if (!isAuthorized(req)) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

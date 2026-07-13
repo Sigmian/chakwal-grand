@@ -11,12 +11,7 @@ import prisma from "@/lib/db/prisma";
 import { siteConfig } from "@/config/site";
 import { BookingStatus, RoomStatus } from "@/types";
 
-// ── Auth helper ───────────────────────────────────────────────
-function isAuthorized(req: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false; // fail closed when secret is unset
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 // ── PKT date helpers (mirrors follow-up/route.ts) ─────────────
 // PKT = UTC+5. Calculate day boundaries in UTC that correspond to PKT midnight.
@@ -93,7 +88,7 @@ function todayLabel(): string {
 
 // ── Cron handler ─────────────────────────────────────────────
 export async function GET(req: Request) {
-  if (!isAuthorized(req)) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

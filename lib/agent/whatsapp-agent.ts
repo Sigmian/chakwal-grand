@@ -52,7 +52,7 @@ const MAX_HISTORY     = 30;
 // can enter manager mode (extra security layer).
 function isOwnerPhone(phone: string): boolean {
   const ownerRaw = process.env.OWNER_WHATSAPP;
-  if (!ownerRaw) return true; // not configured → allow any (backward compat)
+  if (!ownerRaw) return false; // not configured → deny all (fail-closed)
   const owner  = ownerRaw.replace(/\D/g, "");
   const caller = phone.replace(/\D/g, "");
   return caller.endsWith(owner.slice(-10));

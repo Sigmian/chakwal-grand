@@ -1,11 +1,15 @@
 import webpush, { PushSubscription as WebPushSub } from "web-push";
 import prisma from "@/lib/db/prisma";
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+const VAPID_EMAIL      = process.env.VAPID_EMAIL;
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+
+if (VAPID_EMAIL && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+} else {
+  console.warn("[push/send] VAPID keys not configured — push notifications disabled");
+}
 
 export type PushPayload = {
   title: string;
@@ -36,8 +40,11 @@ async function cleanExpired(subs: DbSub[], results: PromiseSettledResult<unknown
   }
 }
 
-export async function sendPushToAllStaff(payload: PushPayload) {
+export async function sendPushToAllStaff(payload: PushPayload, companyId?: string) {
+  if (!VAPID_EMAIL || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
+  const scopedCompanyId = companyId ?? process.env.COMPANY_ID ?? "company-001";
   const subs = await prisma.pushSubscription.findMany({
+    where:   { user: { companyId: scopedCompanyId } },
     include: { user: { select: { isActive: true } } },
   });
 
@@ -51,6 +58,7 @@ export async function sendPushToAllStaff(payload: PushPayload) {
 }
 
 export async function sendPushToBranch(branchId: string, payload: PushPayload) {
+  if (!VAPID_EMAIL || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
   const subs = await prisma.pushSubscription.findMany({
     where: {
       user: {

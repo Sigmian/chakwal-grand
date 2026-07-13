@@ -11,14 +11,10 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { sendAbandonedLeadFollowup } from "@/lib/whatsapp/templates";
 
-function isAuthorized(req: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false; // fail closed when secret is unset
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 export async function GET(req: Request) {
-  if (!isAuthorized(req)) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
