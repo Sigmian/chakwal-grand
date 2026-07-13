@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { headers } from "next/headers";
 import prisma from "@/lib/db/prisma";
@@ -35,7 +35,7 @@ export async function getPublicRoom(id: string) {
   });
 }
 
-// Returns booked date ranges for a room — used by the availability calendar
+// Returns booked date ranges for a room â€” used by the availability calendar
 export async function getRoomBookedDates(roomId: string): Promise<{ checkIn: string; checkOut: string }[]> {
   const bookings = await prisma.booking.findMany({
     where: {
@@ -51,7 +51,7 @@ export async function getRoomBookedDates(roomId: string): Promise<{ checkIn: str
   }));
 }
 
-// Returns booked date ranges for a specific month — used by the two-month availability calendar
+// Returns booked date ranges for a specific month â€” used by the two-month availability calendar
 export async function getRoomAvailability(roomId: string, year: number, month: number) {
   // Build boundaries in UTC to match how checkInDate/checkOutDate are stored,
   // so the visible-month window doesn't shift on a non-UTC server.
@@ -77,7 +77,7 @@ export async function getRoomAvailability(roomId: string, year: number, month: n
 }
 
 export async function getBookingByRef(ref: string, shareToken: string) {
-  // Throttle per IP — this returns guest PII (name/phone/email) keyed only by a
+  // Throttle per IP â€” this returns guest PII (name/phone/email) keyed only by a
   // booking ref, so an unthrottled caller could enumerate refs and harvest it.
   const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
   if (!rateLimit(`booking-ref:${ip}`, 20, 60_000)) {
@@ -445,7 +445,7 @@ export async function createPublicBooking(input: {
 
   const baseAmount = Number(room.pricePerNight) * nights;
 
-  // Determine discount: Grand Opening auto-apply → manual code → auto weekly/monthly
+  // Determine discount: Grand Opening auto-apply â†’ manual code â†’ auto weekly/monthly
   let discountAmount = 0;
   let appliedOfferId: string | null = null;
   let offerMaxUses: number | null = null;
@@ -607,7 +607,7 @@ export async function createPublicBooking(input: {
     discountAmount = transactionResult.discountAmount;
   } catch (err) {
     // Either our explicit conflict guard, or a Postgres serialization failure
-    // (P2034) when two transactions raced — both mean the room was just taken.
+    // (P2034) when two transactions raced â€” both mean the room was just taken.
     const code = (err as { code?: string })?.code;
     if ((err as Error)?.message === "ROOM_CONFLICT" || code === "P2034") {
       return { success: false, error: "This room was just booked by someone else. Please choose another room or dates." };
@@ -623,8 +623,8 @@ export async function createPublicBooking(input: {
 
   // Fire push notification to all staff in this branch (non-blocking)
   sendPushToBranch(branchId, {
-    title: "🔔 New Booking Received",
-    body:  `${cleanName} booked Room ${room.number} · ${nights} night${nights !== 1 ? "s" : ""} · Ref: ${ref}`,
+    title: "ðŸ”” New Booking Received",
+    body:  `${cleanName} booked Room ${room.number} Â· ${nights} night${nights !== 1 ? "s" : ""} Â· Ref: ${ref}`,
     tag:   "new-booking",
     data:  { url: "/dashboard/bookings" },
   }).catch(() => {/* ignore push errors */});
@@ -650,7 +650,7 @@ export async function lookupGuestByPhone(phone: string) {
   const normalised = phone.trim().replace(/\D/g, "").slice(-10);
   if (normalised.length < 10) return { found: false as const };
 
-  // Per-phone throttle — repeated lookups of the same number are pointless for a
+  // Per-phone throttle â€” repeated lookups of the same number are pointless for a
   // legitimate returning guest and are the signature of enumeration.
   if (!rateLimit(`guest-lookup-phone:${normalised}`, 3, 10 * 60 * 1000)) {
     return { found: false as const };
@@ -661,7 +661,7 @@ export async function lookupGuestByPhone(phone: string) {
     select: { name: true, phone: true, email: true },
   });
   if (!customer) return { found: false as const };
-  // Do NOT return CNIC in auto-fill — guests enter it manually for security
+  // Do NOT return CNIC in auto-fill â€” guests enter it manually for security
   return { found: true as const, name: customer.name, phone: customer.phone, email: customer.email ?? "", cnic: "" };
 }
 
@@ -769,3 +769,4 @@ export async function lookupBooking(ref: string, phone: string) {
     },
   };
 }
+

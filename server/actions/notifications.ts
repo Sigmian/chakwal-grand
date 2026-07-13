@@ -64,7 +64,7 @@ export async function getHeaderNotifications(): Promise<HeaderNotification[]> {
       },
     }) : Promise.resolve([]),
     canComplaints ? prisma.complaint.findMany({
-      where:   { status: { not: "RESOLVED" } },
+      where:   { status: { not: "RESOLVED" }, ...(branchId ? { branchId } : { branch: { companyId: user.companyId } }) },
       orderBy: { createdAt: "desc" },
       take:    3,
       select:  { id: true, guestName: true, severity: true, text: true, createdAt: true },

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
-import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
+import { requirePermission, getScopedBranchId, canAccessBranch } from "@/lib/auth/session";
 
 export async function getInRoomOrders(branchId?: string) {
   const user         = await requirePermission("bookings:read");
@@ -37,7 +37,7 @@ export async function updateOrderStatus(orderId: string, status: "PENDING" | "PR
     select:  { booking: { select: { branchId: true } } },
   });
   if (!scopeCheck) return { success: false, error: "Order not found." };
-  if (getScopedBranchId(user, scopeCheck.booking.branchId) !== scopeCheck.booking.branchId) {
+  if (!canAccessBranch(user, scopeCheck.booking.branchId)) {
     return { success: false, error: "Access denied" };
   }
 

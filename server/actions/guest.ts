@@ -67,7 +67,7 @@ async function resolveSession(token?: string) {
 // ─── GUEST LOGIN ──────────────────────────────────────────────
 
 export async function guestLogin(bookingRef: string, phone: string) {
-  const ip = headers().get("x-forwarded-for") ?? "unknown";
+  const ip = (await headers()).get("x-forwarded-for") ?? "unknown";
   if (!rateLimit(`guest-login:${ip}`, 10, 60_000)) {
     return { success: false, error: "Too many attempts. Please wait a minute and try again." };
   }
@@ -513,23 +513,31 @@ export async function submitGuestReview(input: {
   if (input.rating < 1 || input.rating > 5) return { success: false, error: "Rating must be 1-5" };
   if (!input.body.trim()) return { success: false, error: "Review text is required" };
 
-  // Check if already reviewed this booking
-  const existing = await prisma.review.findFirst({
-    where: { bookingId: session.booking.id },
-  });
-  if (existing) return { success: false, error: "You have already submitted a review for this booking." };
+  try {
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.review.findFirst({
+        where: { bookingId: session.booking.id },
+      });
+      if (existing) throw new Error("ALREADY_REVIEWED");
 
-  await prisma.review.create({
-    data: {
-      customerId: session.booking.customerId,
-      branchId:   session.booking.branchId,
-      bookingId:  session.booking.id,
-      rating:     input.rating,
-      title:      input.title?.trim() || null,
-      body:       input.body.trim(),
-      isApproved: false,
-    },
-  });
+      await tx.review.create({
+        data: {
+          customerId: session.booking.customerId,
+          branchId:   session.booking.branchId,
+          bookingId:  session.booking.id,
+          rating:     input.rating,
+          title:      input.title?.trim() || null,
+          body:       input.body.trim(),
+          isApproved: false,
+        },
+      });
+    });
+  } catch (error) {
+    if ((error as Error)?.message === "ALREADY_REVIEWED") {
+      return { success: false, error: "You have already submitted a review for this booking." };
+    }
+    throw error;
+  }
 
   return { success: true };
 }

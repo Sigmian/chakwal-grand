@@ -10,7 +10,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
-import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
+import { requirePermission, getScopedBranchId, canAccessBranch } from "@/lib/auth/session";
 import { sendPushToBranch } from "@/lib/push/send";
 import {
   addInventoryItemSchema,
@@ -404,8 +404,15 @@ export async function createSale(rawInput: CreateSaleInput) {
         });
       }
 
-      // If room-attached: update booking extra charges
+      // If room-attached: validate the booking belongs to the same branch before adding charges
       if (input.bookingId) {
+        const booking = await tx.booking.findUnique({
+          where:  { id: input.bookingId },
+          select: { branchId: true },
+        });
+        if (!booking || booking.branchId !== branchId) {
+          throw new Error("BOOKING_BRANCH_MISMATCH");
+        }
         await tx.booking.update({
           where: { id: input.bookingId },
           data:  { extraCharges: { increment: totalAmount } },
@@ -440,8 +447,12 @@ export async function createSale(rawInput: CreateSaleInput) {
 
     return { success: true, data: sale };
   } catch (error) {
-    if ((error as Error)?.message === "INSUFFICIENT_STOCK") {
+    const msg = (error as Error)?.message;
+    if (msg === "INSUFFICIENT_STOCK") {
       return { success: false, error: "Insufficient stock — another sale may have just used the last units. Please refresh and retry." };
+    }
+    if (msg === "BOOKING_BRANCH_MISMATCH") {
+      return { success: false, error: "Booking does not belong to this branch." };
     }
     console.error("[createSale]", error);
     return { success: false, error: "Failed to process sale" };
@@ -500,6 +511,9 @@ export async function approveStockTransfer(transferId: string) {
       include: { items: true },
     });
     if (!transfer) return { success: false, error: "Transfer not found" };
+    if (!canAccessBranch(user, transfer.fromBranchId)) {
+      return { success: false, error: "Access denied" };
+    }
     if (transfer.status !== "PENDING") {
       return { success: false, error: "Transfer is not in pending status" };
     }

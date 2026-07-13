@@ -63,7 +63,9 @@ export async function getReviews(branchId?: string) {
   const user = await requirePermission("reviews:read");
   const scopedBranchId = getScopedBranchId(user, branchId);
   return prisma.review.findMany({
-    where: scopedBranchId ? { branchId: scopedBranchId } : undefined,
+    where: scopedBranchId
+      ? { branchId: scopedBranchId }
+      : { branch: { companyId: user.companyId } },
     orderBy: [{ isApproved: "asc" }, { createdAt: "desc" }],
     include: {
       customer: { select: { name: true, phone: true } },
