@@ -3,7 +3,6 @@
 // Expenses split by type: Guest House vs Inventory, filterable by date range
 // ============================================================
 
-import { Suspense } from "react";
 import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
 import { PageHeader, SectionHeader, Badge } from "@/components/shared";
@@ -96,11 +95,9 @@ export default async function ExpensesPage({ searchParams }: PageProps) {
       />
 
       {/* Date range filter */}
-      <Suspense fallback={<div className="card-luxury p-4 h-10 animate-pulse" />}>
-        <div className="card-luxury p-4">
-          <DateRangeFilter />
-        </div>
-      </Suspense>
+      <div className="card-luxury p-4">
+        <DateRangeFilter />
+      </div>
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

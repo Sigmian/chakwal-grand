@@ -3,7 +3,6 @@
 // Revenue breakdown: bookings + POS sales, filterable by date range
 // ============================================================
 
-import { Suspense } from "react";
 import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { PageHeader, SectionHeader, TableSkeleton } from "@/components/shared";
 import { getRevenueChartData } from "@/server/actions/analytics";
@@ -64,11 +63,9 @@ export default async function RevenuePage({ searchParams }: PageProps) {
       />
 
       {/* Date range filter */}
-      <Suspense fallback={<div className="card-luxury p-4 h-10 animate-pulse" />}>
-        <div className="card-luxury p-4">
-          <DateRangeFilter />
-        </div>
-      </Suspense>
+      <div className="card-luxury p-4">
+        <DateRangeFilter />
+      </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
