@@ -256,7 +256,7 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
           <div className="space-y-2">
             {[
               { label: "Product Revenue", value: productRevenue, color: "text-blue-400" },
-              { label: "Inventory Costs",  value: -invExpenses, color: "text-red-400" },
+              { label: "Inventory Costs",  value: invExpenses > 0 ? -invExpenses : 0, color: "text-red-400" },
             ].map(({ label, value, color }) => (
               <div key={label} className="flex justify-between text-sm py-1 border-b border-border/50">
                 <span className="text-muted-foreground">{label}</span>
