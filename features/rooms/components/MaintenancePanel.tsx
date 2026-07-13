@@ -6,6 +6,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Wrench, Plus, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { logMaintenance, resolveMaintenance } from "@/server/actions/rooms";
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export function MaintenancePanel({ roomId, maintenanceLogs, currentStatus }: Props) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm]      = useState(false);
   const [form, setForm] = useState({ title: "", description: "", cost: "" });
@@ -46,6 +48,7 @@ export function MaintenancePanel({ roomId, maintenanceLogs, currentStatus }: Pro
         toast.success("Maintenance issue logged");
         setForm({ title: "", description: "", cost: "" });
         setShowForm(false);
+        router.refresh();
       } else {
         toast.error(res.error ?? "Failed to log issue");
       }
@@ -57,6 +60,7 @@ export function MaintenancePanel({ roomId, maintenanceLogs, currentStatus }: Pro
       const res = await resolveMaintenance(logId);
       if (res.success) {
         toast.success("Issue marked as resolved");
+        router.refresh();
       } else {
         toast.error(res.error ?? "Failed to resolve");
       }

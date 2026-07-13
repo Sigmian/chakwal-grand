@@ -178,7 +178,7 @@ export async function getBranchPerformance() {
   const { start: monthStart, end: monthEnd } = getPKTMonthPeriod();
 
   const branches = await prisma.branch.findMany({
-    where:   { isActive: true },
+    where:   { isActive: true, companyId: user.companyId },
     include: { _count: { select: { rooms: true, bookings: true } } },
   });
 
@@ -316,7 +316,9 @@ export async function getRecentActivity(limit = 20, branchId?: string) {
     : {};
 
   const logs = await prisma.activityLog.findMany({
-    where:   scopedBranch ? { staffId: { not: null }, ...staffFilter } : {},
+    where:   scopedBranch
+      ? { staffId: { not: null }, ...staffFilter }
+      : { staffId: { not: null }, staff: { branch: { companyId: user.companyId } } },
     orderBy: { createdAt: "desc" },
     take:    limit,
     include: { user: { select: { name: true, role: true } } },
@@ -719,12 +721,12 @@ export async function getLoyaltyStats(branchId?: string) {
 
 // ---- BRANCH SCORECARD (super admin only) --------------------------------
 export async function getBranchScorecard() {
-  await requirePermission("analytics:company");
+  const user = await requirePermission("analytics:company");
 
   const { start: thisStart, end: thisEnd } = getPKTMonthPeriod(0);
   const { start: lastStart, end: lastEnd } = getPKTMonthPeriod(-1);
 
-  const branches = await prisma.branch.findMany({ where: { isActive: true }, select: { id: true, name: true } });
+  const branches = await prisma.branch.findMany({ where: { isActive: true, companyId: user.companyId }, select: { id: true, name: true } });
 
   return Promise.all(branches.map(async (branch) => {
     const bf = { branchId: branch.id };

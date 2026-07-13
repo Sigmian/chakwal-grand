@@ -20,7 +20,7 @@ export async function getBranches() {
 
   if (user.role === "SUPER_ADMIN") {
     return prisma.branch.findMany({
-      where:   { deletedAt: null },
+      where:   { deletedAt: null, companyId: user.companyId },
       include: {
         _count: {
           select: { rooms: true, bookings: true, staff: true },

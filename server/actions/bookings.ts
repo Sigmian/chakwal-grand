@@ -925,7 +925,7 @@ export async function getBookings(params?: {
     : {};
 
   const where = {
-    ...(branchId ? { branchId }         : {}),
+    ...(branchId ? { branchId } : { branch: { companyId: user.companyId } }),
     ...(params?.status ? { status: params.status } : {}),
     ...dateFilter,
     ...searchFilter,
@@ -963,7 +963,7 @@ export async function getBookingStatusCounts(branchId?: string) {
 
   const grouped = await prisma.booking.groupBy({
     by: ["status"],
-    where: scopedBranch ? { branchId: scopedBranch } : {},
+    where: scopedBranch ? { branchId: scopedBranch } : { branch: { companyId: user.companyId } },
     _count: { status: true },
   });
 

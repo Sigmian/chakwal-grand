@@ -6,6 +6,7 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, AlertTriangle, CheckCircle, Pencil, X, ShoppingBag, Trash2, Search } from "lucide-react";
 import { restockItem, updateInventoryItem, deleteInventoryItem } from "@/server/actions/inventory";
@@ -38,6 +39,7 @@ interface Props {
 }
 
 function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [restockQty, setRestockQty]  = useState("");
   const [showRestock, setShowRestock] = useState(false);
@@ -52,7 +54,7 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
     startTransition(async () => {
       const res = await deleteInventoryItem(item.id);
       if (!res.success) toast.error(res.error ?? "Delete failed");
-      else toast.success("Item removed from inventory");
+      else { toast.success("Item removed from inventory"); router.refresh(); }
     });
   };
 
@@ -62,6 +64,7 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
         inventoryItemId:  item.id,
         isCanteenVisible: !(item.product?.isCanteenVisible ?? false),
       });
+      router.refresh();
     });
   };
 
@@ -77,6 +80,7 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
       if (res.success) {
         toast.success("Item updated");
         setShowEdit(false);
+        router.refresh();
       } else {
         toast.error(res.error ?? "Update failed");
       }
@@ -92,6 +96,7 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
         toast.success(`Restocked: +${qty} ${item.product?.unit ?? "units"}`);
         setRestockQty("");
         setShowRestock(false);
+        router.refresh();
       } else {
         toast.error(res.error ?? "Restock failed");
       }

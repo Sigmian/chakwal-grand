@@ -6,6 +6,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { MoreHorizontal, Power } from "lucide-react";
 import { Badge } from "@/components/shared";
@@ -34,6 +35,7 @@ const ROLE_BADGE_VARIANT: Record<UserRole, "gold" | "blue" | "green" | "purple" 
 };
 
 function UserRow({ user }: { user: User }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const roleCfg = USER_ROLE_CONFIG[user.role];
 
@@ -41,6 +43,7 @@ function UserRow({ user }: { user: User }) {
     startTransition(async () => {
       await toggleUserActive(user.id, user.isActive);
       toast.success(user.isActive ? `${user.name} deactivated` : `${user.name} activated`);
+      router.refresh();
     });
   };
 

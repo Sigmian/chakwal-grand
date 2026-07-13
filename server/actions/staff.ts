@@ -43,7 +43,7 @@ export async function getStaffMembers(params?: {
 
   const staffMembers = await prisma.staffMember.findMany({
     where: {
-      ...(branchId ? { branchId } : {}),
+      ...(branchId ? { branchId } : { branch: { companyId: user.companyId } }),
       user: {
         ...(params?.search
           ? {
@@ -110,7 +110,7 @@ export async function getStaffStats(branchId?: string) {
   const scopedId = getScopedBranchId(user);
   const targetId = scopedId ?? branchId;
 
-  const where = targetId ? { branchId: targetId } : {};
+  const where = targetId ? { branchId: targetId } : { branch: { companyId: user.companyId } };
 
   const [total, byRole, recentActivity] = await Promise.all([
     prisma.staffMember.count({ where }),
@@ -118,12 +118,16 @@ export async function getStaffStats(branchId?: string) {
       by: ["role"],
       where: {
         isActive: true,
-        ...(targetId ? { staffMember: { branchId: targetId } } : {}),
+        ...(targetId
+          ? { staffMember: { branchId: targetId } }
+          : { staffMember: { branch: { companyId: user.companyId } } }),
       },
       _count: true,
     }),
     prisma.activityLog.findMany({
-      where: targetId ? { staff: { branchId: targetId } } : {},
+      where: targetId
+        ? { staff: { branchId: targetId } }
+        : { staff: { branch: { companyId: user.companyId } } },
       orderBy: { createdAt: "desc" },
       take: 10,
       include: {

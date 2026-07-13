@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Megaphone, Plus, Trash2, ToggleLeft, ToggleRight, Clock, CheckCircle, XCircle, Pencil, X } from "lucide-react";
 import { createAnnouncement, toggleAnnouncement, deleteAnnouncement, updateAnnouncement } from "@/server/actions/settings";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ interface Props {
 const emptyForm = { title: "", body: "", isActive: true, expiresAt: "" };
 
 export function AnnouncementsClient({ announcements: initial, canManage }: Props) {
+  const router = useRouter();
   const [items, setItems]            = useState(initial);
   const [showForm, setShowForm]      = useState(false);
   const [editingId, setEditingId]    = useState<string | null>(null);
@@ -61,7 +63,7 @@ export function AnnouncementsClient({ announcements: initial, canManage }: Props
       toast.success("Announcement created.");
       setShowForm(false);
       setForm(emptyForm);
-      window.location.reload();
+      router.refresh();
     });
   }
 
