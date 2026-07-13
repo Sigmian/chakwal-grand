@@ -62,18 +62,32 @@ export async function getCashRevenueForPeriod(
   branchId?: string | null,
   companyId?: string,
 ) {
-  const branchFilter = branchId
+  // Payment query can use booking.branch relation to filter by company
+  const bookingBranchFilter = branchId
     ? { branchId }
     : companyId
       ? { branch: { companyId } }
       : {};
+
+  // Sale model has branchId scalar only — no branch relation exists.
+  // Resolve branch IDs from company when needed so the filter stays valid.
+  let saleBranchFilter: Record<string, unknown> = {};
+  if (branchId) {
+    saleBranchFilter = { branchId };
+  } else if (companyId) {
+    const companyBranches = await prisma.branch.findMany({
+      where:  { companyId },
+      select: { id: true },
+    });
+    saleBranchFilter = { branchId: { in: companyBranches.map((b) => b.id) } };
+  }
 
   const [payments, walkInSales] = await Promise.all([
     prisma.payment.findMany({
       where: {
         createdAt: { gte: start, lte: end },
         booking: {
-          ...branchFilter,
+          ...bookingBranchFilter,
           paymentStatus: { not: "REFUNDED" },
         },
       },
@@ -94,7 +108,7 @@ export async function getCashRevenueForPeriod(
     }),
     prisma.sale.aggregate({
       where: {
-        ...branchFilter,
+        ...saleBranchFilter,
         type: "WALK_IN",
         createdAt: { gte: start, lte: end },
       },
