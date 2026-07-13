@@ -6,6 +6,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
 import { ExpenseCategory } from "@/types";
@@ -33,6 +34,7 @@ function defaultType(cat: string): "INVENTORY" | "GUESTHOUSE" {
 const inputCls = "w-full bg-surface-base border border-border rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gold-500/50 transition-all";
 
 export function ExpenseForm({ branches, defaultBranchId }: Props) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState({
     branchId:    defaultBranchId ?? branches[0]?.id ?? "",
@@ -72,6 +74,7 @@ export function ExpenseForm({ branches, defaultBranchId }: Props) {
       if (res.success) {
         toast.success("Expense logged");
         setForm((f) => ({ ...f, title: "", amount: "", description: "" }));
+        router.refresh();
       } else {
         toast.error(res.error ?? "Failed to log expense");
       }

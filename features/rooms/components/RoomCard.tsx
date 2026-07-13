@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
@@ -55,6 +56,7 @@ export function RoomCard({
   id, number, name, type, status, floor, pricePerNight,
   maxAdults, bedCount, branchName, amenities = [], coverImage, canEdit,
 }: RoomCardProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const statusCfg  = ROOM_STATUS_CONFIG[status];
   const typeCfg    = ROOM_TYPE_CONFIG[type];
@@ -64,6 +66,7 @@ export function RoomCard({
       const res = await updateRoomStatus(id, newStatus);
       if (res.success) {
         toast.success(`Room ${number} → ${ROOM_STATUS_CONFIG[newStatus].label}`);
+        router.refresh();
       } else {
         toast.error(res.error ?? "Failed to update status");
       }
