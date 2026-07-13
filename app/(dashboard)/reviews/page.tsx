@@ -19,25 +19,19 @@ export default async function ReviewsPage() {
   const canApprove = hasPermission(user.role, "reviews:approve");
   const branchId   = getScopedBranchId(user);
 
+  const branchScope = branchId
+    ? { branchId }
+    : { branch: { companyId: user.companyId } };
+
   const [pending, approved] = await Promise.all([
     prisma.review.findMany({
-      where: {
-        isApproved: false,
-        ...(branchId ? { branchId } : {}),
-      },
-      include: {
-        customer: { select: { name: true, loyaltyTier: true } },
-      },
+      where: { isApproved: false, ...branchScope },
+      include: { customer: { select: { name: true, loyaltyTier: true } } },
       orderBy: { createdAt: "desc" },
     }),
     prisma.review.findMany({
-      where: {
-        isApproved: true,
-        ...(branchId ? { branchId } : {}),
-      },
-      include: {
-        customer: { select: { name: true, loyaltyTier: true } },
-      },
+      where: { isApproved: true, ...branchScope },
+      include: { customer: { select: { name: true, loyaltyTier: true } } },
       orderBy: { createdAt: "desc" },
       take: 50,
     }),

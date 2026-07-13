@@ -6,6 +6,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Star, Check, Trash2, Sparkles } from "lucide-react";
 import { cn, formatDate } from "@/utils";
@@ -29,27 +30,31 @@ interface Props {
 }
 
 export function ReviewModerationCard({ review, canModerate }: Props) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const handleApprove = () => {
     startTransition(async () => {
-      await approveReview(review.id);
-      toast.success("Review approved");
+      const res = await approveReview(review.id);
+      if (res.success) { toast.success("Review approved"); router.refresh(); }
+      else toast.error(res.error ?? "Failed to approve review");
     });
   };
 
   const handleFeature = () => {
     startTransition(async () => {
-      await toggleFeatured(review.id, review.isFeatured);
-      toast.success(review.isFeatured ? "Removed from featured" : "Added to featured");
+      const res = await toggleFeatured(review.id, review.isFeatured);
+      if (res.success) { toast.success(review.isFeatured ? "Removed from featured" : "Added to featured"); router.refresh(); }
+      else toast.error(res.error ?? "Failed to update");
     });
   };
 
   const handleDelete = () => {
     if (!confirm("Delete this review? This cannot be undone.")) return;
     startTransition(async () => {
-      await deleteReview(review.id);
-      toast.success("Review deleted");
+      const res = await deleteReview(review.id);
+      if (res.success) { toast.success("Review deleted"); router.refresh(); }
+      else toast.error(res.error ?? "Failed to delete review");
     });
   };
 
