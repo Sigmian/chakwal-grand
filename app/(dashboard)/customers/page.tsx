@@ -9,7 +9,7 @@ import { requirePermission } from "@/lib/auth/session";
 import { getCustomers } from "@/server/actions/branches";
 import { hasPermission } from "@/lib/auth/permissions";
 import {
-  PageHeader, EmptyState, Badge,
+  PageHeader, EmptyState, Badge, SearchInput,
 } from "@/components/shared";
 import {
   cn, formatPKR, formatDate, LOYALTY_TIER_CONFIG,
@@ -25,21 +25,28 @@ const LOYALTY_BADGE_VARIANT: Record<LoyaltyTier, "gold" | "slate" | "orange" | "
   [LoyaltyTier.VIP]:    "purple",
 };
 
-export default async function CustomersPage() {
+interface PageProps { searchParams: { q?: string; page?: string } }
+
+export default async function CustomersPage({ searchParams }: PageProps) {
   const user      = await requirePermission("customers:read");
-  const { data: customers } = await getCustomers();
+  const { data: customers, total } = await getCustomers({
+    search:   searchParams.q,
+    page:     searchParams.page ? parseInt(searchParams.page) : 1,
+    pageSize: 50,
+  });
 
   const vipCount    = customers.filter((c) => c.isVIP).length;
   const blacklisted = customers.filter((c) => c.isBlacklisted).length;
   const avgSpend    = customers.length > 0
     ? customers.reduce((s, c) => s + Number(c.totalSpending), 0) / customers.length
     : 0;
+  const displayTotal = searchParams.q ? customers.length : total;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader
         title="Customers"
-        subtitle={`${customers.length} registered customers`}
+        subtitle={`${total} registered customers`}
         actions={
           hasPermission(user.role, "customers:create") ? (
             <Link
@@ -53,10 +60,13 @@ export default async function CustomersPage() {
         }
       />
 
+      {/* Search */}
+      <SearchInput placeholder="Search by name, phone, email…" className="w-full sm:w-72" />
+
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Customers", value: customers.length.toString(), icon: Users,  color: "text-foreground" },
+          { label: "Total Customers", value: displayTotal.toString(), icon: Users,  color: "text-foreground" },
           { label: "VIP Guests",      value: vipCount.toString(),         icon: Crown,  color: "text-gold-400"  },
           { label: "Avg. Spend",      value: formatPKR(avgSpend),         icon: Star,   color: "text-green-400" },
           { label: "Blacklisted",     value: blacklisted.toString(),      icon: Users,  color: "text-red-400"   },

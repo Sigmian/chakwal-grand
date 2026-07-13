@@ -7,24 +7,36 @@ import Link from "next/link";
 import { UserCog, Plus, Clock, Building2, Phone } from "lucide-react";
 import { requirePermission } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
-import { PageHeader, EmptyState, Badge } from "@/components/shared";
+import { EmptyState, Badge, SearchInput } from "@/components/shared";
 import { cn, formatPKR, USER_ROLE_CONFIG, getInitials } from "@/utils";
 import { UserRole } from "@/types";
 import prisma from "@/lib/db/prisma";
-import { getSession } from "@/lib/auth/session";
 import { getScopedBranchId } from "@/lib/auth/session";
 
 export const metadata = { title: "Staff" };
 
-export default async function StaffPage() {
+interface PageProps { searchParams: { q?: string } }
+
+export default async function StaffPage({ searchParams }: PageProps) {
   const user      = await requirePermission("staff:read");
   const canSalary = hasPermission(user.role, "staff:view_salaries");
   const canCreate = hasPermission(user.role, "staff:create");
 
   const branchId = getScopedBranchId(user);
+  const q = searchParams.q?.toLowerCase() ?? "";
 
   const staffMembers = await prisma.staffMember.findMany({
-    where: branchId ? { branchId } : {},
+    where: {
+      ...(branchId ? { branchId } : {}),
+      ...(q ? {
+        OR: [
+          { user:        { name:  { contains: q, mode: "insensitive" } } },
+          { user:        { email: { contains: q, mode: "insensitive" } } },
+          { phone:       { contains: q } },
+          { designation: { contains: q, mode: "insensitive" } },
+        ],
+      } : {}),
+    },
     include: {
       user:   { select: { name: true, email: true, role: true, image: true, isActive: true, lastLoginAt: true } },
       branch: { select: { name: true, city: true } },
@@ -34,22 +46,28 @@ export default async function StaffPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader
-        title="Staff"
-        subtitle={`${staffMembers.length} staff member${staffMembers.length !== 1 ? "s" : ""}`}
-        actions={
-          canCreate ? (
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-8">
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-foreground font-serif">Staff</h1>
+          <div className="h-0.5 w-10 bg-gold-gradient rounded-full mt-1.5" />
+          <p className="text-sm text-muted-foreground mt-1.5">
+            {staffMembers.length} staff member{staffMembers.length !== 1 ? "s" : ""}
+            {q && ` matching "${q}"`}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <SearchInput placeholder="Search staff…" className="w-full sm:w-56" />
+          {canCreate && (
             <Link
               href="/staff/new"
-              className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background text-sm font-semibold rounded-xl hover:shadow-gold-md transition-all hover:-translate-y-0.5"
+              className="flex items-center gap-2 px-4 py-2.5 bg-gold-gradient text-background text-sm font-semibold rounded-xl hover:shadow-gold-md transition-all hover:-translate-y-0.5 whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
               Add Staff
             </Link>
-          ) : undefined
-        }
-      />
-
+          )}
+        </div>
+      </div>
       {/* Role summary */}
       <div className="flex flex-wrap gap-3">
         {Object.values(UserRole).filter((r) => r !== UserRole.SUPER_ADMIN).map((role) => {

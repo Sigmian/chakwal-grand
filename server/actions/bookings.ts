@@ -889,6 +889,7 @@ export async function getBookings(params?: {
   branchId?: string;
   status?:   BookingStatus;
   date?:     "today" | "this_week" | "this_month";
+  search?:   string;
   page?:     number;
   pageSize?: number;
 }) {
@@ -920,10 +921,22 @@ export async function getBookings(params?: {
     }
   }
 
+  const searchFilter = params?.search
+    ? {
+        OR: [
+          { bookingRef: { contains: params.search, mode: "insensitive" as const } },
+          { customer:   { name:  { contains: params.search, mode: "insensitive" as const } } },
+          { customer:   { phone: { contains: params.search } } },
+          { room:       { number: { contains: params.search } } },
+        ],
+      }
+    : {};
+
   const where = {
     ...(branchId ? { branchId }         : {}),
     ...(params?.status ? { status: params.status } : {}),
     ...dateFilter,
+    ...searchFilter,
   };
 
   const [bookings, total] = await Promise.all([

@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 import { getStaffMember, getStaffPerformance } from "@/server/actions/staff";
 import { requirePermission } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
 import { PageHeader, Badge, StatCard, GoldDivider, SectionHeader } from "@/components/shared";
+import { ToggleActiveButton } from "@/features/staff/components/ToggleActiveButton";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { cn, formatPKR, formatDate, formatTime, USER_ROLE_CONFIG } from "@/utils";
 import { UserRole } from "@/types";
@@ -28,7 +30,8 @@ const ALL_DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 interface Props { params: { staffId: string } }
 
 export default async function StaffDetailPage({ params }: Props) {
-  await requirePermission("staff:view");
+  const viewer = await requirePermission("staff:view");
+  const canManage = hasPermission(viewer.role, "staff:manage");
 
   let data;
   try {
@@ -70,7 +73,7 @@ export default async function StaffDetailPage({ params }: Props) {
                   <p className="text-gold-400 text-sm mt-1 font-medium">{staff.designation}</p>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={
                   staff.user.role === UserRole.SUPER_ADMIN     ? "gold"   :
                   staff.user.role === UserRole.BRANCH_MANAGER  ? "blue"   :
@@ -82,6 +85,11 @@ export default async function StaffDetailPage({ params }: Props) {
                 <Badge variant={isActive ? "green" : "red"}>
                   {isActive ? "Active" : "Inactive"}
                 </Badge>
+                <ToggleActiveButton
+                  staffId={staff.id}
+                  isActive={isActive}
+                  canManage={canManage}
+                />
               </div>
             </div>
 

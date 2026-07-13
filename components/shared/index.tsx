@@ -5,9 +5,55 @@
 
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useTransition } from "react";
 import { cn } from "@/utils";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Search } from "lucide-react";
+
+// ─── SEARCH INPUT ─────────────────────────────────────────────
+interface SearchInputProps {
+  placeholder?: string;
+  paramKey?:    string;
+  className?:   string;
+}
+
+export function SearchInput({ placeholder = "Search…", paramKey = "q", className }: SearchInputProps) {
+  const router       = useRouter();
+  const pathname     = usePathname();
+  const searchParams = useSearchParams();
+  const [pending, startTransition] = useTransition();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const current = searchParams.get(paramKey) ?? "";
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    const val = e.target.value;
+    timerRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (val) { params.set(paramKey, val); } else { params.delete(paramKey); }
+      params.delete("page");
+      startTransition(() => router.push(`${pathname}?${params.toString()}`));
+    }, 300);
+  };
+
+  return (
+    <div className={cn("relative", className)}>
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <input
+        type="text"
+        defaultValue={current}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className="pl-9 pr-3 py-2 text-sm bg-surface-elevated border border-border rounded-xl focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/20 text-foreground placeholder:text-muted-foreground w-full min-w-[180px] transition-colors"
+      />
+      {pending && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 border-2 border-gold-500/50 border-t-transparent rounded-full animate-spin" />
+      )}
+    </div>
+  );
+}
 
 // ─── STAT CARD ────────────────────────────────────────────────
 interface StatCardProps {

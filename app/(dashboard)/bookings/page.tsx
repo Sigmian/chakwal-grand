@@ -5,12 +5,12 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { Plus, Search, Filter, Building2 } from "lucide-react";
+import { Plus, Building2 } from "lucide-react";
 import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { getBookings, getBookingStatusCounts } from "@/server/actions/bookings";
 import { BookingsTable } from "@/features/bookings/components/BookingsTable";
 import { BookingStatusTabs } from "@/features/bookings/components/BookingStatusTabs";
-import { PageHeader, TableSkeleton } from "@/components/shared";
+import { PageHeader, TableSkeleton, SearchInput } from "@/components/shared";
 import { BookingStatus } from "@/types";
 import prisma from "@/lib/db/prisma";
 
@@ -39,6 +39,7 @@ export default async function BookingsPage({ searchParams }: PageProps) {
       status,
       date:     searchParams.date as "today" | "this_week" | "this_month" | undefined,
       branchId: scopedBranchId ?? (activeBranch || undefined),
+      search:   searchParams.search,
       page,
       pageSize: 20,
     }),
@@ -69,6 +70,9 @@ export default async function BookingsPage({ searchParams }: PageProps) {
 
       {/* Status filter tabs */}
       <BookingStatusTabs currentStatus={status} counts={statusCounts} />
+
+      {/* Search bar */}
+      <SearchInput placeholder="Search ref, guest, room…" paramKey="search" className="w-full sm:w-72" />
 
       {/* Date + branch filters */}
       <div className="flex items-center gap-2 flex-wrap">

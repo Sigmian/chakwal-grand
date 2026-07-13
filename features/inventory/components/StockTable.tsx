@@ -5,9 +5,9 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { toast } from "sonner";
-import { Plus, AlertTriangle, CheckCircle, Pencil, X, ShoppingBag, Trash2 } from "lucide-react";
+import { Plus, AlertTriangle, CheckCircle, Pencil, X, ShoppingBag, Trash2, Search } from "lucide-react";
 import { restockItem, updateInventoryItem, deleteInventoryItem } from "@/server/actions/inventory";
 import { cn, formatPKR } from "@/utils";
 import { Badge } from "@/components/shared";
@@ -28,6 +28,7 @@ interface InventoryItem {
     unit:             string;
     image?:           string | null;
     isCanteenVisible?: boolean;
+    category?: { name: string } | null;
   } | null;
 }
 
@@ -279,7 +280,31 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
 }
 
 export function StockTable({ items, canEdit }: Props) {
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return items;
+    const q = query.toLowerCase();
+    return items.filter(
+      (i) =>
+        i.product?.name?.toLowerCase().includes(q) ||
+        i.product?.brand?.toLowerCase().includes(q) ||
+        i.product?.category?.name?.toLowerCase().includes(q)
+    );
+  }, [items, query]);
+
   return (
+    <div>
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Filter products…"
+          className="pl-9 pr-3 py-2 text-sm bg-surface-elevated border border-border rounded-xl focus:outline-none focus:border-gold-500/50 focus:ring-1 focus:ring-gold-500/20 text-foreground placeholder:text-muted-foreground w-full sm:w-72 transition-colors"
+        />
+      </div>
     <div className="overflow-x-auto">
       <table className="data-table">
         <thead>
@@ -295,11 +320,12 @@ export function StockTable({ items, canEdit }: Props) {
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {filtered.map((item) => (
             <StockRow key={item.id} item={item} canEdit={canEdit} />
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }
