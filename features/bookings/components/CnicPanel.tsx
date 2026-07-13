@@ -22,8 +22,13 @@ export function CnicPanel({ customerId, cnic, cnicImage }: Props) {
   const [cnicVal, setCnicVal] = useState(cnic ?? "");
 
   const handleSave = () => {
+    const trimmed = cnicVal.trim();
+    if (trimmed && !/^[0-9]{5}-[0-9]{7}-[0-9]$/.test(trimmed)) {
+      toast.error("CNIC must be in format 00000-0000000-0");
+      return;
+    }
     startTransition(async () => {
-      const res = await updateCustomerCnic(customerId, cnicVal);
+      const res = await updateCustomerCnic(customerId, trimmed);
       if (res.success) {
         toast.success("CNIC updated");
         setEditing(false);

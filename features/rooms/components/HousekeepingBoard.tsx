@@ -7,6 +7,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
@@ -57,6 +58,7 @@ const QUICK_ACTIONS: Partial<Record<RoomStatus, { label: string; next: RoomStatu
 };
 
 function RoomTile({ room }: { room: HousekeepingRoom }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const statusCfg = ROOM_STATUS_CONFIG[room.status];
   const actions   = QUICK_ACTIONS[room.status] ?? [];
@@ -66,6 +68,7 @@ function RoomTile({ room }: { room: HousekeepingRoom }) {
       const res = await updateRoomStatus(room.id, next);
       if (res.success) {
         toast.success(`Room ${room.number} → ${ROOM_STATUS_CONFIG[next].label}`);
+        router.refresh();
       } else {
         toast.error(res.error ?? "Status update failed");
       }

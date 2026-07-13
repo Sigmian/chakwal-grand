@@ -15,11 +15,13 @@ export default async function FinanceReportsPage() {
   const user     = await requirePermission("finance:read");
   const branchId = getScopedBranchId(user);
 
-  const branches = await prisma.branch.findMany({
-    where:   { isActive: true },
-    select:  { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const branches = branchId
+    ? []
+    : await prisma.branch.findMany({
+        where:   { isActive: true, companyId: user.companyId },
+        select:  { id: true, name: true },
+        orderBy: { name: "asc" },
+      });
 
   return (
     <div className="space-y-6 animate-fade-in">

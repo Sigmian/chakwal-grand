@@ -265,6 +265,10 @@ export async function placeRoomOrder(
   const session = await resolveSession();
   if (!session) return { success: false, error: "Session expired. Please log in again." };
 
+  if (!rateLimit(`guest-order:${session.booking.id}`, 10, 60_000)) {
+    return { success: false, error: "Too many orders. Please wait a moment." };
+  }
+
   const booking = session.booking;
 
   if (booking.status !== "CHECKED_IN") {
@@ -439,6 +443,10 @@ export async function getGuestOrders() {
 export async function cancelGuestOrder(orderId: string) {
   const session = await resolveSession();
   if (!session) return { success: false, error: "Session expired." };
+
+  if (!rateLimit(`guest-cancel:${session.booking.id}`, 5, 60_000)) {
+    return { success: false, error: "Too many requests. Please wait a moment." };
+  }
 
   const order = await prisma.inRoomOrder.findUnique({
     where:   { id: orderId },

@@ -28,7 +28,11 @@ const cnicNumber = z
 
 const dateString = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format");
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+  .refine((s) => {
+    const d = new Date(s);
+    return !isNaN(d.getTime()) && d.toISOString().startsWith(s);
+  }, "Invalid calendar date");
 
 // ─── Auth ─────────────────────────────────────────────────────
 
@@ -151,7 +155,7 @@ export const createBookingSchema = z
     guestName:    z.string().min(2).optional(),
     guestPhone:   phoneNumber.optional(),
     guestEmail:   z.string().email().optional().or(z.literal("")),
-    guestCnic:    z.string().optional(),
+    guestCnic:    cnicNumber,
     // Dates
     checkInDate:  dateString,
     checkOutDate: dateString,
@@ -278,8 +282,8 @@ export const createOfferSchema = z
     roomTypes:     z.array(z.nativeEnum(RoomType)).default([]),
     minNights:     z.number().int().min(1).optional(),
     maxUses:       z.number().int().min(1).optional(),
-    startsAt:      z.string(),
-    expiresAt:     z.string(),
+    startsAt:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Start date must be YYYY-MM-DD"),
+    expiresAt:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expiry date must be YYYY-MM-DD"),
     branchId:      z.string().optional(),
   })
   .refine(
@@ -290,6 +294,10 @@ export const createOfferSchema = z
       return true;
     },
     { message: "Percentage discount cannot exceed 100%", path: ["discountValue"] }
+  )
+  .refine(
+    (d) => new Date(d.expiresAt) > new Date(d.startsAt),
+    { message: "Expiry date must be after start date", path: ["expiresAt"] }
   );
 export type CreateOfferInput = z.infer<typeof createOfferSchema>;
 

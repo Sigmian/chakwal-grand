@@ -156,7 +156,7 @@ export function OrdersBoard({ orders }: { orders: Order[] }) {
           { label: "Today",     count: orders.filter((o) => {
             const d = new Date(o.createdAt);
             const t = new Date();
-            return d.getDate() === t.getDate() && d.getMonth() === t.getMonth();
+            return d.getDate() === t.getDate() && d.getMonth() === t.getMonth() && d.getFullYear() === t.getFullYear();
           }).length, color: "text-foreground" },
         ].map(({ label, count, color }) => (
           <div key={label} className="bg-surface-elevated border border-border rounded-2xl p-4 text-center">

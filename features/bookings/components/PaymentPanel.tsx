@@ -7,6 +7,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   CreditCard, Plus, Check, Receipt, Loader2,
@@ -66,6 +67,7 @@ const STATUS_STYLE: Record<PaymentStatus, string> = {
 };
 
 export function PaymentPanel(props: Props) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showForm, setShowForm]      = useState(false);
   const [form, setForm] = useState({
@@ -107,6 +109,7 @@ export function PaymentPanel(props: Props) {
         toast.success(`Payment of ${formatPKR(amt)} recorded`);
         setForm({ amount: "", method: PaymentMethod.CASH, reference: "", note: "" });
         setShowForm(false);
+        router.refresh();
       } else {
         toast.error(res.error ?? "Failed to record payment");
       }

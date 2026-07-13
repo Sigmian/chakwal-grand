@@ -24,8 +24,7 @@ import {
 interface PageProps { params: { bookingId: string } }
 
 export async function generateMetadata({ params }: PageProps) {
-  const b = await prisma.booking.findUnique({ where: { id: params.bookingId } });
-  return { title: b ? `Booking ${b.bookingRef}` : "Booking" };
+  return { title: `Booking` };
 }
 
 export default async function BookingDetailPage({ params, searchParams }: PageProps & { searchParams: { action?: string } }) {

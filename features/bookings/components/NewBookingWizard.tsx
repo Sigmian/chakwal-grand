@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2, Calendar, Users, ArrowRight, ArrowLeft } from "lucide-react";
 import { createBooking } from "@/server/actions/bookings";
+import { checkRoomAvailability } from "@/server/actions/rooms";
 import { createBookingSchema, type CreateBookingInput } from "@/lib/validation/schemas";
 import { formatPKR, getNights, ROOM_TYPE_CONFIG } from "@/utils";
 
@@ -31,6 +32,7 @@ export function NewBookingWizard({ branches, rooms }: {
   const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [selectedRoom, setSelectedRoom] = useState<typeof rooms[0] | null>(null);
+  const [availableRoomIds, setAvailableRoomIds] = useState<Set<string> | null>(null);
 
   const form = useForm<CreateBookingInput>({
     resolver: zodResolver(createBookingSchema),
@@ -150,11 +152,21 @@ export function NewBookingWizard({ branches, rooms }: {
 
               <button
                 type="button"
-                onClick={() => setStep(2)}
-                disabled={!values.branchId || !values.checkInDate || !values.checkOutDate}
+                disabled={!values.branchId || !values.checkInDate || !values.checkOutDate || isPending}
+                onClick={() => {
+                  startTransition(async () => {
+                    const available = await checkRoomAvailability({
+                      branchId:    values.branchId!,
+                      checkInDate: values.checkInDate!,
+                      checkOutDate: values.checkOutDate!,
+                    });
+                    setAvailableRoomIds(new Set(available.map((r) => r.id)));
+                    setStep(2);
+                  });
+                }}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-gold-gradient text-background font-semibold text-sm rounded-xl disabled:opacity-50 hover:shadow-gold-sm transition-all"
               >
-                Continue <ArrowRight className="w-4 h-4" />
+                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
               </button>
             </motion.div>
           )}
@@ -164,7 +176,10 @@ export function NewBookingWizard({ branches, rooms }: {
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <h2 className="text-lg font-bold text-foreground font-serif">Choose a Room</h2>
               <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-                {rooms.filter(() => true).map((room) => {
+                {availableRoomIds !== null && availableRoomIds.size === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No rooms available for the selected dates.</p>
+                )}
+                {rooms.filter((r) => availableRoomIds === null || availableRoomIds.has(r.id)).map((room) => {
                   const isSelected = selectedRoom?.id === room.id;
                   const total      = room.pricePerNight * nights;
                   return (
@@ -228,7 +243,10 @@ export function NewBookingWizard({ branches, rooms }: {
                 <button type="button" onClick={() => setStep(2)} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
-                <button type="button" onClick={() => setStep(4)}
+                <button type="button" onClick={async () => {
+                    const valid = await form.trigger(["guestName", "guestPhone", "guestEmail", "guestCnic"]);
+                    if (valid) setStep(4);
+                  }}
                   className="flex-1 flex items-center justify-center gap-2 py-3 bg-gold-gradient text-background font-semibold text-sm rounded-xl">
                   Review Booking <ArrowRight className="w-4 h-4" />
                 </button>

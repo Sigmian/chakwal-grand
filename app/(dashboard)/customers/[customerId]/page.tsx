@@ -18,9 +18,8 @@ import { LoyaltyTier } from "@/types";
 
 interface PageProps { params: { customerId: string } }
 
-export async function generateMetadata({ params }: PageProps) {
-  const profile = await getCustomerProfile(params.customerId);
-  return { title: profile?.name ?? "Customer Profile" };
+export async function generateMetadata() {
+  return { title: "Customer Profile" };
 }
 
 export default async function CustomerProfilePage({ params }: PageProps) {

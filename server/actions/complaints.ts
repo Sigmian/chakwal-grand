@@ -54,7 +54,7 @@ export async function updateComplaintStatus(
 }
 
 export async function deleteComplaint(id: string) {
-  const user = await requirePermission("complaints:update");
+  const user = await requirePermission("complaints:delete");
   try {
     const complaint = await prisma.complaint.findUnique({ where: { id }, select: { bookingRef: true } });
     if (!complaint) return { success: false, error: "Complaint not found." };
