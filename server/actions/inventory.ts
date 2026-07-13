@@ -45,7 +45,7 @@ export async function getInventory(branchId?: string) {
   const scopedBranch = getScopedBranchId(user, branchId);
 
   const items = await prisma.inventoryItem.findMany({
-    where: scopedBranch ? { branchId: scopedBranch } : {},
+    where: scopedBranch ? { branchId: scopedBranch } : { branch: { companyId: user.companyId } },
     include: {
       product: {
         include: { category: true },
@@ -83,7 +83,7 @@ export async function getLowStockAlerts(branchId?: string) {
 
   // Fetch all then filter by per-item minStockLevel (Prisma can't compare columns in WHERE)
   const items = await prisma.inventoryItem.findMany({
-    where: scopedBranch ? { branchId: scopedBranch } : {},
+    where: scopedBranch ? { branchId: scopedBranch } : { branch: { companyId: user.companyId } },
     include: {
       product: { select: { name: true, unit: true } },
       branch:  { select: { name: true } },

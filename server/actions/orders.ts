@@ -11,7 +11,7 @@ export async function getInRoomOrders(branchId?: string) {
   return prisma.inRoomOrder.findMany({
     where: scopedBranch
       ? { booking: { branchId: scopedBranch } }
-      : {},
+      : { booking: { branch: { companyId: user.companyId } } },
     include: {
       items: true,
       booking: {

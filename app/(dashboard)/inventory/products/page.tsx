@@ -25,7 +25,7 @@ export default async function InventoryProductsPage() {
     getInventory(branchId),
     getLowStockAlerts(branchId),
     getProductCategories(),
-    prisma.branch.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.branch.findMany({ where: { companyId: user.companyId }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 
   // Group by category

@@ -27,7 +27,7 @@ export default async function NewBookingPage({ searchParams }: PageProps) {
   const branches = await prisma.branch.findMany({
     where: {
       isActive: true,
-      ...(branchId ? { id: branchId } : {}),
+      ...(branchId ? { id: branchId } : { companyId: user.companyId }),
     },
     select: { id: true, name: true, city: true },
     orderBy: { name: "asc" },
@@ -37,7 +37,7 @@ export default async function NewBookingPage({ searchParams }: PageProps) {
   const rooms = await prisma.room.findMany({
     where: {
       isActive: true,
-      ...(branchId ? { branchId } : {}),
+      ...(branchId ? { branchId } : { branch: { companyId: user.companyId } }),
     },
     include: {
       images: { where: { isCover: true }, take: 1 },

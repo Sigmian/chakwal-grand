@@ -18,7 +18,7 @@ export default async function NewRoomPage() {
   const branchId = getScopedBranchId(user);
 
   const branches = await prisma.branch.findMany({
-    where:   { isActive: true, ...(branchId ? { id: branchId } : {}) },
+    where:   { isActive: true, ...(branchId ? { id: branchId } : { companyId: user.companyId }) },
     select:  { id: true, name: true, city: true },
     orderBy: { name: "asc" },
   });

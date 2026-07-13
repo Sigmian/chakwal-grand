@@ -17,7 +17,7 @@ export default async function OffersPage() {
     }),
     // Managers only see their own branch in the branch selector
     prisma.branch.findMany({
-      where:   { isActive: true, ...(branchId ? { id: branchId } : {}) },
+      where:   { isActive: true, ...(branchId ? { id: branchId } : { companyId: user.companyId }) },
       select:  { id: true, name: true },
       orderBy: { name: "asc" },
     }),
