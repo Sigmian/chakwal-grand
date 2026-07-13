@@ -1,19 +1,25 @@
 // ============================================================
 // app/(dashboard)/finance/expenses/page.tsx
-// Expenses split by type: Guest House vs Inventory
+// Expenses split by type: Guest House vs Inventory, filterable by date range
 // ============================================================
 
+import { Suspense } from "react";
 import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
 import { PageHeader, SectionHeader, Badge } from "@/components/shared";
 import { ExpenseForm } from "@/features/finance/components/ExpenseForm";
+import { DateRangeFilter } from "@/features/finance/components/DateRangeFilter";
 import { ExpenseCategory } from "@/types";
 import { cn, formatPKR, formatDate } from "@/utils";
 import prisma from "@/lib/db/prisma";
-import { Receipt, AlertTriangle, Building2, Package } from "lucide-react";
-import { getPKTMonthPeriod } from "@/lib/finance/reporting";
+import { Receipt, Building2, Package } from "lucide-react";
+import { parseDateRange } from "@/lib/finance/reporting";
 
 export const metadata = { title: "Expenses" };
+
+interface PageProps {
+  searchParams: { from?: string; to?: string };
+}
 
 const CATEGORY_ICONS: Record<string, string> = {
   ELECTRICITY: "⚡", GAS: "🔥", INTERNET: "🌐", WATER: "💧",
@@ -42,21 +48,26 @@ function CategoryBar({ category, total, pct }: { category: string; total: number
   );
 }
 
-export default async function ExpensesPage() {
+export default async function ExpensesPage({ searchParams }: PageProps) {
   const user      = await requirePermission("finance:read");
   const branchId  = getScopedBranchId(user);
   const canCreate = hasPermission(user.role, "finance:expenses:create");
 
-  const { start: monthStart, end: monthEnd } = getPKTMonthPeriod();
-  const branchWhere = branchId ? { branchId } : {};
+  const { start, end, label } = parseDateRange(searchParams.from, searchParams.to);
+  const branchWhere = branchId
+    ? { branchId }
+    : { branch: { companyId: user.companyId } };
 
   const [expenses, branches] = await Promise.all([
     prisma.expense.findMany({
-      where: { ...branchWhere, paidAt: { gte: monthStart, lte: monthEnd } },
+      where: { ...branchWhere, paidAt: { gte: start, lte: end } },
       include: { branch: { select: { name: true } } },
       orderBy: { paidAt: "desc" },
     }),
-    prisma.branch.findMany({ where: { isActive: true }, select: { id: true, name: true } }),
+    prisma.branch.findMany({
+      where:  { isActive: true, companyId: user.companyId },
+      select: { id: true, name: true },
+    }),
   ]);
 
   const ghExpenses  = expenses.filter(e => String(e.expenseType) !== "INVENTORY");
@@ -81,15 +92,22 @@ export default async function ExpensesPage() {
     <div className="space-y-6 animate-fade-in">
       <PageHeader
         title="Expenses"
-        subtitle={`This month: ${formatPKR(total)} total`}
+        subtitle={`${label}: ${formatPKR(total)} total`}
       />
+
+      {/* Date range filter */}
+      <Suspense>
+        <div className="card-luxury p-4">
+          <DateRangeFilter />
+        </div>
+      </Suspense>
 
       {/* Summary KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Total Expenses",    value: formatPKR(total),    icon: Receipt,   color: "text-foreground",  bg: "bg-accent"         },
-          { label: "Guest House Costs", value: formatPKR(ghTotal),  icon: Building2, color: "text-gold-400",    bg: "bg-gold-500/15"    },
-          { label: "Inventory Costs",   value: formatPKR(invTotal), icon: Package,   color: "text-blue-400",    bg: "bg-blue-500/15"    },
+          { label: "Total Expenses",    value: formatPKR(total),    icon: Receipt,   color: "text-foreground", bg: "bg-accent"      },
+          { label: "Guest House Costs", value: formatPKR(ghTotal),  icon: Building2, color: "text-gold-400",   bg: "bg-gold-500/15" },
+          { label: "Inventory Costs",   value: formatPKR(invTotal), icon: Package,   color: "text-blue-400",   bg: "bg-blue-500/15" },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className="card-luxury p-5 flex items-center gap-4">
             <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0", bg)}>
@@ -120,7 +138,7 @@ export default async function ExpensesPage() {
               <span className="ml-auto text-lg font-bold text-gold-400">{formatPKR(ghTotal)}</span>
             </div>
             {ghByCategory.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-3">No guest house expenses this month</p>
+              <p className="text-sm text-muted-foreground text-center py-3">No guest house expenses in this period</p>
             ) : (
               <div className="space-y-2.5">
                 {ghByCategory.map(({ category, total: t }) => (
@@ -143,7 +161,7 @@ export default async function ExpensesPage() {
               <span className="ml-auto text-lg font-bold text-blue-400">{formatPKR(invTotal)}</span>
             </div>
             {invByCategory.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-3">No inventory expenses this month</p>
+              <p className="text-sm text-muted-foreground text-center py-3">No inventory expenses in this period</p>
             ) : (
               <div className="space-y-2.5">
                 {invByCategory.map(({ category, total: t }) => (
@@ -156,13 +174,13 @@ export default async function ExpensesPage() {
           {/* Full expense list */}
           <div className="card-luxury overflow-hidden">
             <div className="p-5 border-b border-border flex items-center justify-between">
-              <SectionHeader title="All Expenses This Month" />
+              <SectionHeader title={`All Expenses — ${label}`} />
               <Badge variant="slate">{expenses.length} entries</Badge>
             </div>
             {expenses.length === 0 ? (
               <div className="p-8 text-center">
                 <Receipt className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No expenses recorded this month</p>
+                <p className="text-sm text-muted-foreground">No expenses recorded in this period</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -182,7 +200,6 @@ export default async function ExpensesPage() {
                       <tr key={expense.id}>
                         <td>
                           <p className="text-sm font-medium text-foreground">{expense.title}</p>
-                          {/* Mobile-only: category inline */}
                           <p className="text-xs text-muted-foreground sm:hidden capitalize">
                             {CATEGORY_ICONS[expense.category] ?? "📌"} {expense.category.toLowerCase().replace(/_/g, " ")}
                           </p>

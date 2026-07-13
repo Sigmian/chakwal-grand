@@ -734,7 +734,7 @@ export async function getBranchScorecard() {
       prisma.expense.aggregate({ where: { ...bf, paidAt: { gte: thisStart, lte: thisEnd } }, _sum: { amount: true } }),
       prisma.room.groupBy({ by: ["status"], where: { ...bf, isActive: true }, _count: { id: true } }),
       prisma.booking.aggregate({ where: { ...bf, status: BookingStatus.CHECKED_OUT, checkOutDate: { gte: thisStart, lte: thisEnd } }, _avg: { nights: true }, _count: { id: true } }),
-      prisma.complaint.count({ where: { branchId: branch.id, status: { not: "RESOLVED" } } }),
+      prisma.complaint.count({ where: { status: { not: "RESOLVED" } } }),
     ]);
 
     const occMap      = Object.fromEntries(occupancy.map((o) => [o.status, o._count.id]));

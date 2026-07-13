@@ -3,6 +3,28 @@ import prisma from "@/lib/db/prisma";
 const PKT_OFFSET_MS = 5 * 60 * 60 * 1000;
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+/**
+ * Parse `from` / `to` date strings (YYYY-MM-DD, PKT) from page searchParams.
+ * Falls back to the current calendar month in PKT when either is absent.
+ */
+export function parseDateRange(from?: string, to?: string): { start: Date; end: Date; label: string } {
+  if (from && to && /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to)) {
+    const start = new Date(`${from}T00:00:00+05:00`);
+    const end   = new Date(`${to}T23:59:59+05:00`);
+    if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start <= end) {
+      const label = from === to ? from : `${from} – ${to}`;
+      return { start, end, label };
+    }
+  }
+  if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) {
+    const start = new Date(`${from}T00:00:00+05:00`);
+    const end   = new Date(`${from}T23:59:59+05:00`);
+    if (!isNaN(start.getTime())) return { start, end, label: from };
+  }
+  const { start, end, label } = getPKTMonthPeriod();
+  return { start, end, label: `${label} (this month)` };
+}
+
 export interface FinancePeriod {
   label: string;
   start: Date;

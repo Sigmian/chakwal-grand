@@ -62,10 +62,18 @@ export async function deleteReview(id: string) {
 export async function getReviews(branchId?: string) {
   const user = await requirePermission("reviews:read");
   const scopedBranchId = getScopedBranchId(user, branchId);
+  let where: { branchId: string } | { branchId: { in: string[] } } | undefined;
+  if (scopedBranchId) {
+    where = { branchId: scopedBranchId };
+  } else {
+    const companyBranches = await prisma.branch.findMany({
+      where:  { companyId: user.companyId },
+      select: { id: true },
+    });
+    where = { branchId: { in: companyBranches.map((b) => b.id) } };
+  }
   return prisma.review.findMany({
-    where: scopedBranchId
-      ? { branchId: scopedBranchId }
-      : { branch: { companyId: user.companyId } },
+    where,
     orderBy: [{ isApproved: "asc" }, { createdAt: "desc" }],
     include: {
       customer: { select: { name: true, phone: true } },
