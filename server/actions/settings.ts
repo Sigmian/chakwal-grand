@@ -5,8 +5,10 @@ import prisma from "@/lib/db/prisma";
 import { requirePermission } from "@/lib/auth/session";
 
 export async function toggleUserActive(userId: string, isActive: boolean) {
-  await requirePermission("settings:company");
+  const actor = await requirePermission("settings:company");
   try {
+    const target = await prisma.user.findUnique({ where: { id: userId }, select: { companyId: true } });
+    if (!target || target.companyId !== actor.companyId) return { success: false, error: "User not found." };
     await prisma.user.update({ where: { id: userId }, data: { isActive: !isActive } });
     revalidatePath("/settings");
     return { success: true };
@@ -27,7 +29,8 @@ export async function updateCompanyAction(id: string, data: {
   currency?: string;
   timezone?: string;
 }) {
-  await requirePermission("settings:company");
+  const actor = await requirePermission("settings:company");
+  if (id !== actor.companyId) return { success: false, error: "Access denied." };
   try {
     await prisma.company.update({ where: { id }, data });
     revalidatePath("/settings");
@@ -124,11 +127,13 @@ export async function deleteAnnouncement(id: string) {
 }
 
 export async function resetUserPassword(userId: string, newPassword: string) {
-  await requirePermission("settings:company");
+  const actor = await requirePermission("settings:company");
   if (!newPassword || newPassword.length < 8) {
     return { success: false, error: "Password must be at least 8 characters." };
   }
   try {
+    const target = await prisma.user.findUnique({ where: { id: userId }, select: { companyId: true } });
+    if (!target || target.companyId !== actor.companyId) return { success: false, error: "User not found." };
     const bcrypt = await import("bcryptjs");
     const hash = await bcrypt.hash(newPassword, 12);
     await prisma.user.update({ where: { id: userId }, data: { passwordHash: hash } });

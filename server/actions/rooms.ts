@@ -37,7 +37,7 @@ export async function getRooms(params?: {
   return prisma.room.findMany({
     where: {
       isActive: true,
-      ...(scopedBranch        ? { branchId: scopedBranch } : {}),
+      ...(scopedBranch ? { branchId: scopedBranch } : { branch: { companyId: user.companyId } }),
       ...(params?.status      ? { status: params.status }  : {}),
       ...(params?.type        ? { type: params.type as never } : {}),
     },
@@ -386,7 +386,7 @@ export async function getHousekeepingBoard(branchId?: string) {
   const rooms = await prisma.room.findMany({
     where: {
       isActive: true,
-      ...(scopedBranch ? { branchId: scopedBranch } : {}),
+      ...(scopedBranch ? { branchId: scopedBranch } : { branch: { companyId: user.companyId } }),
     },
     include: {
       images: { where: { isCover: true }, take: 1 },

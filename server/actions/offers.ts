@@ -17,7 +17,13 @@ interface CreateOfferInput {
 }
 
 export async function createOffer(input: CreateOfferInput) {
-  await requirePermission("settings:company");
+  const user = await requirePermission("settings:company");
+
+  // Validate that branchId (if provided) belongs to this company
+  if (input.branchId) {
+    const branch = await prisma.branch.findUnique({ where: { id: input.branchId }, select: { companyId: true } });
+    if (!branch || branch.companyId !== user.companyId) return { success: false, offer: null };
+  }
 
   const code = input.code || Math.random().toString(36).slice(2, 10).toUpperCase();
 
@@ -41,10 +47,11 @@ export async function createOffer(input: CreateOfferInput) {
 }
 
 export async function toggleOffer(id: string) {
-  await requirePermission("settings:company");
+  const user = await requirePermission("settings:company");
 
-  const offer = await prisma.offer.findUnique({ where: { id } });
+  const offer = await prisma.offer.findUnique({ where: { id }, include: { branch: { select: { companyId: true } } } });
   if (!offer) return { success: false };
+  if (offer.branch && offer.branch.companyId !== user.companyId) return { success: false };
 
   await prisma.offer.update({
     where: { id },
@@ -56,10 +63,11 @@ export async function toggleOffer(id: string) {
 }
 
 export async function deleteOffer(id: string) {
-  await requirePermission("settings:company");
+  const user = await requirePermission("settings:company");
 
   // Don't delete auto-discount anchors
-  const offer = await prisma.offer.findUnique({ where: { id } });
+  const offer = await prisma.offer.findUnique({ where: { id }, include: { branch: { select: { companyId: true } } } });
+  if (offer?.branch && offer.branch.companyId !== user.companyId) return { success: false, error: "Access denied." };
   if (offer?.code && ["WEEKLY14", "MONTHLY40"].includes(offer.code)) {
     return { success: false, error: "Cannot delete system auto-discounts. Toggle them off instead." };
   }

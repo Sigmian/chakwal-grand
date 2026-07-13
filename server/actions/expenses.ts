@@ -93,7 +93,9 @@ export async function getExpenseBreakdown(branchId?: string, months = 6) {
   const user = await requirePermission("finance:read");
 
   const scopedBranchId = getScopedBranchId(user, branchId);
-  const branchFilter = scopedBranchId ? { branchId: scopedBranchId } : {};
+  const branchFilter = scopedBranchId
+    ? { branchId: scopedBranchId }
+    : { branch: { companyId: user.companyId } };
   const periods = getPKTMonthPeriods(months);
   const since = periods[0].start;
   const through = periods[periods.length - 1].end;
