@@ -307,9 +307,7 @@ export async function confirmBooking(bookingId: string) {
     });
     if (!booking) return { success: false, error: "Booking not found" };
 
-    // Branch scope check
-    const branchId = getScopedBranchId(user, booking.branchId);
-    if (branchId !== booking.branchId) {
+    if (!canAccessBranch(user, booking.branchId)) {
       return { success: false, error: "Access denied" };
     }
 
@@ -362,8 +360,7 @@ export async function checkInBooking(bookingId: string) {
     });
     if (!booking) return { success: false, error: "Booking not found" };
 
-    // Branch scope check — a branch-scoped user can't act on another branch's booking
-    if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+    if (!canAccessBranch(user, booking.branchId)) {
       return { success: false, error: "Access denied" };
     }
 
@@ -420,8 +417,7 @@ export async function checkOutBooking(bookingId: string) {
     });
     if (!booking) return { success: false, error: "Booking not found" };
 
-    // Branch scope check
-    if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+    if (!canAccessBranch(user, booking.branchId)) {
       return { success: false, error: "Access denied" };
     }
 
@@ -559,8 +555,7 @@ export async function cancelBooking(bookingId: string, rawInput: CancelBookingIn
     });
     if (!booking) return { success: false, error: "Booking not found" };
 
-    // Branch scope check
-    if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+    if (!canAccessBranch(user, booking.branchId)) {
       return { success: false, error: "Access denied" };
     }
 
@@ -712,8 +707,7 @@ export async function extendBooking(input: {
     if (!booking) return { success: false, error: "Booking not found" };
 
     // 2. Branch scope check
-    const branchId = getScopedBranchId(user, booking.branchId);
-    if (branchId && branchId !== booking.branchId) {
+    if (!canAccessBranch(user, booking.branchId)) {
       return { success: false, error: "Access denied — this booking belongs to a different branch" };
     }
 
@@ -1005,7 +999,7 @@ export async function applyBookingAdjustment(input: {
 
   const booking = await prisma.booking.findUnique({ where: { id: input.bookingId } });
   if (!booking) return { success: false, error: "Booking not found" };
-  if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+  if (!canAccessBranch(user, booking.branchId)) {
     return { success: false, error: "You cannot adjust a booking from another branch." };
   }
 

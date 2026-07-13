@@ -134,6 +134,16 @@ export async function addInventoryItem(rawInput: AddInventoryItemInput) {
   if (!branchId) return { success: false, error: "Branch access denied" };
 
   try {
+    // Check existence first so we know whether to log an initial stock movement.
+    // The upsert update path does NOT change currentStock, so recording a stock
+    // movement on update would create a phantom "Initial stock" restock in the
+    // audit trail that never actually changed the inventory count.
+    const existing = await prisma.inventoryItem.findUnique({
+      where: { productId_branchId: { productId: input.productId, branchId } },
+      select: { id: true },
+    });
+    const isNew = !existing;
+
     const item = await prisma.inventoryItem.upsert({
       where: {
         productId_branchId: { productId: input.productId, branchId },
@@ -160,7 +170,7 @@ export async function addInventoryItem(rawInput: AddInventoryItemInput) {
       },
     });
 
-    if (input.currentStock > 0) {
+    if (isNew && input.currentStock > 0) {
       await createStockMovement({
         inventoryItemId: item.id,
         type:            "RESTOCK",
@@ -196,19 +206,21 @@ export async function restockItem(rawInput: RestockInput) {
     });
     if (!item) return { success: false, error: "Item not found" };
 
-    const previousStock = item.currentStock;
-    const newStock      = previousStock + input.quantity;
+    // Use increment inside the transaction — computing newStock = previousStock + qty
+    // outside a transaction risks two concurrent restocks both reading the same
+    // previousStock and writing the same absolute value, silently losing one restock.
+    const updated = await prisma.inventoryItem.update({
+      where: { id: input.inventoryItemId },
+      data: {
+        currentStock:    { increment: input.quantity },
+        lastRestockedAt: new Date(),
+        ...(input.purchasePrice ? { purchasePrice: input.purchasePrice } : {}),
+      },
+      select: { currentStock: true },
+    });
 
-    await prisma.$transaction([
-      prisma.inventoryItem.update({
-        where: { id: input.inventoryItemId },
-        data: {
-          currentStock:    newStock,
-          lastRestockedAt: new Date(),
-          ...(input.purchasePrice ? { purchasePrice: input.purchasePrice } : {}),
-        },
-      }),
-    ]);
+    const newStock      = updated.currentStock;
+    const previousStock = newStock - input.quantity;
 
     await createStockMovement({
       inventoryItemId: input.inventoryItemId,
@@ -506,11 +518,17 @@ export async function approveStockTransfer(transferId: string) {
           throw new Error(`Insufficient stock for product ${item.productId}`);
         }
 
-        // Deduct from source
-        await tx.inventoryItem.update({
-          where: { id: fromItem.id },
+        // Conditional deduct: the where-clause re-checks the stock level inside
+        // the transaction, preventing two concurrent transfers from both passing
+        // the check above and driving stock negative.
+        const deducted = await tx.inventoryItem.updateMany({
+          where: { id: fromItem.id, currentStock: { gte: item.quantity } },
           data:  { currentStock: { decrement: item.quantity } },
         });
+        if (deducted.count === 0) {
+          throw new Error(`Insufficient stock for product ${item.productId}`);
+        }
+
         await tx.stockMovement.create({
           data: {
             inventoryItemId: fromItem.id,
