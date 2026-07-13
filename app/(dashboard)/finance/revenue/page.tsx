@@ -29,7 +29,7 @@ export default async function RevenuePage({ searchParams }: PageProps) {
   const branchFilter = branchId ? { branchId } : { branch: { companyId: user.companyId } };
 
   const [periodRevenue, bookings] = await Promise.all([
-    getCashRevenueForPeriod(start, end, branchId ?? undefined),
+    getCashRevenueForPeriod(start, end, branchId ?? undefined, user.companyId),
     prisma.booking.findMany({
       where: {
         ...branchFilter,

@@ -59,9 +59,14 @@ export function getPKTMonthPeriods(months: number): FinancePeriod[] {
 export async function getCashRevenueForPeriod(
   start: Date,
   end: Date,
-  branchId?: string,
+  branchId?: string | null,
+  companyId?: string,
 ) {
-  const branchFilter = branchId ? { branchId } : {};
+  const branchFilter = branchId
+    ? { branchId }
+    : companyId
+      ? { branch: { companyId } }
+      : {};
 
   const [payments, walkInSales] = await Promise.all([
     prisma.payment.findMany({

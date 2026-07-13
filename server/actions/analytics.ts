@@ -43,7 +43,7 @@ export async function getDashboardOverview(branchId?: string) {
         status: { notIn: [BookingStatus.CANCELLED] },
       },
     }),
-    getCashRevenueForPeriod(monthStart, monthEnd, scopedBranch),
+    getCashRevenueForPeriod(monthStart, monthEnd, scopedBranch, user.companyId),
     prisma.booking.aggregate({
       where: {
         ...branchFilter,
@@ -80,7 +80,7 @@ export async function getDashboardOverview(branchId?: string) {
         status: { in: [BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT] },
       },
     }),
-    getCashRevenueForPeriod(lastMonthStart, lastMonthEnd, scopedBranch),
+    getCashRevenueForPeriod(lastMonthStart, lastMonthEnd, scopedBranch, user.companyId),
   ]);
 
   const lowStockCount = allInventory.filter(
@@ -138,7 +138,7 @@ export async function getRevenueChartData(branchId?: string, months = 6) {
   const chartData = await Promise.all(
     periods.map(async ({ label, start, end }) => {
       const [revenue, ghExpenses, invExpenses] = await Promise.all([
-        getCashRevenueForPeriod(start, end, scopedBranch),
+        getCashRevenueForPeriod(start, end, scopedBranch, user.companyId),
         prisma.expense.aggregate({
           where: { ...branchFilter, paidAt: { gte: start, lte: end }, expenseType: "GUESTHOUSE" as never },
           _sum:  { amount: true },
@@ -642,7 +642,7 @@ export async function getPLWaterfall(branchId?: string) {
   const { start, end } = getPKTMonthPeriod(0);
 
   const [revenue, expenses] = await Promise.all([
-    getCashRevenueForPeriod(start, end, scopedBranch),
+    getCashRevenueForPeriod(start, end, scopedBranch, user.companyId),
     prisma.expense.findMany({
       where:  { ...branchFilter, paidAt: { gte: start, lte: end } },
       select: { category: true, amount: true },
@@ -816,8 +816,8 @@ export async function getAISuggestions(branchId?: string) {
     prisma.booking.count({
       where: { ...branchFilter, status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] }, checkInDate: { gte: startOfDay(now), lte: next7End } },
     }),
-    getCashRevenueForPeriod(thisStart, thisEnd, scopedBranch),
-    getCashRevenueForPeriod(lastStart, lastEnd, scopedBranch),
+    getCashRevenueForPeriod(thisStart, thisEnd, scopedBranch, user.companyId),
+    getCashRevenueForPeriod(lastStart, lastEnd, scopedBranch, user.companyId),
     prisma.booking.count({ where: { ...branchFilter, status: BookingStatus.PENDING } }),
     prisma.inventoryItem.findMany({ where: { ...branchFilter }, select: { currentStock: true, minStockLevel: true, product: { select: { name: true } } } }),
     prisma.customer.count({ where: { companyId, totalVisits: { gte: 4 }, freeNightCredits: 0 } }),
