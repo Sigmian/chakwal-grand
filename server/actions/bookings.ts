@@ -12,7 +12,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, requirePermission, getScopedBranchId } from "@/lib/auth/session";
+import { requireAuth, requirePermission, getScopedBranchId, canAccessBranch } from "@/lib/auth/session";
 import { sendBookingConfirmed, sendFreeNightEarned } from "@/lib/whatsapp/templates";
 import {
   createBookingSchema,
@@ -618,62 +618,54 @@ export async function addPayment(rawInput: AddPaymentInput) {
   const input = result.data;
 
   try {
+    // Quick branch-scope check before entering the transaction
     const booking = await prisma.booking.findUnique({
-      where: { id: input.bookingId },
+      where:  { id: input.bookingId },
+      select: { branchId: true },
     });
     if (!booking) return { success: false, error: "Booking not found" };
 
-    // Branch scope check — prevent recording payments against another branch's booking
-    if (getScopedBranchId(user, booking.branchId) !== booking.branchId) {
+    if (!canAccessBranch(user, booking.branchId)) {
       return { success: false, error: "Access denied" };
     }
 
-    const totalAmount    = Number(booking.totalAmount);
-    const currentPaid    = Number(booking.paidAmount);
-    const remaining      = Math.max(0, totalAmount - currentPaid);
-    if (remaining <= 0) {
-      return { success: false, error: "This booking is already fully paid." };
-    }
-    if (input.amount > remaining) {
-      return {
-        success: false,
-        error:   `Payment exceeds the outstanding balance of ₨${remaining.toLocaleString("en-PK")}.`,
-      };
-    }
-
-    const newPaidAmount = currentPaid + input.amount;
-
-    const paymentStatus: PaymentStatus =
-      newPaidAmount >= totalAmount
-        ? PaymentStatus.PAID
-        : newPaidAmount > 0
-        ? PaymentStatus.PARTIAL
-        : PaymentStatus.UNPAID;
-
+    // All balance validation and the update happen inside one transaction so
+    // we always work from the freshest DB state. This prevents false
+    // PAYMENT_CONFLICT errors that used to occur when totalAmount changed
+    // (e.g. price adjustment, extra charges) between the outer read and write.
     await prisma.$transaction(async (tx) => {
-      // Optimistic guard: if another payment or adjustment changed the booking
-      // after our read, abort the whole transaction instead of over-collecting.
-      const updated = await tx.booking.updateMany({
-        where: {
-          id: input.bookingId,
-          paidAmount: booking.paidAmount,
-          totalAmount: booking.totalAmount,
-        },
-        data: {
-          paidAmount: newPaidAmount,
-          paymentStatus,
-        },
+      const fresh = await tx.booking.findUnique({
+        where:  { id: input.bookingId },
+        select: { totalAmount: true, paidAmount: true },
       });
-      if (updated.count !== 1) throw new Error("PAYMENT_CONFLICT");
+      if (!fresh) throw new Error("BOOKING_GONE");
+
+      const totalAmount = Number(fresh.totalAmount);
+      const currentPaid = Number(fresh.paidAmount);
+      const remaining   = Math.max(0, totalAmount - currentPaid);
+
+      if (remaining <= 0) throw new Error("ALREADY_PAID");
+      if (input.amount > remaining) throw new Error(`EXCEEDS:${remaining}`);
+
+      const newPaidAmount = currentPaid + input.amount;
+      const paymentStatus: PaymentStatus =
+        newPaidAmount >= totalAmount ? PaymentStatus.PAID
+        : newPaidAmount > 0         ? PaymentStatus.PARTIAL
+        :                             PaymentStatus.UNPAID;
+
+      await tx.booking.update({
+        where: { id: input.bookingId },
+        data:  { paidAmount: newPaidAmount, paymentStatus },
+      });
 
       await tx.payment.create({
         data: {
-          bookingId:   input.bookingId,
-          amount:      input.amount,
-          method:      input.method,
-          reference:   input.reference || null,
+          bookingId:    input.bookingId,
+          amount:       input.amount,
+          method:       input.method,
+          reference:    input.reference || null,
           receivedById: user.id,
-          notes:       input.notes || null,
+          notes:        input.notes || null,
         },
       });
     });
@@ -686,11 +678,17 @@ export async function addPayment(rawInput: AddPaymentInput) {
 
     return { success: true };
   } catch (error) {
-    if ((error as Error)?.message === "PAYMENT_CONFLICT") {
-      return { success: false, error: "The balance changed while this payment was being recorded. Please refresh and try again." };
+    const msg = (error as Error)?.message ?? "";
+    if (msg === "ALREADY_PAID")
+      return { success: false, error: "This booking is already fully paid." };
+    if (msg.startsWith("EXCEEDS:")) {
+      const bal = Number(msg.split(":")[1]);
+      return { success: false, error: `Payment exceeds the outstanding balance of ₨${bal.toLocaleString("en-PK")}.` };
     }
+    if (msg === "BOOKING_GONE")
+      return { success: false, error: "Booking not found." };
     console.error("[addPayment]", error);
-    return { success: false, error: "Failed to record payment" };
+    return { success: false, error: "Failed to record payment. Please try again." };
   }
 }
 
