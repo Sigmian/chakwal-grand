@@ -64,7 +64,7 @@ export default async function RevenuePage({ searchParams }: PageProps) {
       />
 
       {/* Date range filter */}
-      <Suspense>
+      <Suspense fallback={<div className="card-luxury p-4 h-10 animate-pulse" />}>
         <div className="card-luxury p-4">
           <DateRangeFilter />
         </div>
