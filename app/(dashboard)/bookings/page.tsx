@@ -46,7 +46,7 @@ export default async function BookingsPage({ searchParams }: PageProps) {
     getBookingStatusCounts(scopedBranchId ?? (activeBranch || undefined)),
     // Only super admins (no scoped branch) see the branch selector
     !scopedBranchId ? prisma.branch.findMany({
-      where:   { isActive: true },
+      where:   { isActive: true, companyId: user.companyId },
       select:  { id: true, name: true },
       orderBy: { name: "asc" },
     }) : Promise.resolve([] as { id: string; name: string }[]),
