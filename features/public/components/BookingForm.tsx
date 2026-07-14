@@ -330,7 +330,7 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
               href={`tel:${siteConfig.phoneE164}`}
               className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gold-500/10 border border-gold-500/30 text-gold-400 text-sm font-semibold rounded-xl hover:bg-gold-500/20 transition-colors"
             >
-              📞 Call Owner ({siteConfig.phone})
+              📞 Call Manager ({siteConfig.phone})
             </a>
           </div>
         </div>
