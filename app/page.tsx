@@ -14,6 +14,8 @@ import { FAQSection }     from "@/features/public/components/FAQSection";
 import { ChatWidget }            from "@/features/public/components/ChatWidget";
 import { ReviewsCarousel }       from "@/features/public/components/ReviewsCarousel";
 import { GrandOpeningFireworks } from "@/features/public/components/GrandOpeningFireworks";
+import { BranchSelectorModal }   from "@/features/public/components/BranchSelectorModal";
+import { BranchProvider }        from "@/components/providers/BranchProvider";
 import { getPublicBranches, getPublicReviews, getPublicRooms, getGrandOpeningOffer } from "@/server/actions/public";
 import { siteConfig } from "@/config/site";
 
@@ -140,6 +142,14 @@ export default async function HomePage() {
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : undefined;
 
+  // Branch-selector pricing (mirrors the (public) layout)
+  const mainRooms    = rooms.filter(r => r.branchId === siteConfig.branchIds.main);
+  const madinaRooms  = rooms.filter(r => r.branchId === siteConfig.branchIds.madinaTown);
+  const minMain      = mainRooms.length   ? Math.min(...mainRooms.map(r  => Number(r.pricePerNight))) : null;
+  const minMadina    = madinaRooms.length ? Math.min(...madinaRooms.map(r => Number(r.pricePerNight))) : null;
+  const discountPct  = grandOpeningOffer ? Number(grandOpeningOffer.discountValue) : 0;
+  const minMadinaOff = minMadina !== null && discountPct ? Math.round(minMadina * (1 - discountPct / 100)) : minMadina;
+
   // Pick one representative room per type, serialized to plain objects
   // (Prisma Decimal can't cross the serverâ†’client boundary).
   const featured = ["STANDARD", "FAMILY", "DELUXE", "SUITE"]
@@ -174,7 +184,7 @@ export default async function HomePage() {
   } : null;
 
   return (
-    <>
+    <BranchProvider>
       <GrandOpeningFireworks />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
@@ -419,6 +429,12 @@ export default async function HomePage() {
 
       <PublicFooter />
       <ChatWidget />
-    </>
+      <BranchSelectorModal
+        grandOpeningActive={!!grandOpeningOffer}
+        minPriceMain={minMain}
+        minPriceMadina={minMadina}
+        minPriceMadinaOff={minMadinaOff}
+      />
+    </BranchProvider>
   );
 }
