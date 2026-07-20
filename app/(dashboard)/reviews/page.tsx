@@ -19,9 +19,18 @@ export default async function ReviewsPage() {
   const canApprove = hasPermission(user.role, "reviews:approve");
   const branchId   = getScopedBranchId(user);
 
-  const branchScope = branchId
-    ? { branchId }
-    : { branch: { companyId: user.companyId } };
+  // Review has only a `branchId` scalar (no `branch` relation), so resolve the
+  // company's branch ids and filter by `branchId: { in: [...] }`.
+  let branchScope: Record<string, unknown>;
+  if (branchId) {
+    branchScope = { branchId };
+  } else {
+    const companyBranches = await prisma.branch.findMany({
+      where: { companyId: user.companyId },
+      select: { id: true },
+    });
+    branchScope = { branchId: { in: companyBranches.map((b) => b.id) } };
+  }
 
   const [pending, approved] = await Promise.all([
     prisma.review.findMany({
