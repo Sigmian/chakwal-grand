@@ -115,6 +115,12 @@ enum InRoomOrderStatus {
   CANCELLED  // Cancelled by guest or staff
 }
 
+enum AdvanceStatus {
+  PENDING   // Given, not yet deducted
+  DEDUCTED  // Deducted from a salary payment
+  WAIVED    // Written off by manager
+}
+
 // ─────────────────────────────────────────────
 // CORE: COMPANY & BRANCHES
 // ─────────────────────────────────────────────
@@ -176,6 +182,8 @@ model Branch {
   stockTransfersTo   StockTransfer[] @relation("TransferTo")
   branchAnalytics    BranchAnalyticsSnapshot[]
   abandonedLeads     AbandonedLead[]
+  salaryPayments     StaffSalaryPayment[]
+  staffAdvances      StaffAdvance[]
 
   @@index([companyId])
   @@index([slug])
@@ -279,7 +287,9 @@ model StaffMember {
   shiftEnd    String?     // "18:00"
   workingDays String[]    // ["MON","TUE","WED"]
 
-  activityLogs ActivityLog[]
+  activityLogs     ActivityLog[]
+  salaryPayments   StaffSalaryPayment[]
+  advances         StaffAdvance[]
 
   @@index([branchId])
   @@index([userId])
@@ -972,6 +982,64 @@ model AbandonedLead {
   @@index([followedUp, phone])
   @@index([createdAt])
   @@index([followedUp, createdAt])
+}
+
+// ── Staff Payroll ─────────────────────────────────────────────────────────
+
+model StaffSalaryPayment {
+  id              String      @id @default(cuid())
+  staffMemberId   String
+  staffMember     StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchId        String
+  branch          Branch      @relation(fields: [branchId], references: [id])
+
+  month           Int         // 1-12
+  year            Int
+  grossAmount     Decimal     @db.Decimal(10, 2)
+  advanceDeducted Decimal     @db.Decimal(10, 2) @default(0)
+  netAmount       Decimal     @db.Decimal(10, 2)
+  notes           String?
+  signature       String?     @db.Text  // base64 PNG of staff signature
+  paidById        String      // userId of manager who paid
+
+  // Auto-created expense record
+  expenseId       String?     @unique
+
+  // Which advances were deducted in this payment
+  deductedAdvances StaffAdvance[]
+
+  paidAt          DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+
+  @@index([staffMemberId])
+  @@index([branchId])
+  @@index([month, year])
+}
+
+model StaffAdvance {
+  id              String      @id @default(cuid())
+  staffMemberId   String
+  staffMember     StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchId        String
+  branch          Branch      @relation(fields: [branchId], references: [id])
+
+  amount          Decimal     @db.Decimal(10, 2)
+  reason          String?
+  notes           String?
+  signature       String?     @db.Text  // base64 PNG of staff signature
+  givenById       String      // userId of manager who gave advance
+
+  status          AdvanceStatus @default(PENDING)
+  deductedFromId  String?     // StaffSalaryPayment.id when deducted
+  deductedFrom    StaffSalaryPayment? @relation(fields: [deductedFromId], references: [id])
+  deductedAt      DateTime?
+
+  givenAt         DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+
+  @@index([staffMemberId])
+  @@index([status])
+  @@index([branchId])
 }
 
 // ── Customer OTP Login (Feature 11) ───────────────────────────────────────

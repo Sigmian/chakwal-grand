@@ -132,6 +132,20 @@ export const DASHBOARD_NAV: NavItem[] = [
       UserRole.SUPER_ADMIN,
       UserRole.BRANCH_MANAGER,
     ],
+    children: [
+      {
+        label: "Directory",
+        href:  "/staff",
+        icon:  "Users",
+        requiredRoles: [UserRole.SUPER_ADMIN, UserRole.BRANCH_MANAGER],
+      },
+      {
+        label: "Payroll",
+        href:  "/staff/payroll",
+        icon:  "Banknote",
+        requiredRoles: [UserRole.SUPER_ADMIN, UserRole.BRANCH_MANAGER],
+      },
+    ],
   },
   {
     label: "Reviews",
