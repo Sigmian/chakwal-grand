@@ -3,6 +3,11 @@
 import { useState, useTransition } from "react";
 import { updateStaffMember } from "@/server/actions/staff";
 import { X, Save, Loader2, User, Mail, Phone, CreditCard, Clock, MapPin, FileText, Shield } from "lucide-react";
+import { siteConfig } from "@/config/site";
+
+/** Friendly public branch name (falls back to the DB name). */
+const branchName = (id: string, fallback: string) =>
+  siteConfig.branches.find(b => b.id === id)?.name ?? fallback;
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const DAY_LABELS: Record<string, string> = {
@@ -215,13 +220,13 @@ export function EditStaffPanel({ staff, branches, isSuperAdmin, onClose }: Props
                     onChange={e => set("branchId", e.target.value)}
                   >
                     {branches.map(b => (
-                      <option key={b.id} value={b.id}>{b.name} — {b.city}</option>
+                      <option key={b.id} value={b.id}>{branchName(b.id, b.name)}</option>
                     ))}
                   </select>
                 ) : (
                   <input
                     className="input-luxury w-full opacity-60"
-                    value={branches.find(b => b.id === form.branchId)?.name ?? form.branchId}
+                    value={branchName(form.branchId, branches.find(b => b.id === form.branchId)?.name ?? form.branchId)}
                     readOnly
                   />
                 )}
