@@ -15,9 +15,11 @@ import { requirePermission } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
 import { PageHeader, Badge, StatCard, GoldDivider, SectionHeader } from "@/components/shared";
 import { ToggleActiveButton } from "@/features/staff/components/ToggleActiveButton";
+import { EditStaffButton } from "@/features/staff/components/EditStaffButton";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { cn, formatPKR, formatDate, formatTime, USER_ROLE_CONFIG } from "@/utils";
 import { UserRole } from "@/types";
+import prisma from "@/lib/db/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +44,28 @@ export default async function StaffDetailPage({ params }: Props) {
   const { staff, bookings } = data;
   const perf     = await getStaffPerformance(params.staffId);
   const isActive = staff.user.isActive;
+  const isSuperAdmin = viewer.role === UserRole.SUPER_ADMIN;
+
+  const branches = isSuperAdmin
+    ? await prisma.branch.findMany({ where: { companyId: viewer.companyId }, select: { id: true, name: true, city: true } })
+    : [{ id: staff.branchId, name: staff.branch.name, city: staff.branch.city }];
+
+  const staffForEdit = {
+    id:          staff.id,
+    userId:      staff.userId,
+    name:        staff.user.name ?? "",
+    email:       staff.user.email,
+    role:        staff.user.role,
+    branchId:    staff.branchId,
+    phone:       staff.phone,
+    cnic:        staff.cnic,
+    designation: staff.designation,
+    salary:      staff.salary != null ? Number(staff.salary) : null,
+    shiftStart:  staff.shiftStart,
+    shiftEnd:    staff.shiftEnd,
+    workingDays: staff.workingDays,
+    notes:       staff.notes,
+  };
   const roleCfg  = USER_ROLE_CONFIG[staff.user.role as UserRole] ?? { label: staff.user.role, color: "text-muted-foreground" };
 
   return (
@@ -90,6 +114,13 @@ export default async function StaffDetailPage({ params }: Props) {
                   isActive={isActive}
                   canManage={canManage}
                 />
+                {canManage && (
+                  <EditStaffButton
+                    staff={staffForEdit}
+                    branches={branches}
+                    isSuperAdmin={isSuperAdmin}
+                  />
+                )}
               </div>
             </div>
 
