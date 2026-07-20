@@ -34,6 +34,11 @@ const TYPE_ICON: Record<string, typeof BedDouble> = {
   STANDARD: BedDouble, DELUXE: Star, SUITE: Home, FAMILY: Users, VIP: Crown,
 };
 
+/** Map a DB branch id to the friendly public name (falls back to the given name). */
+function branchLabel(id: string, fallback = "This branch"): string {
+  return siteConfig.branches.find(b => b.id === id)?.name ?? fallback;
+}
+
 export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[]; grandOpeningOffer: GrandOpeningOffer | null }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
@@ -315,7 +320,7 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
             Prefer to book instantly?
           </p>
           <p className="text-xs text-muted-foreground mb-4">
-            Chat with Zara — our AI assistant on WhatsApp — for an instant booking, or call the owner directly.
+            Chat with Zara — our AI assistant on WhatsApp — for an instant booking, or call the manager directly.
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
             <a
@@ -342,7 +347,7 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
             <div className="sm:col-span-2">
               <label htmlFor="book-branch" className={labelCls}>Branch Location</label>
               <select id="book-branch" value={dates.branchId} onChange={setD("branchId")} className={inputCls}>
-                {branches.map(b => <option key={b.id} value={b.id}>{b.name} — {b.city}</option>)}
+                {branches.map(b => <option key={b.id} value={b.id}>{branchLabel(b.id, b.name)}</option>)}
               </select>
             </div>
 
@@ -397,7 +402,7 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
                   <div>
                     <p className="text-sm font-semibold text-emerald-400">Great news! We found rooms at another branch</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {branches.find(b => b.id === dates.branchId)?.name ?? "This branch"} is fully booked for your selected dates — but {fallbackRooms.length} room{fallbackRooms.length > 1 ? "s" : ""} {fallbackRooms.length > 1 ? "are" : "is"} available at our <span className="text-foreground font-medium">{fallbackBranch.name}</span>.
+                      {branchLabel(dates.branchId)} is fully booked for your selected dates — but {fallbackRooms.length} room{fallbackRooms.length > 1 ? "s" : ""} {fallbackRooms.length > 1 ? "are" : "is"} available at our <span className="text-foreground font-medium">{branchLabel(fallbackBranch.id, fallbackBranch.name)}</span>.
                     </p>
                   </div>
                 </div>
@@ -408,7 +413,7 @@ export function BookingForm({ branches, grandOpeningOffer }: { branches: Branch[
                   className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-sm font-semibold rounded-xl transition-all"
                 >
                   <MapPin className="w-4 h-4" />
-                  View {fallbackRooms.length} Available Room{fallbackRooms.length > 1 ? "s" : ""} at {fallbackBranch.name}
+                  View {fallbackRooms.length} Available Room{fallbackRooms.length > 1 ? "s" : ""} at {branchLabel(fallbackBranch.id, fallbackBranch.name)}
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>

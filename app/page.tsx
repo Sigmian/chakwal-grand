@@ -318,7 +318,7 @@ export default async function HomePage() {
                       <div className="w-10 h-10 rounded-xl bg-gold-gradient flex items-center justify-center mb-4">
                         <MapPin className="w-5 h-5 text-background" />
                       </div>
-                      <h3 className="font-bold text-foreground mb-1">{branch.name}</h3>
+                      <h3 className="font-bold text-foreground mb-1">{siteConfig.branches.find((item) => item.id === branch.id)?.name ?? branch.name}</h3>
                       <p className="text-sm text-gold-400 font-medium mb-3">{branch.city}</p>
                       {branch.address && (
                         <p className="text-xs text-muted-foreground leading-relaxed mb-4">{branch.address}</p>
