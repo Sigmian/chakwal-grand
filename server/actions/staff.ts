@@ -11,7 +11,7 @@ const createStaffSchema = z.object({
   name:        z.string().min(2),
   email:       z.string().email(),
   role:        z.enum(["BRANCH_MANAGER", "RECEPTIONIST", "HOUSEKEEPING", "INVENTORY_STAFF"]),
-  branchId:    z.string().cuid(),
+  branchId:    z.string().min(1), // branch ids are custom slugs (e.g. "branch-chakwal"), not cuids
   phone:       z.string().optional(),
   cnic:        z.string().optional(),
   designation: z.string().optional(),
