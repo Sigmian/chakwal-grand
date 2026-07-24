@@ -19,6 +19,10 @@ const ROLES = [
   { value: "HOUSEKEEPING",    label: "Housekeeping" },
   { value: "INVENTORY_STAFF", label: "Inventory Staff" },
 ];
+// Owner accounts hold SUPER_ADMIN. Without this option the <select> silently
+// falls back to the first entry, mislabelling an owner as "Branch Manager" and
+// risking an accidental demotion on save.
+const SUPER_ADMIN_ROLE = { value: "SUPER_ADMIN", label: "Super Admin (Owner)" };
 
 interface Branch { id: string; name: string; city: string }
 
@@ -203,7 +207,10 @@ export function EditStaffPanel({ staff, branches, isSuperAdmin, onClose }: Props
                   value={form.role}
                   onChange={e => set("role", e.target.value)}
                 >
-                  {ROLES.map(r => (
+                  {(staff.role === "SUPER_ADMIN" || isSuperAdmin
+                    ? [SUPER_ADMIN_ROLE, ...ROLES]
+                    : ROLES
+                  ).map(r => (
                     <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </select>

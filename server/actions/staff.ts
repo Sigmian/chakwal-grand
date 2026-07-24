@@ -24,6 +24,10 @@ const createStaffSchema = z.object({
 });
 
 const updateStaffSchema = createStaffSchema.partial().extend({
+  // Owner accounts are SUPER_ADMIN. They can't be *created* from the staff form,
+  // but an existing one must be editable — otherwise saving an owner's record
+  // fails validation. Granting/holding this role is gated below to super admins.
+  role:     z.enum(["SUPER_ADMIN", "BRANCH_MANAGER", "RECEPTIONIST", "HOUSEKEEPING", "INVENTORY_STAFF"]).optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -192,10 +196,20 @@ export async function updateStaffMember(staffId: string, rawInput: UpdateStaffIn
 
   const existing = await prisma.staffMember.findUnique({
     where: { id: staffId },
-    select: { branchId: true, userId: true },
+    select: { branchId: true, userId: true, user: { select: { role: true } } },
   });
   if (!existing) throw new Error("Staff member not found");
   if (scopedId && existing.branchId !== scopedId) throw new Error("Access denied");
+
+  // Privilege guard: only a super admin may edit an owner account or grant the
+  // SUPER_ADMIN role — otherwise a branch manager could escalate privileges.
+  const isSuperAdmin = user.role === "SUPER_ADMIN";
+  if (!isSuperAdmin && existing.user.role === "SUPER_ADMIN") {
+    throw new Error("Only a super admin can modify an owner account");
+  }
+  if (!isSuperAdmin && input.role === "SUPER_ADMIN") {
+    throw new Error("Only a super admin can assign the super admin role");
+  }
 
   await prisma.$transaction(async (tx) => {
     // Update User fields
