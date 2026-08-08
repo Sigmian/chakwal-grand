@@ -119,6 +119,7 @@ export const DASHBOARD_NAV: NavItem[] = [
       UserRole.BRANCH_MANAGER,
     ],
     children: [
+      { label: "Monthly Statement", href: "/finance/statement" },
       { label: "Revenue",  href: "/finance/revenue"  },
       { label: "Expenses", href: "/finance/expenses" },
       { label: "Reports",  href: "/finance/reports"  },
