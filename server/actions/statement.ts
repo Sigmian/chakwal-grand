@@ -104,6 +104,8 @@ export interface MonthlyStatement {
     newBookings:      number;
     cancelled:        number;
     outstanding:      number;
+    overpaidCredit:   number;
+    netReceivable:    number;
     payrollPaid:      number;
     advancesGiven:    number;
   };
@@ -335,7 +337,11 @@ export async function getMonthlyStatement(
       nightsSold:    guests.reduce((s, g) => s + g.nights, 0),
       newBookings:   bookings.filter((b) => inMonth(b.createdAt)).length,
       cancelled:     guests.filter((g) => g.status === "CANCELLED").length,
-      outstanding:   guests.reduce((s, g) => s + Math.max(0, g.balance), 0),
+      // Split so the sheet reconciles: outstanding (what guests still owe) less
+      // credit already overpaid equals the net of the Balance column.
+      outstanding:    guests.reduce((s, g) => s + Math.max(0, g.balance), 0),
+      overpaidCredit: guests.reduce((s, g) => s + Math.min(0, g.balance), 0) * -1,
+      netReceivable:  guests.reduce((s, g) => s + g.balance, 0),
       payrollPaid:   payrollRows.filter((p) => p.kind === "Salary").reduce((s, p) => s + p.net, 0),
       advancesGiven: payrollRows.filter((p) => p.kind === "Advance").reduce((s, p) => s + p.net, 0),
     },

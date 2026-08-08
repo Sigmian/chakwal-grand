@@ -71,7 +71,9 @@ function buildCsv(s: MonthlyStatement): string {
   out.push(csvRow(["Nights sold",            sm.nightsSold]));
   out.push(csvRow(["New bookings made",      sm.newBookings]));
   out.push(csvRow(["Cancelled",              sm.cancelled]));
-  out.push(csvRow(["Outstanding balance",    sm.outstanding.toFixed(2)]));
+  out.push(csvRow(["Outstanding (guests still owe)", sm.outstanding.toFixed(2)]));
+  out.push(csvRow(["Less: advance / overpaid credit", sm.overpaidCredit.toFixed(2)]));
+  out.push(csvRow(["Net receivable (= Balance column total)", sm.netReceivable.toFixed(2)]));
   out.push(csvRow(["Salaries paid",          sm.payrollPaid.toFixed(2)]));
   out.push(csvRow(["Advances given",         sm.advancesGiven.toFixed(2)]));
 
@@ -282,7 +284,7 @@ export function MonthlyStatementView({ branches, defaultBranchId }: Props) {
               { label: "Total Expenses",   value: formatPKR(sm.totalExpenses),   color: "text-red-400" },
               { label: "Guesthouse Exp.",  value: formatPKR(sm.guesthouseExpenses), color: "text-foreground" },
               { label: "Inventory Exp.",   value: formatPKR(sm.inventoryExpenses),  color: "text-foreground" },
-              { label: "Outstanding",      value: formatPKR(sm.outstanding),
+              { label: "Outstanding (owed)", value: formatPKR(sm.outstanding),
                 color: sm.outstanding > 0 ? "text-amber-400" : "text-muted-foreground" },
               { label: "Profit Margin",    value: `${sm.profitMargin.toFixed(1)}%`,
                 color: sm.profitMargin >= 0 ? "text-green-400" : "text-red-400" },
