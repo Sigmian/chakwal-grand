@@ -8,6 +8,7 @@
 
 import prisma from "@/lib/db/prisma";
 import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
+import { assertFinanceUnlocked } from "@/lib/auth/finance-pin";
 import { getCashRevenueForPeriod } from "@/lib/finance/reporting";
 
 const PKT_OFFSET_MS = 5 * 60 * 60 * 1000;
@@ -138,6 +139,7 @@ export async function getMonthlyStatement(
   branchId?: string,
 ): Promise<MonthlyStatement> {
   const user = await requirePermission("finance:read");
+  assertFinanceUnlocked(user.id);
 
   const now       = new Date();
   const safeYear  = Math.min(2100, Math.max(2000, Math.trunc(year)  || now.getUTCFullYear()));
