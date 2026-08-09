@@ -85,6 +85,8 @@ export function ExperienceShell({ initialBranches }: Props) {
   const [supported, setSupported] = useState<boolean | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [compact, setCompact] = useState(false);
+  // Which branch the phone shows in 3D while choosing (desktop shows both).
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   // The date dock wraps to two rows on narrow screens, so the lists that sit
   // above it are offset by its measured height rather than a guessed constant.
@@ -279,6 +281,7 @@ export function ExperienceShell({ initialBranches }: Props) {
             night={night}
             reducedMotion={reducedMotion}
             compact={compact}
+            previewBranchId={previewId ?? branches[0]?.id ?? null}
             onSelectBranch={chooseBranch}
             onSelectRoom={chooseRoom}
           />
@@ -364,14 +367,14 @@ export function ExperienceShell({ initialBranches }: Props) {
               building, which is the thing people came to look at. */}
           <div
             ref={dockRef}
-            className="mx-auto grid max-w-3xl grid-cols-[1fr_1fr_78px] items-end gap-2 rounded-2xl border border-white/12 bg-black/55 p-2.5 backdrop-blur-xl sm:flex sm:flex-wrap sm:justify-center sm:gap-3 sm:p-3"
+            className="mx-auto grid max-w-3xl grid-cols-[1fr_1fr_64px] items-end gap-2 rounded-2xl border border-white/12 bg-black/55 p-2.5 backdrop-blur-xl sm:flex sm:flex-wrap sm:justify-center sm:gap-3 sm:p-3"
           >
             <label className="min-w-0 sm:flex-1 sm:min-w-[120px]">
               <span className="mb-1 block text-[10px] uppercase tracking-wider text-white/50">Check-in</span>
               <input
                 type="date" value={checkIn} min={todayISO()}
                 onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-2.5 py-2 text-sm text-white outline-none focus:border-gold-400/60"
+                className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-1.5 py-2 text-[13px] text-white outline-none focus:border-gold-400/60 sm:px-2.5 sm:text-sm"
               />
             </label>
             <label className="min-w-0 sm:flex-1 sm:min-w-[120px]">
@@ -379,14 +382,14 @@ export function ExperienceShell({ initialBranches }: Props) {
               <input
                 type="date" value={checkOut} min={checkIn}
                 onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-2.5 py-2 text-sm text-white outline-none focus:border-gold-400/60"
+                className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-1.5 py-2 text-[13px] text-white outline-none focus:border-gold-400/60 sm:px-2.5 sm:text-sm"
               />
             </label>
             <label className="min-w-0 sm:w-24">
               <span className="mb-1 block text-[10px] uppercase tracking-wider text-white/50">Adults</span>
               <select
                 value={adults} onChange={(e) => setAdults(Number(e.target.value))}
-                className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-2.5 py-2 text-sm text-white outline-none focus:border-gold-400/60"
+                className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-1.5 py-2 text-[13px] text-white outline-none focus:border-gold-400/60 sm:px-2.5 sm:text-sm"
               >
                 {[1, 2, 3, 4, 5, 6].map((n) => (
                   <option key={n} value={n} className="bg-[#12151a]">{n}</option>
@@ -409,7 +412,14 @@ export function ExperienceShell({ initialBranches }: Props) {
             <button
               key={b.id}
               onClick={() => chooseBranch(b)}
-              className="w-full rounded-2xl border border-white/15 bg-black/65 p-3 text-left backdrop-blur-xl transition-all active:scale-[0.99]"
+              onPointerEnter={() => setPreviewId(b.id)}
+              onFocus={() => setPreviewId(b.id)}
+              className={cn(
+                "w-full rounded-2xl border p-3 text-left backdrop-blur-xl transition-all active:scale-[0.99]",
+                (previewId ?? branches[0]?.id) === b.id
+                  ? "border-gold-400/60 bg-black/75"
+                  : "border-white/15 bg-black/65",
+              )}
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-serif text-base font-bold text-white">{b.name}</span>

@@ -23,7 +23,7 @@ const DAMP = 2.6;
 
 // ─── Building ─────────────────────────────────────────────────
 function Building({
-  branchKey, detail, exploded, dimmed, focusFloor, onSelectBranch, interactive,
+  branchKey, detail, exploded, dimmed, focusFloor, onSelectBranch, interactive, centered,
 }: {
   branchKey: BranchKey;
   detail: Detail;
@@ -32,6 +32,8 @@ function Building({
   focusFloor: number | null;
   onSelectBranch?: () => void;
   interactive: boolean;
+  /** Sit at the origin instead of the side-by-side anchor. */
+  centered?: boolean;
 }) {
   const built = useMemo<BuiltBranch>(() => buildBranch(THREE, branchKey, detail), [branchKey, detail]);
   const [hovered, setHovered] = useState(false);
@@ -84,7 +86,7 @@ function Building({
     built.root.scale.setScalar(s);
   });
 
-  const anchor = BRANCH_ANCHOR[branchKey];
+  const anchor = centered ? ([0, 0, 0] as [number, number, number]) : BRANCH_ANCHOR[branchKey];
 
   return (
     <group
@@ -258,19 +260,23 @@ function CameraRig({
   // The overlay eats roughly 150px of header and 120px of date bar; framing
   // a little low keeps the model centred in the *visible* band.
   const chromeLift = size.height > 0 ? (150 - 120) / size.height : 0;
-  // Phones spend far more of the screen on chrome (heading, chip row, date
-  // dock), so the model has to sit further back to stay clear of it.
-  const chromeMargin = compact ? 1.3 : 1;
 
   useEffect(() => {
     if (stage === "intro" || stage === "branch" || !branchKey) {
-      // Both sites side by side: outermost edge is anchor + half site width.
-      const halfW = Math.abs(BRANCH_ANCHOR.main[0]) + BRANCH_LAYOUT.main.siteWidth / 2;
-      const halfH = 13;
-      const d = fitDistance(halfH, halfW, 1.1 * chromeMargin);
+      // Frame to the buildings, not the full site plates — on a phone the
+      // extra apron of paving is what pushes the architecture out of reach.
+      // A portrait phone cannot hold both sites side by side without shrinking
+      // them to specks, so it shows one centred building and the cards below
+      // do the choosing. Desktop keeps the pair in frame.
+      const halfW = compact
+        ? BRANCH_LAYOUT.main.siteWidth / 2
+        : Math.abs(BRANCH_ANCHOR.main[0]) + BRANCH_LAYOUT.main.siteWidth / 2;
+      const halfH = compact ? 11 : 13;
+      const d = fitDistance(halfH, halfW, compact ? 1.12 : 1.1);
       desired.current = {
-        pos: new THREE.Vector3(0, d * 0.26, d),
-        look: new THREE.Vector3(0, 6.5, 0),
+        pos: new THREE.Vector3(0, d * (compact ? 0.30 : 0.26), d),
+        // Aim low so the model rides above the branch cards.
+        look: new THREE.Vector3(0, compact ? 2.5 : 6.5, 0),
       };
       return;
     }
@@ -285,11 +291,11 @@ function CameraRig({
       const topY = L.levels[L.levels.length - 1].base
         + L.levels[L.levels.length - 1].height + explodedTop + 2.5;
       const halfH = topY / 2;
-      const halfW = L.siteWidth / 2.1;
-      const d = fitDistance(halfH, halfW, 1.5 * chromeMargin);
-      // Aim slightly above the stack's centre so the model settles into the
-      // band between the header and the date bar rather than under them.
-      const midY = topY * (0.56 + chromeLift);
+      const halfW = compact ? L.width / 1.9 : L.siteWidth / 2.1;
+      const d = fitDistance(halfH, halfW, compact ? 1.18 : 1.5);
+      // Aim below the stack's centre on phones so it rides above the floor
+      // cards; on desktop a touch above centre keeps it off the date bar.
+      const midY = topY * (compact ? 0.34 : 0.56 + chromeLift);
       desired.current = {
         pos: new THREE.Vector3(a[0] - d * 0.28, midY + d * 0.14, a[2] + d * 0.94),
         look: new THREE.Vector3(a[0], midY, a[2]),
@@ -301,14 +307,20 @@ function CameraRig({
     const fi = floorIndex ?? 0;
     const lvl = L.levels[Math.min(fi, L.levels.length - 1)];
     const y = lvl.base + explodeOffset(branchKey, fi, true) + lvl.height / 2;
-    const halfH = Math.max(lvl.height, 4) * 1.9;
+    const halfH = Math.max(lvl.height, 4) * (compact ? 1.5 : 1.9);
     const halfW = L.width / 1.7;
-    const d = fitDistance(halfH, halfW, 1.15 * chromeMargin);
+    const d = fitDistance(halfH, halfW, compact ? 1.05 : 1.15);
     desired.current = {
       pos: new THREE.Vector3(a[0] - d * 0.18, y + d * 0.16, a[2] + L.depth / 2 + d),
-      look: new THREE.Vector3(a[0], y + halfH * chromeLift * 2, a[2] + L.depth / 2),
+      // Phones give the room list the lower third, so drop the aim point to
+      // keep the storey itself in the clear band above it.
+      look: new THREE.Vector3(
+        a[0],
+        y - (compact ? halfH * 0.55 : -halfH * chromeLift * 2),
+        a[2] + L.depth / 2,
+      ),
     };
-  }, [stage, branchKey, floorIndex, aspect, fov, chromeLift, chromeMargin]);
+  }, [stage, branchKey, floorIndex, aspect, fov, chromeLift, compact]);
 
   useFrame((_, dt) => {
     const k = reducedMotion ? 1 : 1 - Math.exp(-1.9 * dt);
@@ -411,6 +423,8 @@ export interface SceneProps {
   reducedMotion: boolean;
   /** Small screens get DOM cards instead of in-scene labels. */
   compact: boolean;
+  /** Which branch the phone preview is showing. */
+  previewBranchId: string | null;
   onSelectBranch: (b: ExperienceBranch) => void;
   onSelectRoom: (r: ExperienceRoom) => void;
 }
@@ -418,7 +432,7 @@ export interface SceneProps {
 export function Scene(props: SceneProps) {
   const {
     branches, stage, selectedBranch, selectedFloor, selectedRoomId,
-    detail, night, reducedMotion, compact, onSelectBranch, onSelectRoom,
+    detail, night, reducedMotion, compact, previewBranchId, onSelectBranch, onSelectRoom,
   } = props;
 
   const exploded = stage === "floor" || stage === "room";
@@ -451,10 +465,14 @@ export function Scene(props: SceneProps) {
         const isSelected = selectedBranch?.id === b.id;
         const hidden = selectedBranch !== null && !isSelected && stage !== "branch";
         if (hidden) return null;
+        // Phones preview a single building at the origin during selection.
+        const soloPreview = compact && stage === "branch";
+        if (soloPreview && b.id !== previewBranchId) return null;
         return (
           <group key={b.id}>
             <Building
               branchKey={b.key}
+              centered={compact && stage === "branch"}
               detail={detail}
               exploded={isSelected && exploded}
               dimmed={selectedBranch !== null && !isSelected}
