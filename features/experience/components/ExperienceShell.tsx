@@ -129,22 +129,28 @@ export function ExperienceShell({ initialBranches }: Props) {
     };
   }, []);
 
-  // ── nudge the canvas to re-measure once the mobile viewport settles ──
-  // Phone browsers report a shorter viewport until the URL bar collapses, and
-  // rotating changes it again; without this the canvas can stay stuck at its
-  // intrinsic size on the first paint.
+  // ── kick R3F's measurement once the canvas actually exists ──
+  // R3F only renders the scene when it measures its container above zero, and
+  // it can land on zero here: the scene is a lazy chunk that mounts long after
+  // first paint, and phones keep resizing the viewport as the URL bar hides.
+  // A resize event makes it re-measure — but it has to come *after* the canvas
+  // is in the DOM, so poll for it rather than firing on a fixed delay.
   useEffect(() => {
     if (!supported) return;
-    const nudge = () => window.dispatchEvent(new Event("resize"));
-    const frame = requestAnimationFrame(nudge);
-    const t1 = setTimeout(nudge, 300);
-    const t2 = setTimeout(nudge, 1000);
-    window.addEventListener("orientationchange", nudge);
-    return () => {
-      cancelAnimationFrame(frame);
-      clearTimeout(t1); clearTimeout(t2);
-      window.removeEventListener("orientationchange", nudge);
+    let stop = false;
+    const started = Date.now();
+    const tick = () => {
+      if (stop) return;
+      const canvas = document.querySelector("canvas");
+      const host = canvas?.parentElement;
+      if (canvas && host && host.clientWidth > 0
+        && (canvas.clientWidth !== host.clientWidth || canvas.clientHeight !== host.clientHeight)) {
+        window.dispatchEvent(new Event("resize"));
+      }
+      if (Date.now() - started < 8000) setTimeout(tick, 150);
     };
+    tick();
+    return () => { stop = true; };
   }, [supported]);
 
   // ── intro: short for returning visitors, skipped entirely if motion is reduced ──
@@ -320,7 +326,7 @@ export function ExperienceShell({ initialBranches }: Props) {
             <button
               onClick={() => setNight((n) => !n)}
               aria-label={night ? "Switch to daytime lighting" : "Switch to evening lighting"}
-              className="rounded-xl border border-white/15 bg-black/45 p-3 text-white/80 backdrop-blur-md transition-colors hover:border-gold-400/50 hover:text-white"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-black/45 text-white/80 backdrop-blur-md transition-colors hover:border-gold-400/50 hover:text-white"
             >
               {night ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </button>
@@ -353,9 +359,14 @@ export function ExperienceShell({ initialBranches }: Props) {
 
       {/* ── dates ── */}
       {stage !== "intro" && !room && (
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 p-4 sm:p-6">
-          <div ref={dockRef} className="mx-auto flex max-w-3xl flex-wrap items-end justify-center gap-3 rounded-2xl border border-white/12 bg-black/55 p-3 backdrop-blur-xl">
-            <label className="flex-1 min-w-[120px]">
+        <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 p-3 sm:p-6">
+          {/* One tight row on phones — wrapping to two cost ~90px of the
+              building, which is the thing people came to look at. */}
+          <div
+            ref={dockRef}
+            className="mx-auto grid max-w-3xl grid-cols-[1fr_1fr_78px] items-end gap-2 rounded-2xl border border-white/12 bg-black/55 p-2.5 backdrop-blur-xl sm:flex sm:flex-wrap sm:justify-center sm:gap-3 sm:p-3"
+          >
+            <label className="min-w-0 sm:flex-1 sm:min-w-[120px]">
               <span className="mb-1 block text-[10px] uppercase tracking-wider text-white/50">Check-in</span>
               <input
                 type="date" value={checkIn} min={todayISO()}
@@ -363,7 +374,7 @@ export function ExperienceShell({ initialBranches }: Props) {
                 className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-2.5 py-2 text-sm text-white outline-none focus:border-gold-400/60"
               />
             </label>
-            <label className="flex-1 min-w-[120px]">
+            <label className="min-w-0 sm:flex-1 sm:min-w-[120px]">
               <span className="mb-1 block text-[10px] uppercase tracking-wider text-white/50">Check-out</span>
               <input
                 type="date" value={checkOut} min={checkIn}
@@ -371,7 +382,7 @@ export function ExperienceShell({ initialBranches }: Props) {
                 className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-2.5 py-2 text-sm text-white outline-none focus:border-gold-400/60"
               />
             </label>
-            <label className="w-24">
+            <label className="min-w-0 sm:w-24">
               <span className="mb-1 block text-[10px] uppercase tracking-wider text-white/50">Adults</span>
               <select
                 value={adults} onChange={(e) => setAdults(Number(e.target.value))}
@@ -398,7 +409,7 @@ export function ExperienceShell({ initialBranches }: Props) {
             <button
               key={b.id}
               onClick={() => chooseBranch(b)}
-              className="w-full rounded-2xl border border-white/15 bg-black/65 p-3.5 text-left backdrop-blur-xl transition-all active:scale-[0.99]"
+              className="w-full rounded-2xl border border-white/15 bg-black/65 p-3 text-left backdrop-blur-xl transition-all active:scale-[0.99]"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-serif text-base font-bold text-white">{b.name}</span>
@@ -417,7 +428,7 @@ export function ExperienceShell({ initialBranches }: Props) {
 
       {/* ── floor selector ── */}
       {stage === "floor" && selectedBranch && (
-        <aside style={listStyle} className="pointer-events-auto absolute z-20 space-y-2 max-md:inset-x-0 max-md:bottom-[104px] max-md:px-4 md:right-6 md:top-1/2 md:w-[236px] md:-translate-y-1/2">
+        <aside style={listStyle} className="pointer-events-auto absolute z-20 max-md:inset-x-0 max-md:bottom-[104px] max-md:max-h-[46vh] max-md:space-y-2 max-md:overflow-y-auto max-md:px-4 md:right-6 md:top-1/2 md:w-[236px] md:-translate-y-1/2 md:space-y-2">
           {[...selectedBranch.floors].reverse().map((f) => {
             const full = f.availableCount === 0;
             return (
@@ -427,7 +438,7 @@ export function ExperienceShell({ initialBranches }: Props) {
                 disabled={full}
                 aria-disabled={full}
                 className={cn(
-                  "w-full rounded-2xl border p-3.5 text-left backdrop-blur-xl transition-all",
+                  "w-full rounded-2xl border p-3 text-left backdrop-blur-xl transition-all",
                   full
                     ? "cursor-not-allowed border-white/8 bg-black/35 opacity-60"
                     : "border-white/15 bg-black/55 hover:-translate-x-1 hover:border-gold-400/60 hover:bg-black/75",
@@ -457,7 +468,7 @@ export function ExperienceShell({ initialBranches }: Props) {
 
       {/* ── room list (accessible equivalent of the 3D hotspots) ── */}
       {stage === "room" && selectedFloor && !room && (
-        <aside style={listStyle} className="pointer-events-auto absolute z-20 space-y-2 overflow-y-auto max-md:inset-x-0 max-md:bottom-[104px] max-md:max-h-[38vh] max-md:px-4 md:right-6 md:top-1/2 md:max-h-[58vh] md:w-[240px] md:-translate-y-1/2">
+        <aside style={listStyle} className="pointer-events-auto absolute z-20 max-md:inset-x-0 max-md:bottom-[104px] max-md:max-h-[46vh] max-md:space-y-2 max-md:overflow-y-auto max-md:px-4 md:right-6 md:top-1/2 md:max-h-[58vh] md:w-[240px] md:-translate-y-1/2 md:space-y-2 md:overflow-y-auto">
           {selectedFloor.rooms.map((r) => {
             const free = r.availability === "AVAILABLE";
             return (
@@ -493,7 +504,7 @@ export function ExperienceShell({ initialBranches }: Props) {
             <button
               onClick={() => setRoom(null)}
               aria-label="Close room details"
-              className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="absolute right-3 top-3 inline-flex h-12 w-12 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
             >
               <X className="h-4 w-4" />
             </button>
@@ -515,8 +526,9 @@ export function ExperienceShell({ initialBranches }: Props) {
                     src={img.url}
                     alt={img.altText ?? `Room ${room.number} photo ${i + 1}`}
                     loading="lazy"
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
                     className={cn(
-                      "w-full rounded-xl border border-white/10 object-cover",
+                      "w-full rounded-xl border border-white/10 bg-white/5 object-cover",
                       i === 0 ? "col-span-2 h-40" : "h-24",
                     )}
                   />

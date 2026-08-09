@@ -226,12 +226,13 @@ function BranchLabel({
 interface CamTarget { pos: THREE.Vector3; look: THREE.Vector3 }
 
 function CameraRig({
-  stage, branchKey, floorIndex, reducedMotion,
+  stage, branchKey, floorIndex, reducedMotion, compact,
 }: {
   stage: Stage;
   branchKey: BranchKey | null;
   floorIndex: number | null;
   reducedMotion: boolean;
+  compact: boolean;
 }) {
   const { camera, size } = useThree();
   const target = useRef(new THREE.Vector3());
@@ -257,13 +258,16 @@ function CameraRig({
   // The overlay eats roughly 150px of header and 120px of date bar; framing
   // a little low keeps the model centred in the *visible* band.
   const chromeLift = size.height > 0 ? (150 - 120) / size.height : 0;
+  // Phones spend far more of the screen on chrome (heading, chip row, date
+  // dock), so the model has to sit further back to stay clear of it.
+  const chromeMargin = compact ? 1.3 : 1;
 
   useEffect(() => {
     if (stage === "intro" || stage === "branch" || !branchKey) {
       // Both sites side by side: outermost edge is anchor + half site width.
       const halfW = Math.abs(BRANCH_ANCHOR.main[0]) + BRANCH_LAYOUT.main.siteWidth / 2;
       const halfH = 13;
-      const d = fitDistance(halfH, halfW, 1.1);
+      const d = fitDistance(halfH, halfW, 1.1 * chromeMargin);
       desired.current = {
         pos: new THREE.Vector3(0, d * 0.26, d),
         look: new THREE.Vector3(0, 6.5, 0),
@@ -282,7 +286,7 @@ function CameraRig({
         + L.levels[L.levels.length - 1].height + explodedTop + 2.5;
       const halfH = topY / 2;
       const halfW = L.siteWidth / 2.1;
-      const d = fitDistance(halfH, halfW, 1.5);
+      const d = fitDistance(halfH, halfW, 1.5 * chromeMargin);
       // Aim slightly above the stack's centre so the model settles into the
       // band between the header and the date bar rather than under them.
       const midY = topY * (0.56 + chromeLift);
@@ -299,12 +303,12 @@ function CameraRig({
     const y = lvl.base + explodeOffset(branchKey, fi, true) + lvl.height / 2;
     const halfH = Math.max(lvl.height, 4) * 1.9;
     const halfW = L.width / 1.7;
-    const d = fitDistance(halfH, halfW, 1.15);
+    const d = fitDistance(halfH, halfW, 1.15 * chromeMargin);
     desired.current = {
       pos: new THREE.Vector3(a[0] - d * 0.18, y + d * 0.16, a[2] + L.depth / 2 + d),
       look: new THREE.Vector3(a[0], y + halfH * chromeLift * 2, a[2] + L.depth / 2),
     };
-  }, [stage, branchKey, floorIndex, aspect, fov, chromeLift]);
+  }, [stage, branchKey, floorIndex, aspect, fov, chromeLift, chromeMargin]);
 
   useFrame((_, dt) => {
     const k = reducedMotion ? 1 : 1 - Math.exp(-1.9 * dt);
@@ -312,6 +316,59 @@ function CameraRig({
     target.current.lerp(desired.current.look, k);
     camera.lookAt(target.current);
   });
+
+  return null;
+}
+
+// ─── Canvas sizing ────────────────────────────────────────────
+/**
+ * Size the renderer from its own container.
+ *
+ * R3F's built-in measurement can settle on the canvas's 300x150 intrinsic
+ * default when the element is mounted into a container whose height is still
+ * resolving — which is the normal case here, because the scene is a lazy chunk
+ * and phones report a shorter viewport until the URL bar collapses. Observing
+ * the container directly is immune to both.
+ */
+function CanvasResizer() {
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const setSize = useThree((s) => s.setSize);
+
+  useEffect(() => {
+    const host = gl.domElement.parentElement;
+    if (!host) return;
+
+    // Drive the renderer from the container instead of waiting on R3F's own
+    // measurement, which can settle on the canvas's 300x150 intrinsic default
+    // here: the scene is a lazy chunk, so it mounts long after first paint,
+    // and phones keep changing the viewport as the URL bar collapses.
+    const apply = () => {
+      const w = host.clientWidth;
+      const h = host.clientHeight;
+      if (w < 1 || h < 1) return;
+      if (gl.domElement.clientWidth === w && gl.domElement.clientHeight === h) return;
+      gl.setSize(w, h, true);
+      setSize(w, h);
+      const cam = camera as THREE.PerspectiveCamera;
+      if (cam.isPerspectiveCamera) {
+        cam.aspect = w / h;
+        cam.updateProjectionMatrix();
+      }
+    };
+
+    apply();
+    // The container can still be settling on the first frames.
+    const timers = [50, 200, 600, 1400].map((ms) => setTimeout(apply, ms));
+    const ro = new ResizeObserver(apply);
+    ro.observe(host);
+    window.addEventListener("orientationchange", apply);
+    return () => {
+      timers.forEach(clearTimeout);
+      ro.disconnect();
+      window.removeEventListener("orientationchange", apply);
+    };
+  }, [gl, camera, setSize]);
 
   return null;
 }
@@ -375,12 +432,9 @@ export function Scene(props: SceneProps) {
       shadows={detail === "high"}
       gl={{ antialias: detail === "high", powerPreference: "high-performance" }}
       camera={{ fov: 42, near: 0.5, far: 400, position: [0, 22, 78] }}
-      // Measure without debounce: on mobile the visual viewport settles late
-      // (100dvh moves as the URL bar collapses) and a debounced first measure
-      // leaves the canvas at its 300x150 intrinsic default.
-      resize={{ debounce: 0, scroll: false }}
       style={{ background: "transparent" }}
     >
+      <CanvasResizer />
       <AdaptiveDpr pixelated />
       <AdaptiveEvents />
       <fog attach="fog" args={[night ? "#080a0c" : "#dfd9d0", 90, 260]} />
@@ -390,6 +444,7 @@ export function Scene(props: SceneProps) {
         branchKey={selectedBranch?.key ?? null}
         floorIndex={selectedFloor}
         reducedMotion={reducedMotion}
+        compact={compact}
       />
 
       {branches.map((b) => {
