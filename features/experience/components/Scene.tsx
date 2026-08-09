@@ -352,6 +352,8 @@ export interface SceneProps {
   detail: Detail;
   night: boolean;
   reducedMotion: boolean;
+  /** Small screens get DOM cards instead of in-scene labels. */
+  compact: boolean;
   onSelectBranch: (b: ExperienceBranch) => void;
   onSelectRoom: (r: ExperienceRoom) => void;
 }
@@ -359,11 +361,13 @@ export interface SceneProps {
 export function Scene(props: SceneProps) {
   const {
     branches, stage, selectedBranch, selectedFloor, selectedRoomId,
-    detail, night, reducedMotion, onSelectBranch, onSelectRoom,
+    detail, night, reducedMotion, compact, onSelectBranch, onSelectRoom,
   } = props;
 
   const exploded = stage === "floor" || stage === "room";
-  const showBranchLabels = stage === "branch";
+  // In-scene labels shrink with camera distance, which on a phone leaves an
+  // unusable tap target — the overlay renders real cards there instead.
+  const showBranchLabels = stage === "branch" && !compact;
 
   return (
     <Canvas
@@ -371,6 +375,10 @@ export function Scene(props: SceneProps) {
       shadows={detail === "high"}
       gl={{ antialias: detail === "high", powerPreference: "high-performance" }}
       camera={{ fov: 42, near: 0.5, far: 400, position: [0, 22, 78] }}
+      // Measure without debounce: on mobile the visual viewport settles late
+      // (100dvh moves as the URL bar collapses) and a debounced first measure
+      // leaves the canvas at its 300x150 intrinsic default.
+      resize={{ debounce: 0, scroll: false }}
       style={{ background: "transparent" }}
     >
       <AdaptiveDpr pixelated />
@@ -404,8 +412,9 @@ export function Scene(props: SceneProps) {
         );
       })}
 
-      {/* Room markers only once a floor is chosen — before that they'd be noise. */}
-      {selectedBranch && stage === "room" && selectedFloor !== null &&
+      {/* Room markers only once a floor is chosen — before that they'd be noise.
+          Skipped on phones, where the overlay list is the reliable tap target. */}
+      {!compact && selectedBranch && stage === "room" && selectedFloor !== null &&
         selectedBranch.floors
           .filter((f) => f.index === selectedFloor)
           .map((f) => (

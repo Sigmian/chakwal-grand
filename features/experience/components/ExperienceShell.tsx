@@ -84,6 +84,21 @@ export function ExperienceShell({ initialBranches }: Props) {
   const [detail, setDetail] = useState<Detail>("high");
   const [supported, setSupported] = useState<boolean | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [compact, setCompact] = useState(false);
+
+  // The date dock wraps to two rows on narrow screens, so the lists that sit
+  // above it are offset by its measured height rather than a guessed constant.
+  const dockRef = useRef<HTMLDivElement>(null);
+  const [dockH, setDockH] = useState(96);
+  useEffect(() => {
+    const el = dockRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setDockH(el.offsetHeight));
+    ro.observe(el);
+    setDockH(el.offsetHeight);
+    return () => ro.disconnect();
+  });
+  const listStyle = compact ? { bottom: dockH + 20 } : undefined;
 
   const selectedBranch = useMemo(
     () => branches.find((b) => b.id === branchId) ?? null,
@@ -102,8 +117,35 @@ export function ExperienceShell({ initialBranches }: Props) {
     setReducedMotion(mq.matches);
     const onChange = () => setReducedMotion(mq.matches);
     mq.addEventListener?.("change", onChange);
-    return () => mq.removeEventListener?.("change", onChange);
+
+    const cq = window.matchMedia("(max-width: 767px)");
+    setCompact(cq.matches);
+    const onCompact = () => setCompact(cq.matches);
+    cq.addEventListener?.("change", onCompact);
+
+    return () => {
+      mq.removeEventListener?.("change", onChange);
+      cq.removeEventListener?.("change", onCompact);
+    };
   }, []);
+
+  // ── nudge the canvas to re-measure once the mobile viewport settles ──
+  // Phone browsers report a shorter viewport until the URL bar collapses, and
+  // rotating changes it again; without this the canvas can stay stuck at its
+  // intrinsic size on the first paint.
+  useEffect(() => {
+    if (!supported) return;
+    const nudge = () => window.dispatchEvent(new Event("resize"));
+    const frame = requestAnimationFrame(nudge);
+    const t1 = setTimeout(nudge, 300);
+    const t2 = setTimeout(nudge, 1000);
+    window.addEventListener("orientationchange", nudge);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(t1); clearTimeout(t2);
+      window.removeEventListener("orientationchange", nudge);
+    };
+  }, [supported]);
 
   // ── intro: short for returning visitors, skipped entirely if motion is reduced ──
   useEffect(() => {
@@ -230,6 +272,7 @@ export function ExperienceShell({ initialBranches }: Props) {
             detail={detail}
             night={night}
             reducedMotion={reducedMotion}
+            compact={compact}
             onSelectBranch={chooseBranch}
             onSelectRoom={chooseRoom}
           />
@@ -259,7 +302,7 @@ export function ExperienceShell({ initialBranches }: Props) {
             {stage !== "branch" && (
               <button
                 onClick={stage === "room" ? backToFloors : backToBranches}
-                className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-black/45 px-3 py-2 text-xs font-medium text-white/85 backdrop-blur-md transition-colors hover:border-gold-400/50 hover:text-white"
+                className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-black/45 min-h-11 px-3.5 py-2 text-xs font-medium text-white/85 backdrop-blur-md transition-colors hover:border-gold-400/50 hover:text-white"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 {stage === "room" ? "Floors" : "Branches"}
@@ -267,7 +310,7 @@ export function ExperienceShell({ initialBranches }: Props) {
             )}
             <Link
               href="/"
-              className="rounded-xl border border-white/15 bg-black/45 px-3 py-2 text-xs font-medium text-white/70 backdrop-blur-md transition-colors hover:text-white"
+              className="rounded-xl border border-white/15 bg-black/45 min-h-11 inline-flex items-center px-3.5 py-2 text-xs font-medium text-white/70 backdrop-blur-md transition-colors hover:text-white"
             >
               Home
             </Link>
@@ -277,13 +320,13 @@ export function ExperienceShell({ initialBranches }: Props) {
             <button
               onClick={() => setNight((n) => !n)}
               aria-label={night ? "Switch to daytime lighting" : "Switch to evening lighting"}
-              className="rounded-xl border border-white/15 bg-black/45 p-2 text-white/80 backdrop-blur-md transition-colors hover:border-gold-400/50 hover:text-white"
+              className="rounded-xl border border-white/15 bg-black/45 p-3 text-white/80 backdrop-blur-md transition-colors hover:border-gold-400/50 hover:text-white"
             >
               {night ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </button>
             <Link
               href="/rooms"
-              className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-black/45 px-3 py-2 text-xs font-medium text-white/80 backdrop-blur-md transition-colors hover:border-gold-400/50 hover:text-white"
+              className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-black/45 min-h-11 px-3.5 py-2 text-xs font-medium text-white/80 backdrop-blur-md transition-colors hover:border-gold-400/50 hover:text-white"
             >
               <ListFilter className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Skip 3D &amp; View Rooms</span>
@@ -311,13 +354,13 @@ export function ExperienceShell({ initialBranches }: Props) {
       {/* ── dates ── */}
       {stage !== "intro" && !room && (
         <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 p-4 sm:p-6">
-          <div className="mx-auto flex max-w-3xl flex-wrap items-end justify-center gap-3 rounded-2xl border border-white/12 bg-black/55 p-3 backdrop-blur-xl">
+          <div ref={dockRef} className="mx-auto flex max-w-3xl flex-wrap items-end justify-center gap-3 rounded-2xl border border-white/12 bg-black/55 p-3 backdrop-blur-xl">
             <label className="flex-1 min-w-[120px]">
               <span className="mb-1 block text-[10px] uppercase tracking-wider text-white/50">Check-in</span>
               <input
                 type="date" value={checkIn} min={todayISO()}
                 onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs text-white outline-none focus:border-gold-400/60"
+                className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-2.5 py-2 text-sm text-white outline-none focus:border-gold-400/60"
               />
             </label>
             <label className="flex-1 min-w-[120px]">
@@ -325,14 +368,14 @@ export function ExperienceShell({ initialBranches }: Props) {
               <input
                 type="date" value={checkOut} min={checkIn}
                 onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs text-white outline-none focus:border-gold-400/60"
+                className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-2.5 py-2 text-sm text-white outline-none focus:border-gold-400/60"
               />
             </label>
             <label className="w-24">
               <span className="mb-1 block text-[10px] uppercase tracking-wider text-white/50">Adults</span>
               <select
                 value={adults} onChange={(e) => setAdults(Number(e.target.value))}
-                className="w-full rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs text-white outline-none focus:border-gold-400/60"
+                className="w-full min-h-11 rounded-lg border border-white/15 bg-white/5 px-2.5 py-2 text-sm text-white outline-none focus:border-gold-400/60"
               >
                 {[1, 2, 3, 4, 5, 6].map((n) => (
                   <option key={n} value={n} className="bg-[#12151a]">{n}</option>
@@ -348,9 +391,33 @@ export function ExperienceShell({ initialBranches }: Props) {
         </div>
       )}
 
+      {/* ── branch cards (phones — the in-scene labels are too small to tap) ── */}
+      {stage === "branch" && compact && (
+        <aside style={listStyle} className="pointer-events-auto absolute inset-x-0 bottom-[104px] z-20 space-y-2 px-4">
+          {branches.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => chooseBranch(b)}
+              className="w-full rounded-2xl border border-white/15 bg-black/65 p-3.5 text-left backdrop-blur-xl transition-all active:scale-[0.99]"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-serif text-base font-bold text-white">{b.name}</span>
+                <span className="text-xs font-semibold text-gold-300">
+                  {b.startingFrom !== null ? `from ₨${b.startingFrom.toLocaleString("en-PK")}` : ""}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-white/55">{b.address}</p>
+              <p className="mt-1 text-[11px] text-emerald-300">
+                {b.availableRooms} of {b.totalRooms} rooms available
+              </p>
+            </button>
+          ))}
+        </aside>
+      )}
+
       {/* ── floor selector ── */}
       {stage === "floor" && selectedBranch && (
-        <aside className="pointer-events-auto absolute right-4 top-1/2 z-20 w-[236px] -translate-y-1/2 space-y-2 sm:right-6">
+        <aside style={listStyle} className="pointer-events-auto absolute z-20 space-y-2 max-md:inset-x-0 max-md:bottom-[104px] max-md:px-4 md:right-6 md:top-1/2 md:w-[236px] md:-translate-y-1/2">
           {[...selectedBranch.floors].reverse().map((f) => {
             const full = f.availableCount === 0;
             return (
@@ -390,7 +457,7 @@ export function ExperienceShell({ initialBranches }: Props) {
 
       {/* ── room list (accessible equivalent of the 3D hotspots) ── */}
       {stage === "room" && selectedFloor && !room && (
-        <aside className="pointer-events-auto absolute right-4 top-1/2 z-20 max-h-[58vh] w-[240px] -translate-y-1/2 space-y-2 overflow-y-auto sm:right-6">
+        <aside style={listStyle} className="pointer-events-auto absolute z-20 space-y-2 overflow-y-auto max-md:inset-x-0 max-md:bottom-[104px] max-md:max-h-[38vh] max-md:px-4 md:right-6 md:top-1/2 md:max-h-[58vh] md:w-[240px] md:-translate-y-1/2">
           {selectedFloor.rooms.map((r) => {
             const free = r.availability === "AVAILABLE";
             return (
@@ -426,7 +493,7 @@ export function ExperienceShell({ initialBranches }: Props) {
             <button
               onClick={() => setRoom(null)}
               aria-label="Close room details"
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white"
             >
               <X className="h-4 w-4" />
             </button>

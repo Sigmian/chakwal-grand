@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, CalendarCheck, MapPin, Phone, ChevronRight, Volume2, VolumeX, Star } from "lucide-react";
+import { Building2, CalendarCheck, MapPin, Phone, ChevronRight, Volume2, VolumeX, Star, Boxes } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { CountUp } from "@/features/public/components/CountUp";
 
@@ -102,17 +102,24 @@ export function VideoHero({ branches, startingFrom, avgRating }: Props) {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-14">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 mb-14">
             <Link
               href="/book"
-              className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all hover:-translate-y-0.5 text-base"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gold-gradient text-background font-bold rounded-xl hover:shadow-gold-lg transition-all hover:-translate-y-0.5 text-base"
             >
               Book Your Room — Free
               <ChevronRight className="w-5 h-5" />
             </Link>
             <Link
+              href="/explore"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gold-500/10 backdrop-blur-sm border border-gold-400/50 text-gold-200 font-semibold rounded-xl hover:bg-gold-500/20 hover:text-white transition-all text-base"
+            >
+              <Boxes className="w-5 h-5 transition-transform group-hover:scale-110" />
+              Explore in 3D
+            </Link>
+            <Link
               href="/rooms"
-              className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold rounded-xl hover:bg-white/20 transition-colors text-base"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold rounded-xl hover:bg-white/20 transition-colors text-base"
             >
               View All Rooms
             </Link>
