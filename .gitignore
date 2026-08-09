@@ -38,3 +38,6 @@ prisma/*.db-journal
 .env*
 playwright-report/
 test-results/
+
+# extracted design reference (not committed)
+.design-extract/
