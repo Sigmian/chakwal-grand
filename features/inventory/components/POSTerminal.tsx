@@ -18,6 +18,7 @@ import { PaymentMethod } from "@/types";
 
 interface InventoryItem {
   id:           string;
+  branchId:     string;
   currentStock: number;
   sellingPrice: number;
   product?: { id: string; name: string; unit: string; brand?: string | null } | null;
@@ -33,6 +34,7 @@ interface ActiveBooking {
 
 interface CartItem {
   itemId:    string;
+  branchId:  string;
   name:      string;
   unit:      string;
   price:     number;
@@ -80,6 +82,11 @@ export function POSTerminal({ inventory, activeBookings, branchId }: Props) {
   const addToCart = (item: InventoryItem) => {
     if (!item.product) return;
     setCart(prev => {
+      // A single sale can only draw from one branch's stock.
+      if (prev.length > 0 && prev[0].branchId !== item.branchId) {
+        toast.error("One sale can only contain items from a single branch. Complete or clear this cart first.");
+        return prev;
+      }
       const existing = prev.find(c => c.itemId === item.id);
       if (existing) {
         if (existing.qty >= item.currentStock) {
@@ -89,12 +96,13 @@ export function POSTerminal({ inventory, activeBookings, branchId }: Props) {
         return prev.map(c => c.itemId === item.id ? { ...c, qty: c.qty + 1 } : c);
       }
       return [...prev, {
-        itemId: item.id,
-        name:   item.product!.name,
-        unit:   item.product!.unit,
-        price:  item.sellingPrice,
-        qty:    1,
-        stock:  item.currentStock,
+        itemId:   item.id,
+        branchId: item.branchId,
+        name:     item.product!.name,
+        unit:     item.product!.unit,
+        price:    item.sellingPrice,
+        qty:      1,
+        stock:    item.currentStock,
       }];
     });
   };
@@ -115,9 +123,13 @@ export function POSTerminal({ inventory, activeBookings, branchId }: Props) {
 
   const handleCheckout = () => {
     if (cart.length === 0) { toast.error("Cart is empty"); return; }
+    // The sale's branch comes from its items (all share one branch), falling
+    // back to the caller-scoped branch.
+    const saleBranchId = cart[0]?.branchId ?? branchId ?? "";
+    if (!saleBranchId) { toast.error("Could not determine the branch for this sale."); return; }
     startTransition(async () => {
       const res = await createSale({
-        branchId:  branchId ?? "",
+        branchId:  saleBranchId,
         bookingId: selectedBooking || undefined,
         type:      selectedBooking ? "ROOM_ATTACHED" : "WALK_IN",
         items:     cart.map(c => ({ inventoryItemId: c.itemId, quantity: c.qty })),
