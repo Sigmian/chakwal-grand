@@ -18,6 +18,19 @@ export const DASHBOARD_NAV: NavItem[] = [
     ],
   },
   {
+    label: "My Attendance",
+    href:  "/portal",
+    icon:  "Fingerprint",
+    // Every staff role can mark their own attendance.
+    requiredRoles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.BRANCH_MANAGER,
+      UserRole.RECEPTIONIST,
+      UserRole.HOUSEKEEPING,
+      UserRole.INVENTORY_STAFF,
+    ],
+  },
+  {
     label: "Branches",
     href:  "/branches",
     icon:  "Building2",
