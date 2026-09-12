@@ -190,6 +190,8 @@ model Branch {
   attendances        Attendance[]
   leaveRequests      LeaveRequest[]
   monthlyPayrolls    MonthlyPayroll[]
+  tasks              StaffTask[]
+  handovers          ShiftHandover[]
 
   @@index([companyId])
   @@index([slug])
@@ -306,6 +308,10 @@ model StaffMember {
   leaveRequests       LeaveRequest[]
   monthlyPayrolls     MonthlyPayroll[]
   payrollEntries      PayrollEntry[]
+  warnings            StaffWarning[]
+  tasksAssigned       StaffTask[]      @relation("TaskAssignee")
+  handoversFrom       ShiftHandover[]  @relation("HandoverFrom")
+  handoversTo         ShiftHandover[]  @relation("HandoverTo")
 
   @@index([branchId])
   @@index([userId])
@@ -1348,4 +1354,83 @@ model PayrollEntry {
 
   @@index([staffMemberId, date])
   @@index([payrollId])
+}
+
+// ============================================================
+// HR / PHASE 4 — tasks, warnings, shift handover
+// ============================================================
+
+enum WarningType {
+  VERBAL
+  WRITTEN
+  FINAL
+  APPRECIATION
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+model StaffWarning {
+  id             String      @id @default(cuid())
+  staffMemberId  String
+  staffMember    StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchId       String
+  type           WarningType
+  title          String
+  description    String?
+  attachmentUrl  String?     @db.Text
+  issuedById     String      // userId of the manager
+  acknowledgedAt DateTime?   // staff acknowledgement
+  createdAt      DateTime    @default(now())
+
+  @@index([staffMemberId])
+  @@index([branchId])
+}
+
+model StaffTask {
+  id            String      @id @default(cuid())
+  branchId      String
+  branch        Branch      @relation(fields: [branchId], references: [id])
+  assignedToId  String?     // staffMemberId — null = unassigned
+  assignedTo    StaffMember? @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  title         String
+  description   String?
+  status        TaskStatus  @default(PENDING)
+  dueAt         DateTime?
+  assignedById  String      // userId
+  completedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([assignedToId])
+  @@index([branchId])
+  @@index([status])
+}
+
+model ShiftHandover {
+  id              String      @id @default(cuid())
+  branchId        String
+  branch          Branch      @relation(fields: [branchId], references: [id])
+  fromStaffId     String
+  fromStaff       StaffMember @relation("HandoverFrom", fields: [fromStaffId], references: [id])
+  toStaffId       String?     // incoming staff — null until acknowledged
+  toStaff         StaffMember? @relation("HandoverTo", fields: [toStaffId], references: [id])
+
+  cashInHand      Decimal?    @db.Decimal(10, 2)
+  pendingBookings String?
+  complaints      String?
+  roomsToClean    String?
+  pendingPayments String?
+  maintenance     String?
+  notes           String?
+
+  acknowledgedAt  DateTime?
+  createdAt       DateTime    @default(now())
+
+  @@index([branchId])
+  @@index([fromStaffId])
 }

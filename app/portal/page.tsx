@@ -7,7 +7,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getMyDashboard } from "@/server/actions/attendance";
+import { getMyTasks, getMyWarnings, getOpenHandoversForMe } from "@/server/actions/hr-ops";
 import { StaffPortal } from "@/features/hr/components/StaffPortal";
+import { StaffOpsSection } from "@/features/hr/components/StaffOpsSection";
 
 export const metadata: Metadata = { title: "My Attendance" };
 
@@ -30,5 +32,14 @@ export default async function PortalPage() {
     );
   }
 
-  return <StaffPortal data={data} />;
+  const [tasks, warnings, openHandovers] = await Promise.all([
+    getMyTasks(), getMyWarnings(), getOpenHandoversForMe(),
+  ]);
+
+  return (
+    <div className="space-y-5">
+      <StaffPortal data={data} />
+      <StaffOpsSection tasks={tasks} warnings={warnings} openHandovers={openHandovers} />
+    </div>
+  );
 }
