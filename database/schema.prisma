@@ -144,6 +144,8 @@ model Company {
 
   branches    Branch[]
   users       User[]
+  hrSettings  HrSettings?
+  shifts      Shift[]
 }
 
 model Branch {
@@ -184,6 +186,10 @@ model Branch {
   abandonedLeads     AbandonedLead[]
   salaryPayments     StaffSalaryPayment[]
   staffAdvances      StaffAdvance[]
+  shifts             Shift[]
+  attendances        Attendance[]
+  leaveRequests      LeaveRequest[]
+  monthlyPayrolls    MonthlyPayroll[]
 
   @@index([companyId])
   @@index([slug])
@@ -282,17 +288,28 @@ model StaffMember {
   joinedAt    DateTime    @default(now())
   notes       String?
 
-  // Shift info
+  // Shift info (legacy free-text kept for back-compat; assignedShift is authoritative)
   shiftStart  String?     // "09:00"
   shiftEnd    String?     // "18:00"
   workingDays String[]    // ["MON","TUE","WED"]
 
+  assignedShiftId String?
+  assignedShift   Shift?   @relation(fields: [assignedShiftId], references: [id])
+
+  isActive    Boolean     @default(true)  // deactivate without deleting history
+
   activityLogs     ActivityLog[]
   salaryPayments   StaffSalaryPayment[]
   advances         StaffAdvance[]
+  attendances         Attendance[]
+  correctionRequests  AttendanceCorrectionRequest[]
+  leaveRequests       LeaveRequest[]
+  monthlyPayrolls     MonthlyPayroll[]
+  payrollEntries      PayrollEntry[]
 
   @@index([branchId])
   @@index([userId])
+  @@index([assignedShiftId])
 }
 
 model ActivityLog {
@@ -1066,4 +1083,269 @@ model CustomerSession {
 
   @@index([token])
   @@index([customerId])
+}
+
+// ============================================================
+// HR / ATTENDANCE / PAYROLL  (Phase 1 backbone)
+// ============================================================
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  APPROVED_LEAVE
+  LATE
+  HALF_DAY
+  EARLY_CHECKOUT
+  HOLIDAY
+  WEEKLY_OFF
+  MISSING
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CorrectionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PayrollStatus {
+  DRAFT
+  FINALIZED
+  PAID
+}
+
+enum PayrollEntryType {
+  ATTENDANCE_CREDIT
+  ABSENCE_DEDUCTION
+  HALFDAY_DEDUCTION
+  LATE_DEDUCTION
+  BONUS
+  COMMISSION
+  OVERTIME
+  FINE
+  ADVANCE
+  ADJUSTMENT
+}
+
+enum AttendanceSource {
+  SELF
+  ADMIN
+  CORRECTION
+  AUTO
+}
+
+// Per-company HR configuration — every payroll/attendance rule lives here,
+// never hard-coded. One row per company.
+model HrSettings {
+  id                     String  @id @default(cuid())
+  companyId              String  @unique
+  company                Company @relation(fields: [companyId], references: [id])
+
+  payrollDivisor         Int      @default(30)
+  paidLeavesPerMonth     Int      @default(2)
+  weeklyOffDays          String[] @default([])
+
+  graceMinutes           Int      @default(15)
+  autoAbsentAfterMinutes Int      @default(240)
+  minHalfDayMinutes      Int      @default(240)
+  earlyCheckoutMinutes   Int      @default(30)
+
+  lateWarnAfterCount     Int      @default(3)
+  lateToHalfDayCount     Int?
+  lateToDayCount         Int?
+  halfDayDeductsHalf     Boolean  @default(true)
+  earlyCheckoutPenalty   String   @default("NONE")
+
+  requireSelfie          Boolean  @default(false)
+  requireGeo             Boolean  @default(false)
+  geoLat                 Float?
+  geoLng                 Float?
+  geoRadiusMeters        Int      @default(200)
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model Shift {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id])
+  branchId        String?
+  branch          Branch?  @relation(fields: [branchId], references: [id])
+
+  name            String
+  startTime       String
+  endTime         String
+  crossesMidnight Boolean  @default(false)
+  graceMinutes    Int?
+  isActive        Boolean  @default(true)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  assignedStaff   StaffMember[]
+  attendances     Attendance[]
+
+  @@index([companyId])
+  @@index([branchId])
+}
+
+model Attendance {
+  id            String   @id @default(cuid())
+  staffMemberId String
+  staffMember   StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchId      String
+  branch        Branch   @relation(fields: [branchId], references: [id])
+  shiftId       String?
+  shift         Shift?   @relation(fields: [shiftId], references: [id])
+
+  workDate      DateTime @db.Date
+  checkInAt     DateTime?
+  checkOutAt    DateTime?
+  status        AttendanceStatus @default(PRESENT)
+  workedMinutes Int      @default(0)
+  lateMinutes   Int      @default(0)
+  earlyMinutes  Int      @default(0)
+
+  source        AttendanceSource @default(SELF)
+  selfieUrl     String?  @db.Text
+  geoLat        Float?
+  geoLng        Float?
+  isLocked      Boolean  @default(false)
+  notes         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  audits        AttendanceAudit[]
+
+  @@unique([staffMemberId, workDate])
+  @@index([branchId])
+  @@index([workDate])
+  @@index([status])
+}
+
+model AttendanceAudit {
+  id            String   @id @default(cuid())
+  attendanceId  String
+  attendance    Attendance @relation(fields: [attendanceId], references: [id])
+  field         String
+  oldValue      String?
+  newValue      String?
+  changedById   String
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  @@index([attendanceId])
+}
+
+model AttendanceCorrectionRequest {
+  id                String  @id @default(cuid())
+  staffMemberId     String
+  staffMember       StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchId          String
+  workDate          DateTime @db.Date
+  requestedCheckIn  DateTime?
+  requestedCheckOut DateTime?
+  reason            String
+  status            CorrectionStatus @default(PENDING)
+  reviewedById      String?
+  reviewNote        String?
+  reviewedAt        DateTime?
+  createdAt         DateTime @default(now())
+
+  @@index([staffMemberId])
+  @@index([status])
+}
+
+model LeaveRequest {
+  id             String   @id @default(cuid())
+  staffMemberId  String
+  staffMember    StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchId       String
+  branch         Branch   @relation(fields: [branchId], references: [id])
+
+  fromDate       DateTime @db.Date
+  toDate         DateTime @db.Date
+  reason         String
+  notes          String?
+  attachmentUrl  String?  @db.Text
+
+  status         LeaveStatus @default(PENDING)
+  paid           Boolean  @default(false)
+  overrideReason String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([staffMemberId])
+  @@index([branchId])
+  @@index([status])
+}
+
+model MonthlyPayroll {
+  id              String   @id @default(cuid())
+  staffMemberId   String
+  staffMember     StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchId        String
+  branch          Branch   @relation(fields: [branchId], references: [id])
+  month           Int
+  year            Int
+  status          PayrollStatus @default(DRAFT)
+
+  monthlySalary   Decimal  @db.Decimal(10, 2) @default(0)
+  dailySalary     Decimal  @db.Decimal(10, 2) @default(0)
+  presentDays     Int      @default(0)
+  paidLeaveDays   Int      @default(0)
+  unpaidLeaveDays Int      @default(0)
+  absentDays      Int      @default(0)
+  halfDays        Int      @default(0)
+  lateCount       Int      @default(0)
+  earlyCount      Int      @default(0)
+  weeklyOffDays   Int      @default(0)
+  holidayDays     Int      @default(0)
+
+  grossSalary     Decimal  @db.Decimal(10, 2) @default(0)
+  additions       Decimal  @db.Decimal(10, 2) @default(0)
+  deductions      Decimal  @db.Decimal(10, 2) @default(0)
+  advanceDeducted Decimal  @db.Decimal(10, 2) @default(0)
+  netPayable      Decimal  @db.Decimal(10, 2) @default(0)
+
+  finalizedById   String?
+  finalizedAt     DateTime?
+  paidAt          DateTime?
+  paymentMethod   PaymentMethod?
+  paymentRef      String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  entries         PayrollEntry[]
+
+  @@unique([staffMemberId, month, year])
+  @@index([branchId])
+  @@index([month, year])
+}
+
+model PayrollEntry {
+  id            String   @id @default(cuid())
+  staffMemberId String
+  staffMember   StaffMember @relation(fields: [staffMemberId], references: [id])
+  payrollId     String?
+  payroll       MonthlyPayroll? @relation(fields: [payrollId], references: [id])
+  date          DateTime @db.Date
+  type          PayrollEntryType
+  description   String
+  amount        Decimal  @db.Decimal(10, 2)
+  auto          Boolean  @default(false)
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  @@index([staffMemberId, date])
+  @@index([payrollId])
 }

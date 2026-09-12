@@ -57,6 +57,10 @@ export type Permission =
   | "staff:delete"
   | "staff:view_salaries"
   | "staff:payroll"
+  // HR — attendance, leave, payroll engine
+  | "hr:manage"          // configure shifts/rules, edit attendance, approve leave
+  | "hr:approve_leave"
+  | "hr:finalize_payroll"
   // Reviews
   | "reviews:read"
   | "reviews:approve"
@@ -102,6 +106,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "finance:reports:export",
     "staff:read", "staff:view", "staff:manage", "staff:create", "staff:update", "staff:delete",
     "staff:view_salaries", "staff:payroll",
+    "hr:manage", "hr:approve_leave", "hr:finalize_payroll",
     "reviews:read", "reviews:approve", "reviews:delete",
     "complaints:read", "complaints:update", "complaints:delete",
     "analytics:branch", "analytics:company",
@@ -122,6 +127,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "inventory:restock", "inventory:pos_sell",
     "finance:read", "finance:expenses:create", "finance:reports:export",
     "staff:read", "staff:view", "staff:manage", "staff:view_salaries", "staff:payroll",
+    "hr:manage", "hr:approve_leave",
     "reviews:read", "reviews:approve",
     "complaints:read", "complaints:update", "complaints:delete",
     "analytics:branch",
