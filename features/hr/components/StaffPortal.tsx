@@ -6,16 +6,17 @@
 // monthly summary; leave & correction requests. Mobile-first.
 // ============================================================
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  LogIn, LogOut, Clock, CalendarDays, Loader2, Check, X, MapPin, Camera,
+  LogIn, LogOut, Clock, CalendarDays, Loader2, Check, X,
   CalendarPlus, PencilLine, Megaphone, LogOut as SignOutIcon, Moon,
 } from "lucide-react";
 import { checkIn, checkOut, requestLeave, requestCorrection } from "@/server/actions/attendance";
 import { formatDuration } from "@/lib/hr/attendance";
 import { cn, formatPKR } from "@/utils";
+import { AttendanceCaptureSheet, type PresencePayload } from "./AttendanceCaptureSheet";
 
 // ─── types (mirror getMyDashboard) ────────────────────────────
 interface DashboardData {
@@ -55,53 +56,39 @@ export function StaffPortal({ data }: { data: DashboardData }) {
   const [pending, start] = useTransition();
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [modal, setModal] = useState<"leave" | "correction" | null>(null);
-  const selfieInput = useRef<HTMLInputElement>(null);
+  const [capture, setCapture] = useState<"in" | "out" | null>(null);
 
   const checkedIn = !!data.today.checkInAt;
   const checkedOut = !!data.today.checkOutAt;
+  const needsCapture = data.require.selfie || data.require.geo;
 
-  async function collectPresence(): Promise<{ lat?: number; lng?: number; selfie?: string }> {
-    const out: { lat?: number; lng?: number; selfie?: string } = {};
-    if (data.require.geo && "geolocation" in navigator) {
-      const pos = await new Promise<GeolocationPosition>((res, rej) =>
-        navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 10000 }));
-      out.lat = pos.coords.latitude; out.lng = pos.coords.longitude;
-    }
-    if (data.require.selfie) {
-      out.selfie = await new Promise<string>((res, rej) => {
-        const el = selfieInput.current!;
-        el.onchange = () => {
-          const file = el.files?.[0];
-          if (!file) return rej(new Error("No photo taken"));
-          const fr = new FileReader();
-          fr.onload = () => res(String(fr.result));
-          fr.onerror = () => rej(new Error("Could not read photo"));
-          fr.readAsDataURL(file);
-        };
-        el.click();
-      });
-    }
-    return out;
-  }
-
-  function doCheck(kind: "in" | "out") {
+  // Run the actual check-in/out with a (possibly empty) presence payload.
+  function submitCheck(kind: "in" | "out", presence: PresencePayload) {
     setToast(null);
     start(async () => {
       try {
-        const presence = await collectPresence();
         const res = kind === "in" ? await checkIn(presence) : await checkOut(presence);
         const late = kind === "in" && "lateMinutes" in res && res.lateMinutes ? ` (late by ${res.lateMinutes} min)` : "";
         setToast({ kind: "ok", msg: kind === "in" ? `Checked in${late}` : "Checked out — have a good rest!" });
+        setCapture(null);
         router.refresh();
       } catch (e) {
         setToast({ kind: "err", msg: e instanceof Error ? e.message : "Something went wrong" });
+        setCapture(null);
       }
     });
   }
 
+  // With selfie/geo required, walk the user through capture first; otherwise
+  // it's a single tap.
+  function doCheck(kind: "in" | "out") {
+    setToast(null);
+    if (needsCapture) setCapture(kind);
+    else submitCheck(kind, {});
+  }
+
   return (
     <div className="space-y-5">
-      <input ref={selfieInput} type="file" accept="image/*" capture="user" className="hidden" />
 
       {/* header */}
       <header className="flex items-start justify-between">
@@ -244,6 +231,16 @@ export function StaffPortal({ data }: { data: DashboardData }) {
 
       {modal === "leave" && <LeaveModal onClose={() => setModal(null)} onDone={() => { setModal(null); router.refresh(); }} />}
       {modal === "correction" && <CorrectionModal onClose={() => setModal(null)} onDone={() => { setModal(null); router.refresh(); }} />}
+
+      {capture && (
+        <AttendanceCaptureSheet
+          mode={capture}
+          require={data.require}
+          pending={pending}
+          onCancel={() => setCapture(null)}
+          onSubmit={(payload) => submitCheck(capture, payload)}
+        />
+      )}
     </div>
   );
 }

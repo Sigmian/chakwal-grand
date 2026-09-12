@@ -10,7 +10,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   SlidersHorizontal, Clock, Users, Save, Loader2, Plus, Check, X,
-  Moon, Power, Pencil,
+  Moon, Power, Pencil, MapPin,
 } from "lucide-react";
 import {
   updateHrSettings, createShift, updateShift, toggleShiftActive, assignShift,
@@ -175,7 +175,35 @@ function RulesForm({ initial }: { initial: Settings }) {
           <Toggle label="Require attendance selfie" on={f.requireSelfie} onChange={(v) => setF((s) => ({ ...s, requireSelfie: v }))} />
           <Toggle label="Require location (GPS)" on={f.requireGeo} onChange={(v) => setF((s) => ({ ...s, requireGeo: v }))} />
         </div>
-        <p className="text-[10px] text-muted-foreground mt-2">Selfie and GPS capture are wired in a later phase; enabling here prepares the rule.</p>
+        <p className="text-[10px] text-muted-foreground mt-2">When on, staff are guided to take a live selfie and share their location at check-in and check-out.</p>
+
+        {f.requireGeo && (
+          <div className="mt-4 rounded-xl border border-border bg-accent/30 p-3">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <p className="text-xs font-semibold text-foreground">On-site geofence <span className="font-normal text-muted-foreground">(optional)</span></p>
+              <GeoFillButton onFill={(lat, lng) => setF((s) => ({ ...s, geoLat: lat, geoLng: lng }))} />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div>
+                <label className={label}>Latitude</label>
+                <input type="number" step="any" className={field} placeholder="e.g. 32.9333" value={f.geoLat ?? ""} onChange={nullableNum("geoLat")} />
+              </div>
+              <div>
+                <label className={label}>Longitude</label>
+                <input type="number" step="any" className={field} placeholder="e.g. 72.8597" value={f.geoLng ?? ""} onChange={nullableNum("geoLng")} />
+              </div>
+              <div>
+                <label className={label}>Radius (metres)</label>
+                <input type="number" className={field} value={f.geoRadiusMeters} onChange={num("geoRadiusMeters")} />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              {f.geoLat != null && f.geoLng != null
+                ? `Attendance is allowed only within ${f.geoRadiusMeters} m of this point.`
+                : "Leave the coordinates blank to just record location without enforcing a boundary. Use the button above while standing at the guest house to set them."}
+            </p>
+          </div>
+        )}
       </Section>
 
       {err && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{err}</div>}
@@ -378,6 +406,25 @@ function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange:
       <span className={cn("relative h-5 w-9 rounded-full transition-colors flex-shrink-0", on ? "bg-gold-500" : "bg-border")}>
         <span className={cn("absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all", on ? "left-[18px]" : "left-0.5")} />
       </span>
+    </button>
+  );
+}
+function GeoFillButton({ onFill }: { onFill: (lat: number, lng: number) => void }) {
+  const [state, setState] = useState<"idle" | "loading" | "error">("idle");
+  function fill() {
+    if (!("geolocation" in navigator)) { setState("error"); return; }
+    setState("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { onFill(Number(pos.coords.latitude.toFixed(6)), Number(pos.coords.longitude.toFixed(6))); setState("idle"); },
+      () => setState("error"),
+      { enableHighAccuracy: true, timeout: 12000 },
+    );
+  }
+  return (
+    <button type="button" onClick={fill} disabled={state === "loading"}
+      className="flex items-center gap-1.5 rounded-lg border border-gold-500/30 bg-gold-500/10 px-2.5 py-1 text-xs font-semibold text-gold-300 hover:bg-gold-500/20 disabled:opacity-60">
+      {state === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
+      {state === "error" ? "Location blocked" : "Use my current location"}
     </button>
   );
 }
