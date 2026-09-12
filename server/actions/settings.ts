@@ -137,6 +137,21 @@ export async function deleteAnnouncement(id: string) {
   }
 }
 
+// Reset the staff read-receipts for an announcement (e.g. to re-send it
+// and track who acknowledges the fresh copy).
+export async function clearAnnouncementAcks(id: string) {
+  await requirePermission("settings:company");
+  try {
+    const res = await prisma.announcementAck.deleteMany({ where: { announcementId: id } });
+    revalidatePath("/announcements");
+    revalidatePath("/portal");
+    return { success: true, cleared: res.count };
+  } catch (err) {
+    console.error("[clearAnnouncementAcks]", err);
+    return { success: false, error: "Failed to clear acknowledgements." };
+  }
+}
+
 export async function resetUserPassword(userId: string, newPassword: string) {
   const actor = await requirePermission("settings:company");
   if (!newPassword || newPassword.length < 8) {

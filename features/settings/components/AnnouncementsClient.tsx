@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Megaphone, Plus, Trash2, ToggleLeft, ToggleRight, Clock, CheckCircle, XCircle, Pencil, X } from "lucide-react";
-import { createAnnouncement, toggleAnnouncement, deleteAnnouncement, updateAnnouncement } from "@/server/actions/settings";
+import { Megaphone, Plus, Trash2, ToggleLeft, ToggleRight, Clock, CheckCircle, XCircle, Pencil, X, Eraser } from "lucide-react";
+import { createAnnouncement, toggleAnnouncement, deleteAnnouncement, updateAnnouncement, clearAnnouncementAcks } from "@/server/actions/settings";
 import { toast } from "sonner";
 
 interface Announcement {
@@ -108,6 +108,16 @@ export function AnnouncementsClient({ announcements: initial, canManage }: Props
       if (!res.success) { toast.error(res.error); return; }
       setItems(prev => prev.filter(a => a.id !== id));
       toast.success("Announcement deleted.");
+    });
+  }
+
+  function handleClearAcks(id: string) {
+    if (!confirm("Reset the acknowledgements for this announcement? Staff will be asked to acknowledge it again.")) return;
+    startTransition(async () => {
+      const res = await clearAnnouncementAcks(id);
+      if (!res.success) { toast.error(res.error); return; }
+      setItems(prev => prev.map(a => a.id === id ? { ...a, ackCount: 0 } : a));
+      toast.success(res.cleared ? `Cleared ${res.cleared} acknowledgement${res.cleared !== 1 ? "s" : ""}.` : "No acknowledgements to clear.");
     });
   }
 
@@ -225,6 +235,16 @@ export function AnnouncementsClient({ announcements: initial, canManage }: Props
                         {a.staffTotal != null && a.staffTotal > 0 && (
                           <span className="flex items-center gap-1 text-emerald-400/80">
                             <CheckCircle className="w-2.5 h-2.5" /> {a.ackCount ?? 0}/{a.staffTotal} staff acknowledged
+                            {canManage && (a.ackCount ?? 0) > 0 && (
+                              <button
+                                onClick={() => handleClearAcks(a.id)}
+                                disabled={isPending}
+                                title="Reset acknowledgements"
+                                className="ml-1 flex items-center gap-0.5 text-muted-foreground/70 hover:text-red-400 transition-colors disabled:opacity-40"
+                              >
+                                <Eraser className="w-2.5 h-2.5" /> clear
+                              </button>
+                            )}
                           </span>
                         )}
                       </div>
