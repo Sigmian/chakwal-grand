@@ -154,6 +154,12 @@ export const DASHBOARD_NAV: NavItem[] = [
         requiredRoles: [UserRole.SUPER_ADMIN, UserRole.BRANCH_MANAGER],
       },
       {
+        label: "Attendance & Payroll",
+        href:  "/staff/attendance",
+        icon:  "ClipboardCheck",
+        requiredRoles: [UserRole.SUPER_ADMIN, UserRole.BRANCH_MANAGER],
+      },
+      {
         label: "Payroll",
         href:  "/staff/payroll",
         icon:  "Banknote",
