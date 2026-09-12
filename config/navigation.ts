@@ -146,6 +146,12 @@ export const DASHBOARD_NAV: NavItem[] = [
         icon:  "Banknote",
         requiredRoles: [UserRole.SUPER_ADMIN, UserRole.BRANCH_MANAGER],
       },
+      {
+        label: "HR Settings",
+        href:  "/staff/hr",
+        icon:  "SlidersHorizontal",
+        requiredRoles: [UserRole.SUPER_ADMIN, UserRole.BRANCH_MANAGER],
+      },
     ],
   },
   {
