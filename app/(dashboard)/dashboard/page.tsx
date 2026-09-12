@@ -21,6 +21,8 @@ import {
   getTodaySchedule,
   getRevenueForecast,
 } from "@/server/actions/analytics";
+import { getTodayOverview } from "@/server/actions/hr-approvals";
+import { StaffTodayWidget } from "@/features/hr/components/StaffTodayWidget";
 import {
   StatCard, SectionHeader, Badge, ProgressBar,
 } from "@/components/shared";
@@ -47,15 +49,17 @@ export default async function DashboardPage() {
   const canViewAnalytics = hasPermission(user.role, "analytics:branch");
   const canViewBookings  = hasPermission(user.role, "bookings:read");
   const canViewRooms     = hasPermission(user.role, "rooms:read");
+  const canManageHr      = hasPermission(user.role, "hr:manage");
 
   // Fetch data based on what the role can see
-  const [overview, chartData, topRooms, activity, schedule, forecast] = await Promise.all([
+  const [overview, chartData, topRooms, activity, schedule, forecast, staffToday] = await Promise.all([
     canViewAnalytics ? getDashboardOverview(user.branchId)    : Promise.resolve(null),
     canViewAnalytics ? getRevenueChartData(user.branchId)     : Promise.resolve([]),
     canViewRooms     ? getTopRooms(user.branchId, 5)          : Promise.resolve([]),
     canViewAnalytics ? getRecentActivity(10)                  : Promise.resolve([]),
     canViewBookings  ? getTodaySchedule(user.branchId)        : Promise.resolve({ checkIns: [], checkOuts: [] }),
     canViewAnalytics ? getRevenueForecast(user.branchId)      : Promise.resolve(null),
+    canManageHr      ? getTodayOverview()                     : Promise.resolve(null),
   ]);
 
   // Branch comparison only for super admin
@@ -297,6 +301,9 @@ export default async function DashboardPage() {
         </div>
       </div>
       )}
+
+      {/* ── Staff Today (hr:manage roles only) ── */}
+      {canManageHr && staffToday && <StaffTodayWidget overview={staffToday} />}
 
       {/* ── Today's Schedule + Top Rooms ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
