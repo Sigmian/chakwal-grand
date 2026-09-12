@@ -213,6 +213,21 @@ export async function requestCorrection(raw: z.input<typeof correctionSchema>) {
   return { success: true };
 }
 
+// ─── Announcement acknowledgement (staff) ─────────────────────
+export async function acknowledgeAnnouncement(announcementId: string) {
+  const { staff } = await requireStaffSelf();
+  const ann = await prisma.announcement.findUnique({ where: { id: announcementId }, select: { id: true } });
+  if (!ann) throw new Error("Announcement not found.");
+
+  await prisma.announcementAck.upsert({
+    where: { announcementId_staffMemberId: { announcementId, staffMemberId: staff.id } },
+    update: {},
+    create: { announcementId, staffMemberId: staff.id },
+  });
+  revalidatePath("/portal");
+  return { success: true };
+}
+
 // ─── Portal dashboard ─────────────────────────────────────────
 export async function getMyDashboard() {
   const { user, staff } = await requireStaffSelf();
@@ -244,6 +259,22 @@ export async function getMyDashboard() {
     prisma.attendanceCorrectionRequest.count({ where: { staffMemberId: staff.id, status: "PENDING" } }),
     prisma.hrSettings.findUnique({ where: { companyId: staff.branch.companyId }, select: { requireSelfie: true, requireGeo: true } }),
   ]);
+
+  const documents = await prisma.staffDocument.findMany({
+    where: { staffMemberId: staff.id },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, type: true, title: true, fileUrl: true, fileKind: true, expiresAt: true, createdAt: true },
+  });
+
+  // Which of the shown announcements this staffer has already acknowledged.
+  const ackedIds = announcements.length
+    ? new Set(
+        (await prisma.announcementAck.findMany({
+          where: { staffMemberId: staff.id, announcementId: { in: announcements.map((a) => a.id) } },
+          select: { announcementId: true },
+        })).map((a) => a.announcementId),
+      )
+    : new Set<string>();
 
   return {
     staff: {
@@ -279,10 +310,14 @@ export async function getMyDashboard() {
     },
     paidLeave: leaveUsage,
     require: { selfie: hrCfg?.requireSelfie ?? false, geo: hrCfg?.requireGeo ?? false },
-    announcements: announcements.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })),
+    announcements: announcements.map((a) => ({ ...a, createdAt: a.createdAt.toISOString(), acknowledged: ackedIds.has(a.id) })),
     pendingLeaves: pendingLeaves.map((l) => ({
       id: l.id, from: l.fromDate.toISOString().slice(0, 10), to: l.toDate.toISOString().slice(0, 10), reason: l.reason,
     })),
     pendingCorrections,
+    documents: documents.map((d) => ({
+      id: d.id, type: d.type, title: d.title, fileUrl: d.fileUrl, fileKind: d.fileKind,
+      expiresAt: d.expiresAt ? d.expiresAt.toISOString() : null, createdAt: d.createdAt.toISOString(),
+    })),
   };
 }

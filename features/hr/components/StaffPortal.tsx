@@ -12,8 +12,9 @@ import { signOut } from "next-auth/react";
 import {
   LogIn, LogOut, Clock, CalendarDays, Loader2, Check, X,
   CalendarPlus, PencilLine, Megaphone, LogOut as SignOutIcon, Moon,
+  FileText, Image as ImageIcon, ExternalLink,
 } from "lucide-react";
-import { checkIn, checkOut, requestLeave, requestCorrection } from "@/server/actions/attendance";
+import { checkIn, checkOut, requestLeave, requestCorrection, acknowledgeAnnouncement } from "@/server/actions/attendance";
 import { formatDuration } from "@/lib/hr/attendance";
 import { cn, formatPKR } from "@/utils";
 import { AttendanceCaptureSheet, type PresencePayload } from "./AttendanceCaptureSheet";
@@ -28,9 +29,10 @@ interface DashboardData {
     earlyCount: number; monthlySalary: number; earnedToDate: number; totalDeductions: number; advance: number; netPayable: number };
   paidLeave: { used: number; allowance: number; remaining: number };
   require: { selfie: boolean; geo: boolean };
-  announcements: { id: string; title: string; body: string; createdAt: string }[];
+  announcements: { id: string; title: string; body: string; createdAt: string; acknowledged: boolean }[];
   pendingLeaves: { id: string; from: string; to: string; reason: string }[];
   pendingCorrections: number;
+  documents: { id: string; type: string; title: string; fileUrl: string; fileKind: string | null; expiresAt: string | null; createdAt: string }[];
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -220,10 +222,31 @@ export function StaffPortal({ data }: { data: DashboardData }) {
           </p>
           <div className="space-y-3">
             {data.announcements.map((a) => (
-              <div key={a.id}>
-                <p className="text-sm font-semibold text-white">{a.title}</p>
-                <p className="text-xs text-white/60">{a.body}</p>
-              </div>
+              <AnnouncementRow key={a.id} a={a} onAck={() => router.refresh()} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* my documents */}
+      {data.documents.length > 0 && (
+        <div className="rounded-2xl border border-white/12 bg-white/[0.04] p-4">
+          <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/50">
+            <FileText className="h-3.5 w-3.5 text-gold-400" /> My documents
+          </p>
+          <div className="space-y-2">
+            {data.documents.map((d) => (
+              <a key={d.id} href={d.fileUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-xl bg-white/5 p-2.5 hover:bg-white/[0.08]">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gold-500/10 text-gold-400">
+                  {d.fileKind === "pdf" ? <FileText className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-white">{d.title}</span>
+                  {d.expiresAt && <span className="block text-[11px] text-white/45">Expires {d.expiresAt.slice(0, 10)}</span>}
+                </span>
+                <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-white/40" />
+              </a>
             ))}
           </div>
         </div>
@@ -261,6 +284,29 @@ function BigButton({ pending, onClick, tone, label, hint }: {
         {hint && <span className="text-[11px] font-normal opacity-70">{hint}</span>}
       </span>
     </button>
+  );
+}
+function AnnouncementRow({ a, onAck }: {
+  a: { id: string; title: string; body: string; acknowledged: boolean };
+  onAck: () => void;
+}) {
+  const [pending, start] = useTransition();
+  return (
+    <div className="rounded-xl bg-white/5 p-3">
+      <p className="text-sm font-semibold text-white">{a.title}</p>
+      <p className="mt-0.5 text-xs text-white/60">{a.body}</p>
+      <div className="mt-2 flex justify-end">
+        {a.acknowledged ? (
+          <span className="flex items-center gap-1 text-[11px] text-green-300"><Check className="h-3 w-3" /> Acknowledged</span>
+        ) : (
+          <button disabled={pending}
+            onClick={() => start(async () => { await acknowledgeAnnouncement(a.id); onAck(); })}
+            className="rounded-lg border border-gold-500/30 bg-gold-500/10 px-3 py-1 text-[11px] font-semibold text-gold-300 disabled:opacity-60">
+            {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Got it"}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 function Stat({ label, value, tone }: { label: string; value: string | number; tone: string }) {

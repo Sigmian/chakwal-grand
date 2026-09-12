@@ -13,6 +13,8 @@ interface Announcement {
   isActive:  boolean;
   expiresAt: Date | null;
   createdAt: Date;
+  ackCount?:   number;
+  staffTotal?: number;
 }
 
 interface Props {
@@ -215,10 +217,15 @@ export function AnnouncementsClient({ announcements: initial, canManage }: Props
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{a.body}</p>
-                      <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground/70">
+                      <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground/70">
                         <span>Created {new Date(a.createdAt).toLocaleDateString("en-PK", { day: "numeric", month: "short", year: "numeric" })}</span>
                         {a.expiresAt && (
                           <span>· Expires {new Date(a.expiresAt).toLocaleString("en-PK", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                        )}
+                        {a.staffTotal != null && a.staffTotal > 0 && (
+                          <span className="flex items-center gap-1 text-emerald-400/80">
+                            <CheckCircle className="w-2.5 h-2.5" /> {a.ackCount ?? 0}/{a.staffTotal} staff acknowledged
+                          </span>
                         )}
                       </div>
                     </div>

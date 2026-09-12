@@ -11,6 +11,8 @@ import {
   Shield, CheckCircle2, XCircle,
 } from "lucide-react";
 import { getStaffMember, getStaffPerformance } from "@/server/actions/staff";
+import { listStaffDocuments } from "@/server/actions/hr-documents";
+import { StaffDocumentsPanel } from "@/features/hr/components/StaffDocumentsPanel";
 import { requirePermission } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
 import { PageHeader, Badge, StatCard, GoldDivider, SectionHeader } from "@/components/shared";
@@ -43,6 +45,7 @@ export default async function StaffDetailPage({ params }: Props) {
   }
   const { staff, bookings } = data;
   const perf     = await getStaffPerformance(params.staffId);
+  const documents = await listStaffDocuments(params.staffId).catch(() => []);
   const isActive = staff.user.isActive;
   const isSuperAdmin = viewer.role === UserRole.SUPER_ADMIN;
 
@@ -268,6 +271,9 @@ export default async function StaffDetailPage({ params }: Props) {
           )}
         </div>
       </div>
+
+      {/* Documents */}
+      <StaffDocumentsPanel staffId={staff.id} initialDocs={documents} canManage={canManage} />
 
       {/* Activity Log */}
       <div className="card-luxury p-6">

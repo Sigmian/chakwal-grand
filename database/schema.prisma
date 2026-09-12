@@ -312,6 +312,8 @@ model StaffMember {
   tasksAssigned       StaffTask[]      @relation("TaskAssignee")
   handoversFrom       ShiftHandover[]  @relation("HandoverFrom")
   handoversTo         ShiftHandover[]  @relation("HandoverTo")
+  documents           StaffDocument[]
+  announcementAcks    AnnouncementAck[]
 
   @@index([branchId])
   @@index([userId])
@@ -848,6 +850,21 @@ model Announcement {
   isActive  Boolean  @default(true)
   expiresAt DateTime?
   createdAt DateTime @default(now())
+
+  acks      AnnouncementAck[]
+}
+
+// Per-staff read-receipt for an announcement shown in the staff portal.
+model AnnouncementAck {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  staffMemberId  String
+  staffMember    StaffMember  @relation(fields: [staffMemberId], references: [id])
+  acknowledgedAt DateTime     @default(now())
+
+  @@unique([announcementId, staffMemberId])
+  @@index([staffMemberId])
 }
 
 // ─────────────────────────────────────────────
@@ -1389,6 +1406,33 @@ model StaffWarning {
 
   @@index([staffMemberId])
   @@index([branchId])
+}
+
+enum StaffDocumentType {
+  CNIC_FRONT
+  CNIC_BACK
+  AGREEMENT
+  CONTRACT
+  CERTIFICATE
+  OTHER
+}
+
+// Files kept on a staff member's HR record — CNIC scans, signed
+// agreements, certificates. Uploaded by managers; the staffer can view
+// their own from the portal.
+model StaffDocument {
+  id            String            @id @default(cuid())
+  staffMemberId String
+  staffMember   StaffMember       @relation(fields: [staffMemberId], references: [id])
+  type          StaffDocumentType @default(OTHER)
+  title         String
+  fileUrl       String            @db.Text
+  fileKind      String?           // "image" | "pdf" | "raw" — hint for rendering
+  expiresAt     DateTime?         // optional expiry (CNIC / contract renewal)
+  uploadedById  String            // userId of the manager who uploaded
+  createdAt     DateTime          @default(now())
+
+  @@index([staffMemberId])
 }
 
 model StaffTask {

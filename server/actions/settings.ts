@@ -44,8 +44,19 @@ export async function updateCompanyAction(id: string, data: {
 // ── Announcements ──────────────────────────────────────────────
 
 export async function getAnnouncements() {
-  await requirePermission("settings:branch");
-  return prisma.announcement.findMany({ orderBy: { createdAt: "desc" } });
+  const user = await requirePermission("settings:branch");
+  const [rows, staffTotal] = await Promise.all([
+    prisma.announcement.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { acks: true } } },
+    }),
+    prisma.staffMember.count({ where: { isActive: true, branch: { companyId: user.companyId } } }),
+  ]);
+  return rows.map((a) => ({
+    id: a.id, title: a.title, body: a.body, isActive: a.isActive,
+    expiresAt: a.expiresAt, createdAt: a.createdAt,
+    ackCount: a._count.acks, staffTotal,
+  }));
 }
 
 export async function createAnnouncement(data: {
