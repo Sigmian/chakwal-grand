@@ -18,6 +18,7 @@ import { hasPermission } from "@/lib/auth/permissions";
 import { PageHeader, Badge, StatCard, GoldDivider, SectionHeader } from "@/components/shared";
 import { ToggleActiveButton } from "@/features/staff/components/ToggleActiveButton";
 import { EditStaffButton } from "@/features/staff/components/EditStaffButton";
+import { SetPasswordButton } from "@/features/staff/components/SetPasswordButton";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { cn, formatPKR, formatDate, formatTime, USER_ROLE_CONFIG } from "@/utils";
 import { UserRole } from "@/types";
@@ -123,6 +124,9 @@ export default async function StaffDetailPage({ params }: Props) {
                     branches={branches}
                     isSuperAdmin={isSuperAdmin}
                   />
+                )}
+                {canManage && (
+                  <SetPasswordButton staffId={staff.id} staffName={staff.user.name ?? "this staff member"} />
                 )}
               </div>
             </div>

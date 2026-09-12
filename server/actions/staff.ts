@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
 import { assertBranchAccess, requirePermission, getScopedBranchId } from "@/lib/auth/session";
+import { logActivity } from "@/lib/activity/log";
 import { z } from "zod";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -187,6 +188,46 @@ export async function createStaffMember(rawInput: CreateStaffInput) {
 
   revalidatePath("/staff");
   return { success: true, staffId: staff.id };
+}
+
+/**
+ * Set or reset a staff member's login password. Branch-scoped for managers;
+ * only a super admin may touch an owner account. The admin never sees the old
+ * password — this simply overwrites it with a fresh bcrypt hash.
+ */
+export async function resetStaffPassword(staffId: string, newPassword: string) {
+  const actor = await requirePermission("staff:manage");
+  if (!newPassword || newPassword.length < 8) {
+    return { success: false, error: "Password must be at least 8 characters." };
+  }
+
+  const staff = await prisma.staffMember.findUnique({
+    where:  { id: staffId },
+    select: { branchId: true, userId: true, user: { select: { role: true, name: true, companyId: true } } },
+  });
+  if (!staff) return { success: false, error: "Staff member not found." };
+
+  const scoped = getScopedBranchId(actor);
+  if (scoped && staff.branchId !== scoped)       return { success: false, error: "Access denied." };
+  if (staff.user.companyId !== actor.companyId)  return { success: false, error: "Access denied." };
+  if (staff.user.role === "SUPER_ADMIN" && actor.role !== "SUPER_ADMIN") {
+    return { success: false, error: "Only a super admin can reset an owner's password." };
+  }
+
+  try {
+    const bcrypt = await import("bcryptjs");
+    const hash = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({ where: { id: staff.userId }, data: { passwordHash: hash } });
+    await logActivity({
+      userId: actor.id, action: "PASSWORD_RESET", entity: "Auth", entityId: staff.userId,
+      branchId: staff.branchId, description: `Reset login password for ${staff.user.name}`,
+    });
+    revalidatePath(`/staff/${staffId}`);
+    return { success: true };
+  } catch (err) {
+    console.error("[resetStaffPassword]", err);
+    return { success: false, error: "Failed to set the password." };
+  }
 }
 
 export async function updateStaffMember(staffId: string, rawInput: UpdateStaffInput) {
