@@ -102,6 +102,7 @@ export const DASHBOARD_NAV: NavItem[] = [
     children: [
       { label: "Products",  href: "/inventory/products" },
       { label: "Point of Sale", href: "/inventory/pos" },
+      { label: "Stock Ledger", href: "/inventory/ledger" },
     ],
   },
   {

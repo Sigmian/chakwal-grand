@@ -8,11 +8,12 @@
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, AlertTriangle, CheckCircle, Pencil, X, ShoppingBag, Trash2, Search } from "lucide-react";
-import { restockItem, updateInventoryItem, deleteInventoryItem } from "@/server/actions/inventory";
+import { AlertTriangle, CheckCircle, Pencil, ShoppingBag, Trash2, Search, ArrowLeftRight } from "lucide-react";
+import { updateInventoryItem, deleteInventoryItem } from "@/server/actions/inventory";
 import { cn, formatPKR } from "@/utils";
 import { Badge } from "@/components/shared";
 import { ProductImagePicker } from "@/features/inventory/components/ProductImagePicker";
+import { StockMovementModal } from "@/features/inventory/components/StockMovementModal";
 
 interface InventoryItem {
   id:            string;
@@ -41,8 +42,7 @@ interface Props {
 function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [restockQty, setRestockQty]  = useState("");
-  const [showRestock, setShowRestock] = useState(false);
+  const [showMove, setShowMove] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editName,     setEditName]     = useState(item.product?.name ?? "");
   const [editCost,     setEditCost]     = useState(String(item.purchasePrice));
@@ -50,11 +50,14 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
   const [editMinStock, setEditMinStock] = useState(String(item.minStockLevel));
 
   const handleDelete = () => {
-    if (!confirm(`Delete "${item.product?.name}" from inventory? This cannot be undone.`)) return;
+    if (!confirm(`Remove "${item.product?.name}" from inventory? Its stock history is kept in the ledger.`)) return;
     startTransition(async () => {
       const res = await deleteInventoryItem(item.id);
       if (!res.success) toast.error(res.error ?? "Delete failed");
-      else { toast.success("Item removed from inventory"); router.refresh(); }
+      else {
+        toast.success(res.archived ? "Item archived — its ledger history is preserved." : "Item removed from inventory.");
+        router.refresh();
+      }
     });
   };
 
@@ -83,22 +86,6 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
         router.refresh();
       } else {
         toast.error(res.error ?? "Update failed");
-      }
-    });
-  };
-
-  const handleRestock = () => {
-    const qty = Number(restockQty);
-    if (!qty || qty < 1) return toast.error("Enter a valid quantity");
-    startTransition(async () => {
-      const res = await restockItem({ inventoryItemId: item.id, quantity: qty });
-      if (res.success) {
-        toast.success(`Restocked: +${qty} ${item.product?.unit ?? "units"}`);
-        setRestockQty("");
-        setShowRestock(false);
-        router.refresh();
-      } else {
-        toast.error(res.error ?? "Restock failed");
       }
     });
   };
@@ -183,34 +170,14 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
       {canEdit && (
         <td>
           <div className="flex items-center gap-1.5">
-            {showRestock ? (
-              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="number"
-                  value={restockQty}
-                  onChange={(e) => setRestockQty(e.target.value)}
-                  placeholder="Qty"
-                  className="w-16 bg-surface-base border border-border rounded-lg px-2 py-1 text-xs text-foreground focus:outline-none focus:border-gold-500/50"
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === "Enter") handleRestock(); if (e.key === "Escape") setShowRestock(false); }}
-                />
-                <button onClick={handleRestock} disabled={isPending} className="p-1.5 text-green-400 hover:bg-green-500/10 rounded-lg transition-colors">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => setShowRestock(false)} className="text-xs text-muted-foreground hover:text-foreground">
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => { setShowRestock(true); setShowEdit(false); }}
-                className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gold-400 hover:bg-gold-500/10 border border-gold-500/20 transition-all"
-              >
-                <Plus className="w-3 h-3" /> Restock
-              </button>
-            )}
             <button
-              onClick={() => { setShowEdit(e => !e); setShowRestock(false); }}
+              onClick={() => { setShowMove(true); setShowEdit(false); }}
+              className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gold-400 hover:bg-gold-500/10 border border-gold-500/20 transition-all"
+            >
+              <ArrowLeftRight className="w-3 h-3" /> Stock
+            </button>
+            <button
+              onClick={() => { setShowEdit(e => !e); }}
               className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-blue-400 hover:bg-blue-500/10 border border-blue-500/20 transition-all"
             >
               <Pencil className="w-3 h-3" /> Edit
@@ -279,6 +246,13 @@ function StockRow({ item, canEdit }: { item: InventoryItem; canEdit: boolean }) 
           </div>
         </td>
       </tr>
+    )}
+
+    {showMove && (
+      <StockMovementModal
+        item={{ id: item.id, name: item.product?.name ?? "Item", unit: item.product?.unit ?? "units", currentStock: item.currentStock }}
+        onClose={() => setShowMove(false)}
+      />
     )}
     </>
   );

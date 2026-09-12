@@ -214,20 +214,39 @@ export type AddPaymentInput = z.infer<typeof addPaymentSchema>;
 
 // ─── Inventory ────────────────────────────────────────────────
 
+export const PRODUCT_UNITS = ["piece", "bottle", "sachet", "box", "pack", "kg", "liter"] as const;
+
 export const createProductSchema = z.object({
   name:       z.string().min(2).max(100),
   brand:      z.string().max(100).optional(),
   categoryId: z.string().min(1, "Category is required"),
   sku:        z.string().max(50).optional(),
-  unit:       z.enum(["piece", "bottle", "sachet", "box", "pack", "kg", "liter"]).default("piece"),
+  unit:       z.enum(PRODUCT_UNITS).default("piece"),
+  description: z.string().max(500).optional(),
 });
 export type CreateProductInput = z.infer<typeof createProductSchema>;
+
+// Add a product AND stock it at a branch in one atomic call. Prices allow 0
+// (issue-only / donated items). A safe, non-negative quantity is enforced.
+export const createProductWithStockSchema = z.object({
+  name:          z.string().min(2, "Product name is too short").max(100),
+  brand:         z.string().max(100).optional(),
+  categoryId:    z.string().min(1, "Category is required"),
+  unit:          z.enum(PRODUCT_UNITS).default("piece"),
+  description:   z.string().max(500).optional(),
+  branchId:      z.string().min(1, "Branch is required"),
+  purchasePrice: pkrAmount,                       // >= 0
+  sellingPrice:  pkrAmount,                        // >= 0
+  currentStock:  z.number({ invalid_type_error: "Stock must be a number" }).int("Stock must be a whole number").min(0, "Stock cannot be negative").max(1_000_000).default(0),
+  minStockLevel: z.number({ invalid_type_error: "Min level must be a number" }).int().min(0).max(1_000_000).default(10),
+});
+export type CreateProductWithStockInput = z.infer<typeof createProductWithStockSchema>;
 
 export const addInventoryItemSchema = z.object({
   productId:     z.string().min(1),
   branchId:      z.string().min(1),
-  purchasePrice: pkrAmount.min(1),
-  sellingPrice:  pkrAmount.min(1),
+  purchasePrice: pkrAmount,
+  sellingPrice:  pkrAmount,
   currentStock:  z.number().int().min(0).default(0),
   minStockLevel: z.number().int().min(0).default(10),
   expiresAt:     z.string().optional(),
@@ -235,6 +254,18 @@ export const addInventoryItemSchema = z.object({
   supplierPhone: phoneNumber.optional(),
 });
 export type AddInventoryItemInput = z.infer<typeof addInventoryItemSchema>;
+
+// Manual stock movement (staff-driven stock in/out with a reason).
+export const STOCK_IN_TYPES  = ["RESTOCK", "PURCHASE", "RETURN", "ADJUSTMENT_IN"] as const;
+export const STOCK_OUT_TYPES = ["ISSUE_ROOM", "ISSUE_STAFF", "ISSUE_CANTEEN", "DAMAGED", "EXPIRED", "ADJUSTMENT_OUT"] as const;
+
+export const stockMovementSchema = z.object({
+  inventoryItemId: z.string().min(1),
+  type:            z.enum([...STOCK_IN_TYPES, ...STOCK_OUT_TYPES]),
+  quantity:        z.number({ invalid_type_error: "Quantity must be a number" }).int("Quantity must be a whole number").min(1, "Quantity must be at least 1").max(1_000_000),
+  notes:           z.string().max(300).optional(),
+});
+export type StockMovementInput = z.infer<typeof stockMovementSchema>;
 
 export const restockSchema = z.object({
   inventoryItemId: z.string(),

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { createProduct, addInventoryItem } from "@/server/actions/inventory";
+import { createProductWithStock } from "@/server/actions/inventory";
 
 interface Category { id: string; name: string; icon: string | null }
 interface Branch   { id: string; name: string }
@@ -24,6 +24,7 @@ export function AddProductDialog({ categories, branches, defaultBranchId }: Prop
 
   const [name,          setName]          = useState("");
   const [brand,         setBrand]         = useState("");
+  const [description,   setDescription]   = useState("");
   const [categoryId,    setCategoryId]    = useState(categories[0]?.id ?? "");
   const [unit,          setUnit]          = useState<typeof UNITS[number]>("piece");
   const [branchId,      setBranchId]      = useState(defaultBranchId ?? branches[0]?.id ?? "");
@@ -33,50 +34,57 @@ export function AddProductDialog({ categories, branches, defaultBranchId }: Prop
   const [minStockLevel, setMinStockLevel] = useState("10");
 
   const reset = () => {
-    setName(""); setBrand(""); setUnit("piece");
+    setName(""); setBrand(""); setDescription(""); setUnit("piece");
     setPurchasePrice(""); setSellingPrice("");
     setCurrentStock("0"); setMinStockLevel("10");
     setCategoryId(categories[0]?.id ?? "");
     setBranchId(defaultBranchId ?? branches[0]?.id ?? "");
   };
 
+  // A non-negative integer from a text input; blank → fallback.
+  const intOr = (v: string, fallback: number) => {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+  };
+  const numOr = (v: string, fallback: number) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !categoryId || !branchId || !purchasePrice || !sellingPrice) {
-      toast.error("Please fill in all required fields");
+    if (isPending) return; // guard against a double submit
+    if (!name.trim() || !categoryId || !branchId) {
+      toast.error("Please fill in the product name, category and branch.");
       return;
     }
 
     startTransition(async () => {
-      // Step 1: create the product
-      const productRes = await createProduct({
-        name: name.trim(),
-        brand: brand.trim() || undefined,
+      // One atomic call: create/reuse product + stock it at the branch.
+      const res = await createProductWithStock({
+        name:          name.trim(),
+        brand:         brand.trim() || undefined,
+        description:   description.trim() || undefined,
         categoryId,
         unit,
-      });
-
-      if (!productRes.success || !productRes.data) {
-        toast.error(productRes.error ?? "Failed to create product");
-        return;
-      }
-
-      // Step 2: add to inventory
-      const invRes = await addInventoryItem({
-        productId:     productRes.data.id,
         branchId,
-        purchasePrice: Number(purchasePrice),
-        sellingPrice:  Number(sellingPrice),
-        currentStock:  Number(currentStock),
-        minStockLevel: Number(minStockLevel),
+        purchasePrice: numOr(purchasePrice, 0),
+        sellingPrice:  numOr(sellingPrice, 0),
+        currentStock:  intOr(currentStock, 0),
+        minStockLevel: intOr(minStockLevel, 10),
       });
 
-      if (!invRes.success) {
-        toast.error(invRes.error ?? "Product created but failed to add to inventory");
+      if (!res.success || !res.data) {
+        toast.error(res.error ?? "Failed to add product");
         return;
       }
 
-      toast.success(`"${name}" added to inventory`);
+      const d = res.data;
+      toast.success(
+        d.stock > 0
+          ? `${d.productName} added with ${d.stock} ${d.unit} in stock.`
+          : `${d.productName} added to inventory.`,
+      );
       reset();
       setOpen(false);
       router.refresh();
@@ -120,6 +128,12 @@ export function AddProductDialog({ categories, branches, defaultBranchId }: Prop
                 <input value={brand} onChange={e => setBrand(e.target.value)} placeholder="e.g. Nestle" className={inputCls} />
               </div>
 
+              {/* Description / notes */}
+              <div>
+                <label className={labelCls}>Description / Notes</label>
+                <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional notes about this product" rows={2} className={inputCls + " resize-none"} />
+              </div>
+
               {/* Category + Unit */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -149,12 +163,12 @@ export function AddProductDialog({ categories, branches, defaultBranchId }: Prop
               {/* Prices */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>Cost Price (₨) *</label>
-                  <input type="number" min="0" value={purchasePrice} onChange={e => setPurchasePrice(e.target.value)} placeholder="0" className={inputCls} required />
+                  <label className={labelCls}>Cost Price (₨)</label>
+                  <input type="number" min="0" step="0.01" value={purchasePrice} onChange={e => setPurchasePrice(e.target.value)} placeholder="0" className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>Selling Price (₨) *</label>
-                  <input type="number" min="0" value={sellingPrice} onChange={e => setSellingPrice(e.target.value)} placeholder="0" className={inputCls} required />
+                  <label className={labelCls}>Selling Price (₨)</label>
+                  <input type="number" min="0" step="0.01" value={sellingPrice} onChange={e => setSellingPrice(e.target.value)} placeholder="0" className={inputCls} />
                 </div>
               </div>
 

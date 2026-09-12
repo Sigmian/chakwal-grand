@@ -206,6 +206,7 @@ export async function getCanteenMenu() {
   const items = await prisma.inventoryItem.findMany({
     where: {
       branchId,
+      isActive:     true,
       currentStock: { gt: 0 },
       product: {
         isActive:         true,

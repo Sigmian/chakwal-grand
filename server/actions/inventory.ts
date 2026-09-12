@@ -9,6 +9,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/db/prisma";
 import { requirePermission, getScopedBranchId, canAccessBranch } from "@/lib/auth/session";
 import { sendPushToBranch } from "@/lib/push/send";
@@ -17,12 +18,17 @@ import {
   restockSchema,
   createSaleSchema,
   createProductSchema,
+  createProductWithStockSchema,
+  stockMovementSchema,
+  STOCK_IN_TYPES,
 } from "@/lib/validation/schemas";
 import type {
   AddInventoryItemInput,
   RestockInput,
   CreateSaleInput,
   CreateProductInput,
+  CreateProductWithStockInput,
+  StockMovementInput,
 } from "@/lib/validation/schemas";
 
 // ─── Helper: record a stock movement ─────────────────────────
@@ -45,7 +51,10 @@ export async function getInventory(branchId?: string) {
   const scopedBranch = getScopedBranchId(user, branchId);
 
   const items = await prisma.inventoryItem.findMany({
-    where: scopedBranch ? { branchId: scopedBranch } : { branch: { companyId: user.companyId } },
+    where: {
+      isActive: true,
+      ...(scopedBranch ? { branchId: scopedBranch } : { branch: { companyId: user.companyId } }),
+    },
     include: {
       product: {
         include: { category: true },
@@ -83,7 +92,10 @@ export async function getLowStockAlerts(branchId?: string) {
 
   // Fetch all then filter by per-item minStockLevel (Prisma can't compare columns in WHERE)
   const items = await prisma.inventoryItem.findMany({
-    where: scopedBranch ? { branchId: scopedBranch } : { branch: { companyId: user.companyId } },
+    where: {
+      isActive: true,
+      ...(scopedBranch ? { branchId: scopedBranch } : { branch: { companyId: user.companyId } }),
+    },
     include: {
       product: { select: { name: true, unit: true } },
       branch:  { select: { name: true } },
@@ -110,6 +122,254 @@ export async function createProduct(rawInput: CreateProductInput) {
     console.error("[createProduct]", error);
     return { success: false, error: "Failed to create product" };
   }
+}
+
+// ─── ADD PRODUCT + STOCK IT (atomic, deduped) ────────────────
+// Replaces the old two-step client flow (createProduct → addInventoryItem),
+// which could create duplicate products and orphaned rows. This runs in one
+// transaction: reuse the catalog product if it already exists, refuse a
+// duplicate at the same branch, and log the opening-stock movement.
+export async function createProductWithStock(rawInput: CreateProductWithStockInput) {
+  const user = await requirePermission("inventory:create");
+
+  const parsed = createProductWithStockSchema.safeParse(rawInput);
+  if (!parsed.success) return { success: false, error: parsed.error.errors[0].message };
+  const input = parsed.data;
+
+  const branchId = getScopedBranchId(user, input.branchId);
+  if (!branchId) return { success: false, error: "You don't have access to that branch." };
+
+  const name = input.name.trim();
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // Reuse an existing catalog product (same category + case-insensitive name)
+      // so the same item is never duplicated.
+      let product = await tx.product.findFirst({
+        where: { categoryId: input.categoryId, name: { equals: name, mode: "insensitive" } },
+        select: { id: true, name: true },
+      });
+      if (!product) {
+        product = await tx.product.create({
+          data: {
+            name,
+            brand:       input.brand?.trim() || null,
+            categoryId:  input.categoryId,
+            unit:        input.unit,
+            description: input.description?.trim() || null,
+            createdById: user.id,
+          },
+          select: { id: true, name: true },
+        });
+      }
+
+      // One inventory row per (product, branch). An active row means this is a
+      // duplicate add — refuse and point the user at Restock. An archived row
+      // is brought back to life instead of creating a second one.
+      const existing = await tx.inventoryItem.findUnique({
+        where:  { productId_branchId: { productId: product.id, branchId } },
+        select: { id: true, isActive: true, currentStock: true },
+      });
+      if (existing?.isActive) throw new Error("DUPLICATE_AT_BRANCH");
+
+      if (existing && !existing.isActive) {
+        const revived = await tx.inventoryItem.update({
+          where: { id: existing.id },
+          data: {
+            isActive:        true,
+            purchasePrice:   input.purchasePrice,
+            sellingPrice:    input.sellingPrice,
+            currentStock:    input.currentStock,
+            minStockLevel:   input.minStockLevel,
+            lastRestockedAt: input.currentStock > 0 ? new Date() : null,
+          },
+          select: { id: true, currentStock: true },
+        });
+        if (input.currentStock !== existing.currentStock) {
+          await tx.stockMovement.create({
+            data: {
+              inventoryItemId: revived.id,
+              type:            "ADJUSTMENT_IN",
+              quantity:        input.currentStock - existing.currentStock,
+              previousStock:   existing.currentStock,
+              newStock:        input.currentStock,
+              notes:           "Reactivated product",
+              createdById:     user.id,
+            },
+          });
+        }
+        return { productName: product.name, stock: revived.currentStock, unit: input.unit };
+      }
+
+      const item = await tx.inventoryItem.create({
+        data: {
+          productId:       product.id,
+          branchId,
+          purchasePrice:   input.purchasePrice,
+          sellingPrice:    input.sellingPrice,
+          currentStock:    input.currentStock,
+          minStockLevel:   input.minStockLevel,
+          lastRestockedAt: input.currentStock > 0 ? new Date() : null,
+        },
+        select: { id: true, currentStock: true },
+      });
+
+      if (input.currentStock > 0) {
+        await tx.stockMovement.create({
+          data: {
+            inventoryItemId: item.id,
+            type:            "RESTOCK",
+            quantity:        input.currentStock,
+            previousStock:   0,
+            newStock:        input.currentStock,
+            notes:           "Opening stock",
+            createdById:     user.id,
+          },
+        });
+      }
+
+      return { productName: product.name, stock: item.currentStock, unit: input.unit };
+    });
+
+    revalidatePath("/inventory/products");
+    revalidatePath("/inventory");
+    return { success: true, data: result };
+  } catch (error) {
+    if ((error as Error).message === "DUPLICATE_AT_BRANCH") {
+      return { success: false, error: "This product is already stocked at this branch — use “Restock” to add more." };
+    }
+    console.error("[createProductWithStock]", error);
+    return { success: false, error: "Failed to add product" };
+  }
+}
+
+// ─── MANUAL STOCK MOVEMENT (stock in / stock out with a reason) ─
+export async function recordStockMovement(rawInput: StockMovementInput) {
+  const parsed = stockMovementSchema.safeParse(rawInput);
+  if (!parsed.success) return { success: false, error: parsed.error.errors[0].message };
+  const input = parsed.data;
+
+  const isIn = (STOCK_IN_TYPES as readonly string[]).includes(input.type);
+  // Stock-in is a restock; stock-out (issue / write-off / adjustment) is a
+  // management action. Both are enforced server-side, not by hiding buttons.
+  const user = await requirePermission(isIn ? "inventory:restock" : "inventory:update");
+
+  try {
+    const item = await prisma.inventoryItem.findUnique({
+      where:   { id: input.inventoryItemId },
+      include: { product: { select: { name: true, unit: true } } },
+    });
+    if (!item) return { success: false, error: "Item not found" };
+    if (!canAccessBranch(user, item.branchId)) return { success: false, error: "Branch access denied" };
+
+    const newStock = await prisma.$transaction(async (tx) => {
+      if (isIn) {
+        const updated = await tx.inventoryItem.update({
+          where: { id: item.id },
+          data:  { currentStock: { increment: input.quantity }, lastRestockedAt: new Date() },
+          select: { currentStock: true },
+        });
+        await tx.stockMovement.create({
+          data: {
+            inventoryItemId: item.id, type: input.type, quantity: input.quantity,
+            previousStock: updated.currentStock - input.quantity, newStock: updated.currentStock,
+            notes: input.notes, createdById: user.id,
+          },
+        });
+        return updated.currentStock;
+      }
+      // Stock out — conditional decrement blocks negative stock under concurrency.
+      const dec = await tx.inventoryItem.updateMany({
+        where: { id: item.id, currentStock: { gte: input.quantity } },
+        data:  { currentStock: { decrement: input.quantity } },
+      });
+      if (dec.count === 0) throw new Error("INSUFFICIENT_STOCK");
+      const updated = await tx.inventoryItem.findUnique({ where: { id: item.id }, select: { currentStock: true } });
+      const ns = updated!.currentStock;
+      await tx.stockMovement.create({
+        data: {
+          inventoryItemId: item.id, type: input.type, quantity: -input.quantity,
+          previousStock: ns + input.quantity, newStock: ns,
+          notes: input.notes, createdById: user.id,
+        },
+      });
+      return ns;
+    });
+
+    revalidatePath("/inventory");
+    revalidatePath("/inventory/products");
+    revalidatePath("/inventory/ledger");
+
+    return {
+      success: true,
+      data: { productName: item.product.name, unit: item.product.unit, quantity: input.quantity, newStock, direction: isIn ? "in" : "out" },
+    };
+  } catch (error) {
+    if ((error as Error).message === "INSUFFICIENT_STOCK") {
+      return { success: false, error: `Not enough stock to remove ${input.quantity}. Please refresh and check the current level.` };
+    }
+    console.error("[recordStockMovement]", error);
+    return { success: false, error: "Failed to record stock movement" };
+  }
+}
+
+// ─── STOCK LEDGER (inventory history) ────────────────────────
+export interface LedgerRow {
+  id: string; productName: string; unit: string; branch: string;
+  type: string; quantity: number; previousStock: number; newStock: number;
+  notes: string | null; staff: string; createdAt: string;
+}
+
+export async function getStockLedger(opts?: {
+  branchId?: string; productId?: string; type?: string; from?: string; to?: string; limit?: number;
+}): Promise<LedgerRow[]> {
+  const user   = await requirePermission("inventory:read");
+  const scoped = getScopedBranchId(user, opts?.branchId);
+
+  const itemFilter: Prisma.InventoryItemWhereInput = scoped
+    ? { branchId: scoped }
+    : { branch: { companyId: user.companyId } };
+  if (opts?.productId) itemFilter.productId = opts.productId;
+
+  const where: Prisma.StockMovementWhereInput = { inventoryItem: itemFilter };
+  if (opts?.type) where.type = opts.type;
+  if (opts?.from || opts?.to) {
+    where.createdAt = {
+      ...(opts.from ? { gte: new Date(`${opts.from}T00:00:00`) } : {}),
+      ...(opts.to   ? { lte: new Date(`${opts.to}T23:59:59`) } : {}),
+    };
+  }
+
+  const movements = await prisma.stockMovement.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take: Math.min(opts?.limit ?? 200, 500),
+    include: {
+      inventoryItem: {
+        select: { product: { select: { name: true, unit: true } }, branch: { select: { name: true } } },
+      },
+    },
+  });
+
+  const ids = [...new Set(movements.map((m) => m.createdById).filter(Boolean))] as string[];
+  const users = ids.length
+    ? await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } })
+    : [];
+  const nameById = new Map(users.map((u) => [u.id, u.name] as const));
+
+  return movements.map((m) => ({
+    id:            m.id,
+    productName:   m.inventoryItem.product.name,
+    unit:          m.inventoryItem.product.unit,
+    branch:        m.inventoryItem.branch.name,
+    type:          m.type,
+    quantity:      m.quantity,
+    previousStock: m.previousStock,
+    newStock:      m.newStock,
+    notes:         m.notes,
+    staff:         m.createdById ? (nameById.get(m.createdById) ?? "—") : "System",
+    createdAt:     m.createdAt.toISOString(),
+  }));
 }
 
 // ─── UPDATE PRODUCT IMAGE ─────────────────────────────────────
@@ -297,13 +557,29 @@ export async function deleteInventoryItem(inventoryItemId: string) {
   await requirePermission("inventory:create");
 
   try {
-    // Delete stock movements first (FK constraint)
-    await prisma.stockMovement.deleteMany({ where: { inventoryItemId } });
-    await prisma.inventoryItem.delete({ where: { id: inventoryItemId } });
+    const item = await prisma.inventoryItem.findUnique({
+      where:  { id: inventoryItemId },
+      select: { id: true, _count: { select: { stockMovements: true, saleLineItems: true } } },
+    });
+    if (!item) return { success: false, error: "Item not found" };
+
+    // Preserve the stock ledger: if the item has any history, archive it
+    // (hide from active inventory) instead of erasing its movements. Only a
+    // pristine item with no history is truly removed.
+    const hasHistory = item._count.stockMovements > 0 || item._count.saleLineItems > 0;
+
+    if (hasHistory) {
+      await prisma.inventoryItem.update({
+        where: { id: inventoryItemId },
+        data:  { isActive: false },
+      });
+    } else {
+      await prisma.inventoryItem.delete({ where: { id: inventoryItemId } });
+    }
 
     revalidatePath("/inventory/products");
     revalidatePath("/inventory");
-    return { success: true };
+    return { success: true, archived: hasHistory };
   } catch (error) {
     console.error("[deleteInventoryItem]", error);
     return { success: false, error: "Failed to delete item" };

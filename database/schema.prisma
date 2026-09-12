@@ -657,15 +657,18 @@ model Product {
   sku            String?         @unique
   unit           String          @default("piece") // "piece", "bottle", "sachet"
   image          String?
+  description    String?         // Notes / description shown on the product
 
   isActive          Boolean         @default(true)
   isCanteenVisible  Boolean         @default(false) // Show in guest-facing canteen/room-service menu
+  createdById       String?         // userId who first created the product
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
   inventoryItems InventoryItem[] // One product can be stocked in multiple branches
 
   @@index([categoryId])
+  @@index([name])
 }
 
 model InventoryItem {
@@ -682,6 +685,8 @@ model InventoryItem {
   expiresAt       DateTime?
   supplierName    String?
   supplierPhone   String?
+
+  isActive        Boolean  @default(true)  // Archive (hide) without erasing ledger history
 
   lastRestockedAt DateTime?
   updatedAt       DateTime @updatedAt
