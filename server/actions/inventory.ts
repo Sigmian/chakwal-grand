@@ -13,6 +13,7 @@ import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/db/prisma";
 import { requirePermission, getScopedBranchId, canAccessBranch } from "@/lib/auth/session";
 import { sendPushToBranch } from "@/lib/push/send";
+import { logActivity } from "@/lib/activity/log";
 import {
   addInventoryItemSchema,
   restockSchema,
@@ -233,6 +234,13 @@ export async function createProductWithStock(rawInput: CreateProductWithStockInp
 
     revalidatePath("/inventory/products");
     revalidatePath("/inventory");
+    await logActivity({
+      userId:      user.id,
+      action:      "PRODUCT_ADDED",
+      entity:      "Inventory",
+      branchId,
+      description: `Added product ${result.productName}${result.stock > 0 ? ` with ${result.stock} ${result.unit} opening stock` : ""}`,
+    });
     return { success: true, data: result };
   } catch (error) {
     if ((error as Error).message === "DUPLICATE_AT_BRANCH") {
@@ -299,6 +307,16 @@ export async function recordStockMovement(rawInput: StockMovementInput) {
     revalidatePath("/inventory");
     revalidatePath("/inventory/products");
     revalidatePath("/inventory/ledger");
+
+    await logActivity({
+      userId:      user.id,
+      action:      isIn ? "STOCK_IN" : "STOCK_OUT",
+      entity:      "Inventory",
+      entityId:    item.id,
+      branchId:    item.branchId,
+      description: `${isIn ? "Added" : "Issued"} ${input.quantity} × ${item.product.name} (${input.type.replace(/_/g, " ").toLowerCase()})`,
+      metadata:    { type: input.type, quantity: input.quantity, newStock },
+    });
 
     return {
       success: true,

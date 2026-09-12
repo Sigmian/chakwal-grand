@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
-import { requirePermission } from "@/lib/auth/session";
+import { requirePermission, requireAuth } from "@/lib/auth/session";
+import { logActivity } from "@/lib/activity/log";
 
 export async function toggleUserActive(userId: string, isActive: boolean) {
   const actor = await requirePermission("settings:company");
@@ -149,6 +150,34 @@ export async function clearAnnouncementAcks(id: string) {
   } catch (err) {
     console.error("[clearAnnouncementAcks]", err);
     return { success: false, error: "Failed to clear acknowledgements." };
+  }
+}
+
+// Self-service password change. Verifies the current password before setting
+// a new one — an admin reset (below) never needs to see the old password.
+export async function changeMyPassword(input: { currentPassword: string; newPassword: string }) {
+  const me = await requireAuth();
+  if (!input.newPassword || input.newPassword.length < 8) {
+    return { success: false, error: "New password must be at least 8 characters." };
+  }
+  if (input.currentPassword === input.newPassword) {
+    return { success: false, error: "New password must be different from the current one." };
+  }
+  try {
+    const user = await prisma.user.findUnique({ where: { id: me.id }, select: { passwordHash: true, name: true, staffMember: { select: { branchId: true } } } });
+    if (!user) return { success: false, error: "Account not found." };
+
+    const bcrypt = await import("bcryptjs");
+    const ok = await bcrypt.compare(input.currentPassword, user.passwordHash);
+    if (!ok) return { success: false, error: "Your current password is incorrect." };
+
+    const hash = await bcrypt.hash(input.newPassword, 12);
+    await prisma.user.update({ where: { id: me.id }, data: { passwordHash: hash } });
+    await logActivity({ userId: me.id, action: "PASSWORD_CHANGED", entity: "Auth", description: `${user.name} changed their password`, branchId: user.staffMember?.branchId ?? null });
+    return { success: true };
+  } catch (err) {
+    console.error("[changeMyPassword]", err);
+    return { success: false, error: "Failed to change password." };
   }
 }
 

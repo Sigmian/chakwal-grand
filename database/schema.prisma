@@ -331,11 +331,13 @@ model ActivityLog {
   entity      String      // "Booking", "Room", "Payment"
   entityId    String?
   description String
+  branchId    String?     // Branch the action related to (for filtering)
   metadata    Json?       // Extra data
   ipAddress   String?
   createdAt   DateTime    @default(now())
 
   @@index([userId])
+  @@index([branchId])
   @@index([createdAt])
 }
 

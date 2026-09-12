@@ -12,9 +12,10 @@ import { signOut } from "next-auth/react";
 import {
   LogIn, LogOut, Clock, CalendarDays, Loader2, Check, X,
   CalendarPlus, PencilLine, Megaphone, LogOut as SignOutIcon, Moon,
-  FileText, Image as ImageIcon, ExternalLink,
+  FileText, Image as ImageIcon, ExternalLink, KeyRound,
 } from "lucide-react";
 import { checkIn, checkOut, requestLeave, requestCorrection, acknowledgeAnnouncement } from "@/server/actions/attendance";
+import { changeMyPassword } from "@/server/actions/settings";
 import { formatDuration } from "@/lib/hr/attendance";
 import { cn, formatPKR } from "@/utils";
 import { AttendanceCaptureSheet, type PresencePayload } from "./AttendanceCaptureSheet";
@@ -57,7 +58,7 @@ export function StaffPortal({ data }: { data: DashboardData }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
-  const [modal, setModal] = useState<"leave" | "correction" | null>(null);
+  const [modal, setModal] = useState<"leave" | "correction" | "password" | null>(null);
   const [capture, setCapture] = useState<"in" | "out" | null>(null);
 
   const checkedIn = !!data.today.checkInAt;
@@ -101,10 +102,16 @@ export function StaffPortal({ data }: { data: DashboardData }) {
             {data.staff.designation ?? "Staff"} · {data.staff.branch}
           </p>
         </div>
-        <button onClick={() => signOut({ callbackUrl: "/login" })}
-          className="rounded-xl border border-white/15 p-2.5 text-white/60 transition-colors hover:text-white">
-          <SignOutIcon className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setModal("password")} title="Change password"
+            className="rounded-xl border border-white/15 p-2.5 text-white/60 transition-colors hover:text-white">
+            <KeyRound className="h-4 w-4" />
+          </button>
+          <button onClick={() => signOut({ callbackUrl: "/login" })} title="Sign out"
+            className="rounded-xl border border-white/15 p-2.5 text-white/60 transition-colors hover:text-white">
+            <SignOutIcon className="h-4 w-4" />
+          </button>
+        </div>
       </header>
 
       {/* today / shift */}
@@ -254,6 +261,7 @@ export function StaffPortal({ data }: { data: DashboardData }) {
 
       {modal === "leave" && <LeaveModal onClose={() => setModal(null)} onDone={() => { setModal(null); router.refresh(); }} />}
       {modal === "correction" && <CorrectionModal onClose={() => setModal(null)} onDone={() => { setModal(null); router.refresh(); }} />}
+      {modal === "password" && <PasswordModal onClose={() => setModal(null)} />}
 
       {capture && (
         <AttendanceCaptureSheet
@@ -381,6 +389,53 @@ function LeaveModal({ onClose, onDone }: { onClose: () => void; onDone: () => vo
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Submit Request
         </button>
       </div>
+    </Sheet>
+  );
+}
+
+function PasswordModal({ onClose }: { onClose: () => void }) {
+  const [pending, start] = useTransition();
+  const [err, setErr] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
+  const [f, setF] = useState({ current: "", next: "", confirm: "" });
+  const field = "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm outline-none focus:border-gold-400/60";
+
+  function submit() {
+    setErr(null);
+    if (f.next.length < 8) { setErr("New password must be at least 8 characters."); return; }
+    if (f.next !== f.confirm) { setErr("New passwords don't match."); return; }
+    start(async () => {
+      const res = await changeMyPassword({ currentPassword: f.current, newPassword: f.next });
+      if (!res.success) { setErr(res.error ?? "Failed"); return; }
+      setOk(true);
+      setTimeout(onClose, 1200);
+    });
+  }
+  return (
+    <Sheet title="Change password" onClose={onClose}>
+      {ok ? (
+        <div className="flex items-center gap-2 rounded-xl bg-green-500/10 px-3 py-3 text-sm text-green-300">
+          <Check className="h-4 w-4" /> Password updated.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <label className="block text-xs text-white/60">Current password
+            <input type="password" className={field + " mt-1"} value={f.current} onChange={(e) => setF({ ...f, current: e.target.value })} autoComplete="current-password" />
+          </label>
+          <label className="block text-xs text-white/60">New password
+            <input type="password" className={field + " mt-1"} value={f.next} onChange={(e) => setF({ ...f, next: e.target.value })} autoComplete="new-password" />
+          </label>
+          <label className="block text-xs text-white/60">Confirm new password
+            <input type="password" className={field + " mt-1"} value={f.confirm} onChange={(e) => setF({ ...f, confirm: e.target.value })} autoComplete="new-password" />
+          </label>
+          <p className="text-[11px] text-white/45">Use at least 8 characters.</p>
+          {err && <p className="text-sm text-red-300">{err}</p>}
+          <button onClick={submit} disabled={pending || !f.current || !f.next}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gold-gradient py-3 text-sm font-bold text-background disabled:opacity-60">
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Update Password
+          </button>
+        </div>
+      )}
     </Sheet>
   );
 }

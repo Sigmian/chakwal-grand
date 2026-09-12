@@ -13,6 +13,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/db/prisma";
+import { logActivity } from "@/lib/activity/log";
 import type { UserRole } from "@/types";
 
 // ─── Augment NextAuth types ────────────────────────────────────
@@ -98,10 +99,17 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid email or password");
         }
 
-        // 3. Update last login timestamp
+        // 3. Update last login timestamp + record the login for the audit trail
         await prisma.user.update({
           where: { id: user.id },
           data:  { lastLoginAt: new Date() },
+        });
+        await logActivity({
+          userId:      user.id,
+          action:      "LOGIN",
+          entity:      "Auth",
+          description: `${user.name} signed in`,
+          branchId:    user.staffMember?.branchId ?? null,
         });
 
         // 4. Return the shape NextAuth expects

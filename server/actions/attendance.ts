@@ -16,6 +16,7 @@ import { getHrConfig } from "@/lib/hr/config";
 import { deriveAttendance } from "@/lib/hr/attendance";
 import { resolveWorkDate, pktDateStr, type ShiftLike } from "@/lib/hr/time";
 import { getStaffPayroll, getPaidLeaveUsage } from "@/server/actions/hr";
+import { logActivity } from "@/lib/activity/log";
 
 // Distance between two lat/lng points in metres (haversine).
 function metersBetween(aLat: number, aLng: number, bLat: number, bLng: number) {
@@ -117,6 +118,14 @@ export async function checkIn(raw: CheckPayload = {}) {
   }
 
   revalidatePath("/portal");
+  await logActivity({
+    userId:      staff.userId,
+    staffId:     staff.id,
+    action:      "CHECK_IN",
+    entity:      "Attendance",
+    branchId:    staff.branchId,
+    description: `Checked in (${d.status.toLowerCase()})${d.lateMinutes ? `, ${d.lateMinutes} min late` : ""}`,
+  });
   return { success: true, status: d.status, lateMinutes: d.lateMinutes };
 }
 
@@ -152,6 +161,14 @@ export async function checkOut(raw: CheckPayload = {}) {
   });
 
   revalidatePath("/portal");
+  await logActivity({
+    userId:      staff.userId,
+    staffId:     staff.id,
+    action:      "CHECK_OUT",
+    entity:      "Attendance",
+    branchId:    staff.branchId,
+    description: `Checked out — worked ${Math.floor(d.workedMinutes / 60)}h ${d.workedMinutes % 60}m`,
+  });
   return { success: true, status: d.status, workedMinutes: d.workedMinutes, earlyMinutes: d.earlyMinutes };
 }
 
