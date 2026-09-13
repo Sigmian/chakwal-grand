@@ -60,7 +60,7 @@ async function maybeAwardBookingBonus(userId: string): Promise<void> {
   try {
     const staff = await prisma.staffMember.findUnique({
       where:  { userId },
-      select: { id: true, branch: { select: { companyId: true } } },
+      select: { id: true, branchId: true, branch: { select: { companyId: true } } },
     });
     if (!staff) return; // creator isn't a staff member (shouldn't happen for internal bookings)
 
@@ -69,7 +69,18 @@ async function maybeAwardBookingBonus(userId: string): Promise<void> {
     const amount    = cfg.bookingBonusAmount;
     if (!threshold || threshold <= 0 || !amount || amount <= 0) return;
 
-    const total = await prisma.booking.count({ where: { createdById: userId } });
+    // Anti-fraud: only PAID, non-cancelled bookings with a real (>0) total count
+    // toward the bonus, so a staffer can't create bogus/unpaid bookings to farm
+    // the reward. A later cancellation drops the count; the per-milestone dedup
+    // marker still prevents re-awarding the same milestone.
+    const total = await prisma.booking.count({
+      where: {
+        createdById:   userId,
+        paymentStatus: PaymentStatus.PAID,
+        status:        { not: BookingStatus.CANCELLED },
+        totalAmount:   { gt: 0 },
+      },
+    });
     if (total <= 0 || total % threshold !== 0) return;
 
     const milestone = total; // 50, 100, 150, …
@@ -86,10 +97,17 @@ async function maybeAwardBookingBonus(userId: string): Promise<void> {
           staffMemberId: staff.id,
           date:          new Date(`${pktDateStr(new Date())}T00:00:00.000Z`),
           type:          "BONUS",
-          description:   `Booking milestone bonus — ${milestone} bookings ${marker}`,
+          description:   `Booking milestone bonus — ${milestone} paid bookings ${marker}`,
           amount,
           auto:          true,
           createdById:   userId,
+        },
+      });
+      // Audit trail so an owner can see exactly when/why each bonus was granted.
+      await tx.activityLog.create({
+        data: {
+          userId, action: "BONUS_AWARDED", entity: "Payroll", branchId: staff.branchId ?? null,
+          description: `Booking bonus of ₨${amount} awarded at ${milestone} paid bookings`,
         },
       });
     });
@@ -339,8 +357,9 @@ export async function createBooking(rawInput: CreateBookingInput) {
       `New booking ${booking.bookingRef} created for ${booking.customer.name}`
     );
 
-    // Award the booking-count performance bonus if a milestone was reached.
-    await maybeAwardBookingBonus(user.id);
+    // Note: the booking-count bonus is awarded when a booking becomes PAID
+    // (see addPayment / extendBooking), not at creation — a fresh booking is
+    // still UNPAID, so it doesn't yet count toward the milestone.
 
     revalidatePath("/bookings");
     revalidatePath("/dashboard");
@@ -673,13 +692,15 @@ export async function addPayment(rawInput: AddPaymentInput) {
     // Quick branch-scope check before entering the transaction
     const booking = await prisma.booking.findUnique({
       where:  { id: input.bookingId },
-      select: { branchId: true },
+      select: { branchId: true, createdById: true },
     });
     if (!booking) return { success: false, error: "Booking not found" };
 
     if (!canAccessBranch(user, booking.branchId)) {
       return { success: false, error: "Access denied" };
     }
+
+    let becamePaid = false;
 
     // All balance validation and the update happen inside one transaction so
     // we always work from the freshest DB state. This prevents false
@@ -714,6 +735,8 @@ export async function addPayment(rawInput: AddPaymentInput) {
       });
       if (applied.count !== 1) throw new Error("PAYMENT_RACE");
 
+      becamePaid = paymentStatus === PaymentStatus.PAID;
+
       await tx.payment.create({
         data: {
           bookingId:    input.bookingId,
@@ -728,6 +751,12 @@ export async function addPayment(rawInput: AddPaymentInput) {
 
     await logActivity(user.id, "PAYMENT_RECEIVED", "Booking", input.bookingId,
       `Payment of ₨${input.amount} received via ${input.method}`);
+
+    // Booking just became fully paid → credit the staffer who CREATED it toward
+    // their paid-booking bonus (not whoever took the payment).
+    if (becamePaid && booking.createdById) {
+      await maybeAwardBookingBonus(booking.createdById);
+    }
 
     revalidatePath(`/bookings/${input.bookingId}`);
     revalidatePath("/finance/revenue");
@@ -902,6 +931,12 @@ export async function extendBooking(input: {
         });
       }
     });
+
+    // If the extension payment brought the booking to fully paid, credit its
+    // creator toward the paid-booking bonus.
+    if (paymentStatus === PaymentStatus.PAID && booking.createdById) {
+      await maybeAwardBookingBonus(booking.createdById);
+    }
 
     // 9. Activity log
     await logActivity(
