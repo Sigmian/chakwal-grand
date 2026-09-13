@@ -48,14 +48,16 @@ export default async function DashboardPage() {
   const isSA   = user.role === UserRole.SUPER_ADMIN;
   const canViewAnalytics = hasPermission(user.role, "analytics:branch");
   const canViewBookings  = hasPermission(user.role, "bookings:read");
-  const canViewRooms     = hasPermission(user.role, "rooms:read");
   const canManageHr      = hasPermission(user.role, "hr:manage");
 
   // Fetch data based on what the role can see
   const [overview, chartData, topRooms, activity, schedule, forecast, staffToday] = await Promise.all([
     canViewAnalytics ? getDashboardOverview(user.branchId)    : Promise.resolve(null),
     canViewAnalytics ? getRevenueChartData(user.branchId)     : Promise.resolve([]),
-    canViewRooms     ? getTopRooms(user.branchId, 5)          : Promise.resolve([]),
+    // getTopRooms requires analytics:branch (not rooms:read), so gate it on the
+    // same permission — otherwise a receptionist's dashboard load hits its
+    // internal requirePermission and is bounced to /unauthorized.
+    canViewAnalytics ? getTopRooms(user.branchId, 5)          : Promise.resolve([]),
     canViewAnalytics ? getRecentActivity(10)                  : Promise.resolve([]),
     canViewBookings  ? getTodaySchedule(user.branchId)        : Promise.resolve({ checkIns: [], checkOuts: [] }),
     canViewAnalytics ? getRevenueForecast(user.branchId)      : Promise.resolve(null),
