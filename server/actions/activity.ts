@@ -27,9 +27,11 @@ export async function getActivityLog(opts?: {
   if (opts?.action) where.action = opts.action;
   if (scoped)       where.branchId = scoped;          // branch managers: their branch only
   if (opts?.from || opts?.to) {
+    // PKT calendar days (Asia/Karachi, UTC+5) — a UTC server would otherwise
+    // bucket early-morning events into the previous day.
     where.createdAt = {
-      ...(opts.from ? { gte: new Date(`${opts.from}T00:00:00`) } : {}),
-      ...(opts.to   ? { lte: new Date(`${opts.to}T23:59:59`) } : {}),
+      ...(opts.from ? { gte: new Date(`${opts.from}T00:00:00+05:00`) } : {}),
+      ...(opts.to   ? { lte: new Date(`${opts.to}T23:59:59+05:00`) } : {}),
     };
   }
 

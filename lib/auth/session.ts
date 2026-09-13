@@ -115,6 +115,11 @@ export async function requireSuperAdmin(): Promise<SessionUser> {
  *   const branchId = getScopedBranchId(user, requestedBranchId);
  *   const bookings = await prisma.booking.findMany({ where: { branchId } });
  */
+// Sentinel branch id for a non-super-admin whose account has no branch. It
+// matches no real branch, so callers that build `where: { branchId }` return
+// nothing instead of silently falling through to a company-wide query.
+const NO_BRANCH = "__no_branch_access__";
+
 export function getScopedBranchId(
   user: SessionUser,
   requestedBranchId?: string | null
@@ -124,8 +129,9 @@ export function getScopedBranchId(
     return requestedBranchId ?? undefined;
   }
 
-  // Non-super-admin is always restricted to their branch
-  return user.branchId;
+  // Non-super-admin is always restricted to their own branch. If the account
+  // somehow has no branch, deny (empty scope) rather than leak the whole company.
+  return user.branchId || NO_BRANCH;
 }
 
 /** Return whether the current user may access records owned by a branch. */

@@ -1058,6 +1058,7 @@ model StaffSalaryPayment {
   paidAt          DateTime    @default(now())
   createdAt       DateTime    @default(now())
 
+  @@unique([staffMemberId, month, year]) // One salary payment per staff per month
   @@index([staffMemberId])
   @@index([branchId])
   @@index([month, year])

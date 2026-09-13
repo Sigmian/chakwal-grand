@@ -30,6 +30,14 @@ export interface RecordAdvanceInput {
 export async function paySalary(input: PaySalaryInput) {
   const user = await requirePermission("staff:view_salaries");
 
+  // Validate the money amount — never trust an unbounded client value.
+  if (!Number.isFinite(input.grossAmount) || input.grossAmount < 0 || input.grossAmount > 100_000_000) {
+    throw new Error("Invalid salary amount");
+  }
+  if (!Number.isInteger(input.month) || input.month < 1 || input.month > 12) {
+    throw new Error("Invalid month");
+  }
+
   const staffMember = await prisma.staffMember.findUnique({
     where: { id: input.staffMemberId },
     include: { user: { select: { name: true } }, branch: true },
@@ -42,73 +50,90 @@ export async function paySalary(input: PaySalaryInput) {
     throw new Error("Unauthorized");
   }
 
-  // Prevent duplicate payment for same month/year
-  const existing = await prisma.staffSalaryPayment.findFirst({
-    where: { staffMemberId: input.staffMemberId, month: input.month, year: input.year },
-  });
-  if (existing) throw new Error(`Salary for ${input.month}/${input.year} already recorded`);
-
-  // Sum selected advances to deduct
-  const advances = input.advanceIds.length > 0
-    ? await prisma.staffAdvance.findMany({
-        where: { id: { in: input.advanceIds }, staffMemberId: input.staffMemberId, status: AdvanceStatus.PENDING },
-      })
-    : [];
-
-  const advanceDeducted = advances.reduce((s, a) => s + Number(a.amount), 0);
-  const netAmount = Math.max(0, input.grossAmount - advanceDeducted);
-
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-  const result = await prisma.$transaction(async (tx) => {
-    // 1. Create expense record
-    const expense = await tx.expense.create({
-      data: {
-        branchId:    staffMember.branchId,
-        category:    "STAFF_SALARY",
-        expenseType: "GUESTHOUSE",
-        title:       `Salary — ${staffMember.user.name} (${monthNames[input.month - 1]} ${input.year})`,
-        amount:      netAmount,
-        description: input.notes ?? null,
-        paidById:    user.id,
-        paidAt:      new Date(),
-        month:       input.month,
-        year:        input.year,
-      },
-    });
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // Re-read the advances INSIDE the transaction, still PENDING, and mark them
+      // deducted with a guarded updateMany so a concurrent payment can't claim the
+      // same advance twice. The deducted amount is derived from the rows actually
+      // claimed, not from a stale outer read.
+      let advanceDeducted = 0;
+      if (input.advanceIds.length > 0) {
+        const advances = await tx.staffAdvance.findMany({
+          where: { id: { in: input.advanceIds }, staffMemberId: input.staffMemberId, status: AdvanceStatus.PENDING },
+          select: { id: true, amount: true },
+        });
+        advanceDeducted = advances.reduce((s, a) => s + Number(a.amount), 0);
+        if (advances.length > 0) {
+          const claim = await tx.staffAdvance.updateMany({
+            where: { id: { in: advances.map((a) => a.id) }, status: AdvanceStatus.PENDING },
+            data:  { status: AdvanceStatus.DEDUCTED, deductedAt: new Date() },
+          });
+          if (claim.count !== advances.length) throw new Error("ADVANCE_CONFLICT");
+        }
+      }
 
-    // 2. Create salary payment record
-    const payment = await tx.staffSalaryPayment.create({
-      data: {
-        staffMemberId:   input.staffMemberId,
-        branchId:        staffMember.branchId,
-        month:           input.month,
-        year:            input.year,
-        grossAmount:     input.grossAmount,
-        advanceDeducted: advanceDeducted,
-        netAmount:       netAmount,
-        notes:           input.notes ?? null,
-        signature:       input.signature ?? null,
-        paidById:        user.id,
-        expenseId:       expense.id,
-      },
-    });
+      const netAmount = Math.max(0, input.grossAmount - advanceDeducted);
 
-    // 3. Mark advances as deducted
-    if (advances.length > 0) {
-      await tx.staffAdvance.updateMany({
-        where: { id: { in: input.advanceIds } },
-        data:  { status: AdvanceStatus.DEDUCTED, deductedFromId: payment.id, deductedAt: new Date() },
+      // Create the salary payment first — its [staffMemberId, month, year] unique
+      // constraint is the real guard against a double payment (a double-click or a
+      // concurrent call fails here with P2002 and the whole tx rolls back).
+      const payment = await tx.staffSalaryPayment.create({
+        data: {
+          staffMemberId:   input.staffMemberId,
+          branchId:        staffMember.branchId,
+          month:           input.month,
+          year:            input.year,
+          grossAmount:     input.grossAmount,
+          advanceDeducted: advanceDeducted,
+          netAmount:       netAmount,
+          notes:           input.notes ?? null,
+          signature:       input.signature ?? null,
+          paidById:        user.id,
+        },
       });
+
+      const expense = await tx.expense.create({
+        data: {
+          branchId:    staffMember.branchId,
+          category:    "STAFF_SALARY",
+          expenseType: "GUESTHOUSE",
+          title:       `Salary — ${staffMember.user.name} (${monthNames[input.month - 1]} ${input.year})`,
+          amount:      netAmount,
+          description: input.notes ?? null,
+          paidById:    user.id,
+          paidAt:      new Date(),
+          month:       input.month,
+          year:        input.year,
+        },
+      });
+
+      // Link the two + stamp which advances this payment cleared.
+      await tx.staffSalaryPayment.update({ where: { id: payment.id }, data: { expenseId: expense.id } });
+      if (input.advanceIds.length > 0) {
+        await tx.staffAdvance.updateMany({
+          where: { id: { in: input.advanceIds }, status: AdvanceStatus.DEDUCTED, deductedFromId: null },
+          data:  { deductedFromId: payment.id },
+        });
+      }
+
+      return payment;
+    });
+
+    revalidatePath("/staff/payroll");
+    revalidatePath(`/staff/payroll/${input.staffMemberId}`);
+    revalidatePath("/finance/expenses");
+    return { ok: true, paymentId: result.id };
+  } catch (err) {
+    if ((err as { code?: string })?.code === "P2002") {
+      throw new Error(`Salary for ${monthNames[input.month - 1]} ${input.year} has already been paid.`);
     }
-
-    return payment;
-  });
-
-  revalidatePath("/staff/payroll");
-  revalidatePath(`/staff/payroll/${input.staffMemberId}`);
-  revalidatePath("/finance/expenses");
-  return { ok: true, paymentId: result.id };
+    if ((err as Error)?.message === "ADVANCE_CONFLICT") {
+      throw new Error("One of the selected advances was just processed elsewhere. Please refresh and try again.");
+    }
+    throw err;
+  }
 }
 
 // ─── Record Advance ──────────────────────────────────────────────────────────

@@ -352,9 +352,11 @@ export async function getStockLedger(opts?: {
   const where: Prisma.StockMovementWhereInput = { inventoryItem: itemFilter };
   if (opts?.type) where.type = opts.type;
   if (opts?.from || opts?.to) {
+    // Interpret the date range as PKT calendar days (Asia/Karachi, UTC+5) so an
+    // early-morning movement isn't dropped into the wrong day on a UTC server.
     where.createdAt = {
-      ...(opts.from ? { gte: new Date(`${opts.from}T00:00:00`) } : {}),
-      ...(opts.to   ? { lte: new Date(`${opts.to}T23:59:59`) } : {}),
+      ...(opts.from ? { gte: new Date(`${opts.from}T00:00:00+05:00`) } : {}),
+      ...(opts.to   ? { lte: new Date(`${opts.to}T23:59:59+05:00`) } : {}),
     };
   }
 
@@ -630,6 +632,15 @@ export async function createSale(rawInput: CreateSaleInput) {
       const requested = input.items[idx].quantity;
       if (!item) {
         return { success: false, error: `Item not found: ${input.items[idx].inventoryItemId}` };
+      }
+      // Every line item must belong to the branch this sale is recorded against —
+      // otherwise a sale in one branch could deduct another branch's stock and
+      // mis-attribute the revenue.
+      if (item.branchId !== branchId) {
+        return { success: false, error: "All items in a sale must belong to the same branch." };
+      }
+      if (!item.isActive) {
+        return { success: false, error: "One of the items is no longer available." };
       }
       if (item.currentStock < requested) {
         return {

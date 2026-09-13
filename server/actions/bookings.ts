@@ -483,9 +483,11 @@ export async function checkOutBooking(bookingId: string) {
     const AC_AMENITIES = ["AC", "Air Conditioning", "A/C", "AC Room", "Air Conditioned"];
     const roomAmenities: string[] = (booking.room.amenities as string[]) ?? [];
     const isPremiumType = ["VIP", "SUITE", "DELUXE"].includes(booking.room.type);
-    const hasAC         = roomAmenities.some(
-      (a) => AC_AMENITIES.some((ac) => a.toLowerCase() === ac.toLowerCase()),
-    );
+    // Exact match — must stay consistent with the `hasSome: AC_AMENITIES` count
+    // query below (Prisma array `hasSome` is case-sensitive). A case-insensitive
+    // trigger here would qualify the booking but the count would miss it, so the
+    // free-night credit would never actually be awarded.
+    const hasAC         = roomAmenities.some((a) => AC_AMENITIES.includes(a));
     const noDiscount    = Number(booking.discountAmount) === 0;
 
     if ((isPremiumType || hasAC) && noDiscount) {
@@ -648,10 +650,14 @@ export async function addPayment(rawInput: AddPaymentInput) {
         : newPaidAmount > 0         ? PaymentStatus.PARTIAL
         :                             PaymentStatus.UNPAID;
 
-      await tx.booking.update({
-        where: { id: input.bookingId },
+      // Optimistic lock: the update only applies if paidAmount is still what we
+      // read. Two concurrent payments can't both overwrite the same absolute
+      // value and silently drop one — the loser gets PAYMENT_RACE and retries.
+      const applied = await tx.booking.updateMany({
+        where: { id: input.bookingId, paidAmount: fresh.paidAmount },
         data:  { paidAmount: newPaidAmount, paymentStatus },
       });
+      if (applied.count !== 1) throw new Error("PAYMENT_RACE");
 
       await tx.payment.create({
         data: {
@@ -682,6 +688,8 @@ export async function addPayment(rawInput: AddPaymentInput) {
     }
     if (msg === "BOOKING_GONE")
       return { success: false, error: "Booking not found." };
+    if (msg === "PAYMENT_RACE")
+      return { success: false, error: "Another payment was recorded at the same moment. Please refresh and try again." };
     console.error("[addPayment]", error);
     return { success: false, error: "Failed to record payment. Please try again." };
   }
