@@ -247,7 +247,9 @@ const PROGRESS_COLORS = {
 };
 
 export function ProgressBar({ value, max = 100, label, className, color = "gold" }: ProgressBarProps) {
-  const pct = Math.min(100, Math.max(0, (value / max) * 100));
+  // Guard against a zero/invalid max, which would make pct NaN/Infinity and drop
+  // the width style entirely.
+  const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
     <div className={cn("space-y-1", className)}>
       {label && (

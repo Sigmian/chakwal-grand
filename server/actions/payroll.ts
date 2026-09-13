@@ -141,6 +141,11 @@ export async function paySalary(input: PaySalaryInput) {
 export async function recordAdvance(input: RecordAdvanceInput) {
   const user = await requirePermission("staff:view_salaries");
 
+  // Validate the money amount — a negative or NaN advance must never be stored.
+  if (!Number.isFinite(input.amount) || input.amount <= 0 || input.amount > 100_000_000) {
+    throw new Error("Enter a valid advance amount.");
+  }
+
   const staffMember = await prisma.staffMember.findUnique({
     where: { id: input.staffMemberId },
     include: { user: { select: { name: true } } },

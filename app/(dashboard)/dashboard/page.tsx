@@ -368,7 +368,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {topRooms.map((room, idx) => {
-                const maxRev = topRooms[0]?.totalRevenue ?? 1;
+                const maxRev = topRooms[0]?.totalRevenue || 1; // || not ?? so 0 → 1 (no ÷0)
                 return (
                   <div key={room.roomId} className="flex items-center gap-3">
                     <div className={cn(
