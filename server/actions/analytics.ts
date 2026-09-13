@@ -918,3 +918,63 @@ export async function getTodaySchedule(branchId?: string) {
 
   return { checkIns, checkOuts };
 }
+
+// ─── TODAY'S REVENUE (PKT day) ────────────────────────────────
+export async function getTodayCollected(branchId?: string) {
+  const user   = await requirePermission("analytics:branch");
+  const scoped = getScopedBranchId(user, branchId);
+
+  const PKT = 5 * 60 * 60 * 1000;
+  const pktNow = new Date(Date.now() + PKT);
+  const y = pktNow.getUTCFullYear(), m = pktNow.getUTCMonth(), d = pktNow.getUTCDate();
+  const start = new Date(Date.UTC(y, m, d) - PKT);
+  const end   = new Date(Date.UTC(y, m, d + 1) - PKT - 1);
+
+  const rev = await getCashRevenueForPeriod(start, end, scoped, user.companyId);
+  return {
+    total:   rev.totalRevenue,
+    room:    rev.roomRevenue,
+    product: rev.productRevenue,
+  };
+}
+
+// ─── BOOKINGS BY STAFF (this PKT month) ───────────────────────
+export interface StaffBookingRow { userId: string; name: string; role: string | null; total: number; paid: number }
+
+export async function getStaffBookingStats(): Promise<StaffBookingRow[]> {
+  const user   = await requirePermission("analytics:branch");
+  const scoped = getScopedBranchId(user);
+  const { start, end } = getPKTMonthPeriod(0);
+  const branchWhere = scoped ? { branchId: scoped } : { branch: { companyId: user.companyId } };
+
+  const [grouped, paidGrouped] = await Promise.all([
+    prisma.booking.groupBy({
+      by: ["createdById"],
+      where: { ...branchWhere, createdById: { not: null }, createdAt: { gte: start, lte: end } },
+      _count: { _all: true },
+    }),
+    prisma.booking.groupBy({
+      by: ["createdById"],
+      where: { ...branchWhere, createdById: { not: null }, paymentStatus: "PAID", status: { not: BookingStatus.CANCELLED }, totalAmount: { gt: 0 }, createdAt: { gte: start, lte: end } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const paidMap = new Map(paidGrouped.map((g) => [g.createdById, g._count._all] as const));
+  const ids = grouped.map((g) => g.createdById).filter(Boolean) as string[];
+  const users = ids.length
+    ? await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, role: true } })
+    : [];
+  const byId = new Map(users.map((u) => [u.id, u] as const));
+
+  return grouped
+    .filter((g) => g.createdById)
+    .map((g) => ({
+      userId: g.createdById!,
+      name:   byId.get(g.createdById!)?.name ?? "—",
+      role:   byId.get(g.createdById!)?.role ?? null,
+      total:  g._count._all,
+      paid:   paidMap.get(g.createdById!) ?? 0,
+    }))
+    .sort((a, b) => b.paid - a.paid || b.total - a.total);
+}

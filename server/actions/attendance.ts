@@ -283,6 +283,17 @@ export async function getMyDashboard() {
     select: { id: true, type: true, title: true, fileUrl: true, fileKind: true, expiresAt: true, createdAt: true },
   });
 
+  // Booking performance — how many bookings this staffer has created, and their
+  // progress toward the next paid-booking bonus.
+  const bonusCfg = await getHrConfig(staff.branch.companyId);
+  const monthStart = new Date(`${year}-${String(month).padStart(2, "0")}-01T00:00:00.000Z`);
+  const monthEnd = new Date(Date.UTC(year, month, 1));
+  const [paidBookings, bookingsThisMonth] = await Promise.all([
+    prisma.booking.count({ where: { createdById: user.id, paymentStatus: "PAID", status: { not: "CANCELLED" }, totalAmount: { gt: 0 } } }),
+    prisma.booking.count({ where: { createdById: user.id, createdAt: { gte: monthStart, lt: monthEnd } } }),
+  ]);
+  const bThreshold = bonusCfg.bookingBonusThreshold;
+
   // Which of the shown announcements this staffer has already acknowledged.
   const ackedIds = announcements.length
     ? new Set(
@@ -336,5 +347,13 @@ export async function getMyDashboard() {
       id: d.id, type: d.type, title: d.title, fileUrl: d.fileUrl, fileKind: d.fileKind,
       expiresAt: d.expiresAt ? d.expiresAt.toISOString() : null, createdAt: d.createdAt.toISOString(),
     })),
+    bookings: {
+      paidTotal:      paidBookings,
+      thisMonth:      bookingsThisMonth,
+      bonusThreshold: bThreshold,
+      bonusAmount:    bonusCfg.bookingBonusAmount,
+      bonusesEarned:  bThreshold > 0 ? Math.floor(paidBookings / bThreshold) : 0,
+      toNextBonus:    bThreshold > 0 ? bThreshold - (paidBookings % bThreshold) : 0,
+    },
   };
 }

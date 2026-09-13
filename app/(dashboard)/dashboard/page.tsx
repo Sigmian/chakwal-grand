@@ -20,6 +20,8 @@ import {
   getRecentActivity,
   getTodaySchedule,
   getRevenueForecast,
+  getTodayCollected,
+  getStaffBookingStats,
 } from "@/server/actions/analytics";
 import { getTodayOverview } from "@/server/actions/hr-approvals";
 import { StaffTodayWidget } from "@/features/hr/components/StaffTodayWidget";
@@ -51,7 +53,7 @@ export default async function DashboardPage() {
   const canManageHr      = hasPermission(user.role, "hr:manage");
 
   // Fetch data based on what the role can see
-  const [overview, chartData, topRooms, activity, schedule, forecast, staffToday] = await Promise.all([
+  const [overview, chartData, topRooms, activity, schedule, forecast, staffToday, todayCollected, staffBookings] = await Promise.all([
     canViewAnalytics ? getDashboardOverview(user.branchId)    : Promise.resolve(null),
     canViewAnalytics ? getRevenueChartData(user.branchId)     : Promise.resolve([]),
     // getTopRooms requires analytics:branch (not rooms:read), so gate it on the
@@ -62,6 +64,8 @@ export default async function DashboardPage() {
     canViewBookings  ? getTodaySchedule(user.branchId)        : Promise.resolve({ checkIns: [], checkOuts: [] }),
     canViewAnalytics ? getRevenueForecast(user.branchId)      : Promise.resolve(null),
     canManageHr      ? getTodayOverview()                     : Promise.resolve(null),
+    canViewAnalytics ? getTodayCollected(user.branchId)       : Promise.resolve(null),
+    canViewAnalytics ? getStaffBookingStats()                 : Promise.resolve([]),
   ]);
 
   // Branch comparison only for super admin
@@ -130,6 +134,13 @@ export default async function DashboardPage() {
       {/* ── KPI Cards (analytics roles only) ── */}
       {canViewAnalytics && overview && (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard
+          title="Collected Today"
+          value={formatPKRShort(todayCollected?.total ?? 0)}
+          subtitle={`Rooms ${formatPKRShort(todayCollected?.room ?? 0)} · Canteen ${formatPKRShort(todayCollected?.product ?? 0)}`}
+          icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
+          iconBg="bg-emerald-500/15"
+        />
         <StatCard
           title="Collected This Month"
           value={formatPKRShort(overview.revenueThisMonth)}
@@ -306,6 +317,39 @@ export default async function DashboardPage() {
 
       {/* ── Staff Today (hr:manage roles only) ── */}
       {canManageHr && staffToday && <StaffTodayWidget overview={staffToday} />}
+
+      {/* ── Bookings by Staff (this month) ── */}
+      {canViewAnalytics && staffBookings.length > 0 && (
+      <div className="card-luxury p-6">
+        <SectionHeader title="Bookings by Staff" subtitle="This month · paid vs total created" />
+        <div className="space-y-3">
+          {(() => {
+            const maxTotal = Math.max(...staffBookings.map((s) => s.total), 1);
+            return staffBookings.map((s, idx) => (
+              <div key={s.userId} className="flex items-center gap-3">
+                <div className={cn(
+                  "w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0",
+                  idx === 0 ? "bg-gold-gradient text-background" : "bg-accent text-muted-foreground",
+                )}>{idx + 1}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-semibold text-foreground truncate">{s.name}</span>
+                    <span className="text-sm flex-shrink-0 ml-2">
+                      <span className="font-bold text-green-400">{s.paid}</span>
+                      <span className="text-muted-foreground"> / {s.total}</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-accent rounded-full overflow-hidden">
+                    <div className="h-full bg-gold-gradient rounded-full" style={{ width: `${(s.total / maxTotal) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
+        <p className="mt-3 text-2xs text-muted-foreground">Paid bookings (green) count toward each staffer&apos;s milestone bonus.</p>
+      </div>
+      )}
 
       {/* ── Today's Schedule + Top Rooms ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

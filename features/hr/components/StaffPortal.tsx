@@ -34,6 +34,22 @@ interface DashboardData {
   pendingLeaves: { id: string; from: string; to: string; reason: string }[];
   pendingCorrections: number;
   documents: { id: string; type: string; title: string; fileUrl: string; fileKind: string | null; expiresAt: string | null; createdAt: string }[];
+  bookings: { paidTotal: number; thisMonth: number; bonusThreshold: number; bonusAmount: number; bonusesEarned: number; toNextBonus: number };
+}
+
+// Rotating Urdu motivational quotes — one per day so the portal feels alive.
+const URDU_QUOTES = [
+  "محنت کبھی رائیگاں نہیں جاتی۔",
+  "آج کی محنت، کل کی کامیابی ہے۔",
+  "بہترین خدمت ہی ہماری پہچان ہے۔",
+  "مسکراہٹ کے ساتھ مہمان کی خدمت کریں۔",
+  "چھوٹا کام بھی دل لگا کر کریں، بڑا انعام ملے گا۔",
+  "ایمانداری سب سے بڑی دولت ہے۔",
+  "ہر مہمان ہمارے لیے ایک موقع ہے۔",
+];
+function urduQuoteOfDay() {
+  const day = Math.floor(Date.now() / 86_400_000);
+  return URDU_QUOTES[day % URDU_QUOTES.length];
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -113,6 +129,42 @@ export function StaffPortal({ data }: { data: DashboardData }) {
           </button>
         </div>
       </header>
+
+      {/* Urdu motivational quote */}
+      <div dir="rtl" className="rounded-2xl border border-gold-500/20 bg-gold-500/[0.06] px-4 py-3 text-center">
+        <p className="font-serif text-base text-gold-200 leading-relaxed">{urduQuoteOfDay()}</p>
+      </div>
+
+      {/* Bookings — bold performance card */}
+      <div className="rounded-2xl border border-white/12 bg-white/[0.04] p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-widest text-white/45">Bookings you made</p>
+            <p className="mt-0.5 font-serif text-4xl font-extrabold text-white leading-none">
+              {data.bookings.paidTotal}
+              <span className="ml-2 align-middle text-sm font-normal text-white/45">paid · all time</span>
+            </p>
+            <p className="mt-1 text-xs text-white/55">{data.bookings.thisMonth} created this month</p>
+          </div>
+          {data.bookings.bonusesEarned > 0 && (
+            <div className="rounded-xl border border-green-500/25 bg-green-500/10 px-3 py-2 text-center">
+              <p className="font-serif text-xl font-bold text-green-300">{data.bookings.bonusesEarned}×</p>
+              <p className="text-[10px] text-green-300/80">bonus earned</p>
+            </div>
+          )}
+        </div>
+        {data.bookings.bonusThreshold > 0 && (
+          <div className="mt-3">
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-gold-gradient"
+                style={{ width: `${Math.min(100, ((data.bookings.bonusThreshold - data.bookings.toNextBonus) / data.bookings.bonusThreshold) * 100)}%` }} />
+            </div>
+            <p className="mt-1.5 text-[11px] text-white/55">
+              <span className="font-semibold text-gold-300">{data.bookings.toNextBonus}</span> more paid booking{data.bookings.toNextBonus !== 1 ? "s" : ""} to earn a <span className="font-semibold text-gold-300">{formatPKR(data.bookings.bonusAmount)}</span> bonus
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* today / shift */}
       <div className="rounded-2xl border border-white/12 bg-white/[0.04] p-4">
