@@ -45,6 +45,8 @@ export default async function HrSettingsPage() {
           geoLat:                 settings.geoLat,
           geoLng:                 settings.geoLng,
           geoRadiusMeters:        settings.geoRadiusMeters,
+          bookingBonusThreshold:  settings.bookingBonusThreshold,
+          bookingBonusAmount:     Number(settings.bookingBonusAmount),
         }}
         shifts={shifts.map((s) => ({
           id: s.id, name: s.name, startTime: s.startTime, endTime: s.endTime,

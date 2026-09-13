@@ -14,6 +14,9 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, requirePermission, getScopedBranchId, canAccessBranch } from "@/lib/auth/session";
 import { sendBookingConfirmed, sendFreeNightEarned } from "@/lib/whatsapp/templates";
+import { getHrConfig } from "@/lib/hr/config";
+import { pktDateStr } from "@/lib/hr/time";
+import { runSerializable } from "@/lib/db/tx";
 import {
   createBookingSchema,
   updateBookingSchema,
@@ -45,6 +48,54 @@ async function logActivity(
   await prisma.activityLog.create({
     data: { userId, action, entity, entityId, description, metadata: metadata as never },
   });
+}
+
+/**
+ * Award a performance bonus when a staffer's booking count reaches a configured
+ * multiple (default: every 50 bookings → PKR 2,500). Best-effort — a failure
+ * here never blocks the booking. The amount/threshold live in HR settings, and
+ * each milestone is awarded exactly once (Serializable + a dedup marker).
+ */
+async function maybeAwardBookingBonus(userId: string): Promise<void> {
+  try {
+    const staff = await prisma.staffMember.findUnique({
+      where:  { userId },
+      select: { id: true, branch: { select: { companyId: true } } },
+    });
+    if (!staff) return; // creator isn't a staff member (shouldn't happen for internal bookings)
+
+    const cfg = await getHrConfig(staff.branch.companyId);
+    const threshold = cfg.bookingBonusThreshold;
+    const amount    = cfg.bookingBonusAmount;
+    if (!threshold || threshold <= 0 || !amount || amount <= 0) return;
+
+    const total = await prisma.booking.count({ where: { createdById: userId } });
+    if (total <= 0 || total % threshold !== 0) return;
+
+    const milestone = total; // 50, 100, 150, …
+    const marker = `[booking-bonus:${milestone}]`;
+
+    await runSerializable(async (tx) => {
+      const already = await tx.payrollEntry.findFirst({
+        where:  { staffMemberId: staff.id, type: "BONUS", description: { contains: marker } },
+        select: { id: true },
+      });
+      if (already) return;
+      await tx.payrollEntry.create({
+        data: {
+          staffMemberId: staff.id,
+          date:          new Date(`${pktDateStr(new Date())}T00:00:00.000Z`),
+          type:          "BONUS",
+          description:   `Booking milestone bonus — ${milestone} bookings ${marker}`,
+          amount,
+          auto:          true,
+          createdById:   userId,
+        },
+      });
+    });
+  } catch (err) {
+    console.error("[maybeAwardBookingBonus]", err);
+  }
 }
 
 // ─── CREATE BOOKING ───────────────────────────────────────────
@@ -191,7 +242,7 @@ export async function createBooking(rawInput: CreateBookingInput) {
     //    availability, so two concurrent creates can't oversell the same room.
     let booking;
     try {
-      booking = await prisma.$transaction(async (tx) => {
+      booking = await runSerializable(async (tx) => {
         const conflict = await tx.booking.findFirst({
           where: {
             roomId: input.roomId,
@@ -253,6 +304,7 @@ export async function createBooking(rawInput: CreateBookingInput) {
             offerId:      committedOfferId,
             specialRequests: input.specialRequests || null,
             internalNotes:   input.internalNotes || null,
+            createdById:  user.id,
           },
           include: {
             room:     { select: { number: true, name: true, type: true } },
@@ -260,7 +312,7 @@ export async function createBooking(rawInput: CreateBookingInput) {
             branch:   { select: { name: true, address: true } },
           },
         });
-      }, { isolationLevel: "Serializable" });
+      });
     } catch (err) {
       const code = (err as { code?: string })?.code;
       if ((err as Error)?.message === "ROOM_CONFLICT" || code === "P2034") {
@@ -286,6 +338,9 @@ export async function createBooking(rawInput: CreateBookingInput) {
       booking.id,
       `New booking ${booking.bookingRef} created for ${booking.customer.name}`
     );
+
+    // Award the booking-count performance bonus if a milestone was reached.
+    await maybeAwardBookingBonus(user.id);
 
     revalidatePath("/bookings");
     revalidatePath("/dashboard");
@@ -494,7 +549,7 @@ export async function checkOutBooking(bookingId: string) {
       // Wrap count + conditional update in a Serializable transaction so two
       // concurrent checkouts for the same customer can't both read the same
       // qualifyingCount and award a double credit.
-      const earnedCredit = await prisma.$transaction(async (tx) => {
+      const earnedCredit = await runSerializable(async (tx) => {
         const qualifyingCount = await tx.booking.count({
           where: {
             customerId: booking.customerId,
@@ -518,7 +573,7 @@ export async function checkOutBooking(bookingId: string) {
           });
         }
         return null;
-      }, { isolationLevel: "Serializable" });
+      });
 
       if (earnedCredit) {
         sendFreeNightEarned({
@@ -802,7 +857,7 @@ export async function extendBooking(input: {
       : PaymentStatus.UNPAID;
 
     // 8. Atomic transaction (Serializable to prevent double-booking race)
-    await prisma.$transaction(async (tx) => {
+    await runSerializable(async (tx) => {
       await tx.booking.update({
         where: { id: booking.id },
         data:  {
@@ -846,7 +901,7 @@ export async function extendBooking(input: {
           },
         });
       }
-    }, { isolationLevel: "Serializable" });
+    });
 
     // 9. Activity log
     await logActivity(

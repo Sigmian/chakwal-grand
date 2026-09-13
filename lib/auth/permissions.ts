@@ -139,7 +139,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 
   [UserRole.RECEPTIONIST]: [
     "rooms:read",
-    "bookings:read", "bookings:create", "bookings:update",
+    "bookings:read", "bookings:create", "bookings:update", "bookings:cancel",
     "bookings:checkin", "bookings:checkout",
     "customers:read", "customers:create", "customers:update",
     "inventory:read", "inventory:pos_sell",

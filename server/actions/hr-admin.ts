@@ -38,6 +38,8 @@ const settingsSchema = z.object({
   geoLat:                 z.number().nullable(),
   geoLng:                 z.number().nullable(),
   geoRadiusMeters:        z.number().int().min(20).max(5000),
+  bookingBonusThreshold:  z.number().int().min(0).max(100000),
+  bookingBonusAmount:     z.number().min(0).max(100000000),
 });
 
 export async function updateHrSettings(raw: z.input<typeof settingsSchema>) {

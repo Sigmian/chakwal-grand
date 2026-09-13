@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import prisma from "@/lib/db/prisma";
+import { runSerializable } from "@/lib/db/tx";
 import { sendPushToBranch } from "@/lib/push/send";
 import { siteConfig } from "@/config/site";
 import { rateLimit } from "@/lib/rate-limit";
@@ -542,7 +543,7 @@ export async function createPublicBooking(input: {
   // and oversell the same room+dates.
   let booking;
   try {
-    const transactionResult = await prisma.$transaction(async (tx) => {
+    const transactionResult = await runSerializable(async (tx) => {
       const conflict = await tx.booking.findFirst({
         where: {
           roomId: input.roomId,
@@ -602,7 +603,7 @@ export async function createPublicBooking(input: {
         },
       });
       return { booking: createdBooking, discountAmount: committedDiscount };
-    }, { isolationLevel: "Serializable" });
+    });
     booking = transactionResult.booking;
     discountAmount = transactionResult.discountAmount;
   } catch (err) {

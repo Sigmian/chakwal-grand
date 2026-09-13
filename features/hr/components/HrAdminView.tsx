@@ -27,6 +27,7 @@ interface Settings {
   halfDayDeductsHalf: boolean; earlyCheckoutPenalty: "NONE" | "HALF_DAY";
   requireSelfie: boolean; requireGeo: boolean;
   geoLat: number | null; geoLng: number | null; geoRadiusMeters: number;
+  bookingBonusThreshold: number; bookingBonusAmount: number;
 }
 interface Shift {
   id: string; name: string; startTime: string; endTime: string;
@@ -204,6 +205,18 @@ function RulesForm({ initial }: { initial: Settings }) {
             </p>
           </div>
         )}
+      </Section>
+
+      <Section title="Performance bonus">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <Num label="Bookings per bonus" hint="0 disables the bonus" value={f.bookingBonusThreshold} onChange={num("bookingBonusThreshold")} />
+          <Num label="Bonus amount (₨)" hint="Paid each milestone" value={f.bookingBonusAmount} onChange={num("bookingBonusAmount")} />
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2">
+          {f.bookingBonusThreshold > 0
+            ? `Every ${f.bookingBonusThreshold} bookings a staff member creates earns a ₨${f.bookingBonusAmount.toLocaleString("en-PK")} bonus, added to that month's payroll.`
+            : "Booking bonus is disabled."}
+        </p>
       </Section>
 
       {err && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">{err}</div>}

@@ -551,6 +551,7 @@ model Booking {
   estimatedArrival  String?   // e.g. "3:00 PM" — customer's expected arrival time
   shareToken        String?   @unique  // random token for shareable booking link
   internalNotes     String?
+  createdById       String?   // userId of the staff who created it (null = website/public)
 
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -570,6 +571,7 @@ model Booking {
   @@index([status])
   @@index([checkInDate])
   @@index([bookingRef])
+  @@index([createdById])
 }
 
 model Payment {
@@ -1197,6 +1199,11 @@ model HrSettings {
   geoLat                 Float?
   geoLng                 Float?
   geoRadiusMeters        Int      @default(200)
+
+  // Booking performance bonus: every N bookings a staffer creates earns a bonus.
+  // 0 threshold disables it. Configurable — never hard-coded in the engine.
+  bookingBonusThreshold  Int      @default(50)
+  bookingBonusAmount     Decimal  @default(2500) @db.Decimal(10, 2)
 
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
