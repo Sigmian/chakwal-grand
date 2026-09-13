@@ -239,7 +239,9 @@ export const DASHBOARD_NAV: NavItem[] = [
     ],
     children: [
       { label: "General",      href: "/settings" },
-      { label: "Zara AI",      href: "/settings/zara" },
+      // Zara AI settings require settings:ai — super admin only. Without this the
+      // link showed to branch managers and clicking it hit Access Denied.
+      { label: "Zara AI",      href: "/settings/zara", requiredRoles: [UserRole.SUPER_ADMIN] },
     ],
   },
 ];
@@ -248,8 +250,18 @@ export const DASHBOARD_NAV: NavItem[] = [
  * Filter navigation items for a given role.
  */
 export function getNavForRole(role: UserRole): NavItem[] {
-  return DASHBOARD_NAV.filter(
-    (item) =>
-      !item.requiredRoles || item.requiredRoles.includes(role)
-  );
+  return DASHBOARD_NAV
+    .filter((item) => !item.requiredRoles || item.requiredRoles.includes(role))
+    .map((item) =>
+      item.children
+        ? {
+            ...item,
+            // Also filter sub-links by their own requiredRoles so a role is never
+            // shown a child page it can't actually open.
+            children: item.children.filter(
+              (c) => !c.requiredRoles || c.requiredRoles.includes(role),
+            ),
+          }
+        : item,
+    );
 }
