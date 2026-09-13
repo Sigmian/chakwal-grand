@@ -74,9 +74,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password are required");
         }
 
-        // 1. Find user with their staff member (for branchId)
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
+        // 1. Find user with their staff member (for branchId). Case-insensitive
+        //    so a login works regardless of how the email was capitalised when
+        //    the account was created (some staff emails are stored mixed-case).
+        const user = await prisma.user.findFirst({
+          where: { email: { equals: credentials.email.trim(), mode: "insensitive" } },
           include: {
             staffMember: { select: { branchId: true } },
           },
