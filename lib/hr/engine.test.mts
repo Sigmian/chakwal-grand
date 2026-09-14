@@ -124,5 +124,53 @@ const GnoHoliday = computeMonthlyPayroll({
 eq("G no-holiday absentDays", GnoHoliday.absentDays, 1);
 eq("G no-holiday absenceDeduction", GnoHoliday.absenceDeduction, 1000);
 
+// ── Scenario H: day-based paid-leave allowance (2 days) splits a 3-day leave ──
+// A single 3-day paid-eligible leave with a 2-day allowance → 2 paid + 1 unpaid.
+const H = computeMonthlyPayroll({
+  ...base, todayStr: "2026-09-03",
+  attendance: [],
+  leaves: [{ fromDate: "2026-09-01", toDate: "2026-09-03", paid: true }],
+});
+eq("H paidLeaveDays (cap 2)", H.paidLeaveDays, 2);
+eq("H unpaidLeaveDays (overflow)", H.unpaidLeaveDays, 1);
+eq("H absenceDeduction (1 unpaid day)", H.absenceDeduction, 1000);
+
+// ── Scenario I: allowance spans requests in date order (1 day + 2 days) ──
+// First leave (1 day) paid; second leave (2 days) gets 1 paid + 1 unpaid.
+const I = computeMonthlyPayroll({
+  ...base, todayStr: "2026-09-06",
+  attendance: [],
+  leaves: [
+    { fromDate: "2026-09-01", toDate: "2026-09-01", paid: true },
+    { fromDate: "2026-09-05", toDate: "2026-09-06", paid: true },
+  ],
+});
+eq("I paidLeaveDays (cap 2 across requests)", I.paidLeaveDays, 2);
+eq("I unpaidLeaveDays", I.unpaidLeaveDays, 1);
+
+// ── Scenario J: manager override pays a leave beyond the allowance (extra) ──
+// Override days are always paid and never consume the normal allowance.
+const J = computeMonthlyPayroll({
+  ...base, todayStr: "2026-09-04",
+  attendance: [],
+  leaves: [
+    { fromDate: "2026-09-01", toDate: "2026-09-02", paid: true },                     // 2 paid, fills allowance
+    { fromDate: "2026-09-03", toDate: "2026-09-04", paid: true, override: true },      // 2 extra paid via override
+  ],
+});
+eq("J paidLeaveDays (2 + 2 override)", J.paidLeaveDays, 4);
+eq("J unpaidLeaveDays", J.unpaidLeaveDays, 0);
+eq("J totalDeductions", J.totalDeductions, 0);
+
+// ── Scenario K: an approved *unpaid* leave still deducts, regardless of allowance ──
+const K = computeMonthlyPayroll({
+  ...base, todayStr: "2026-09-01",
+  attendance: [],
+  leaves: [{ fromDate: "2026-09-01", toDate: "2026-09-01", paid: false }],
+});
+eq("K unpaidLeaveDays", K.unpaidLeaveDays, 1);
+eq("K paidLeaveDays", K.paidLeaveDays, 0);
+eq("K absenceDeduction", K.absenceDeduction, 1000);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

@@ -225,7 +225,7 @@ export function StaffPortal({ data }: { data: DashboardData }) {
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <Stat label="Present" value={data.month.presentDays} tone="text-green-300" />
-          <Stat label={`Paid leave`} value={`${data.paidLeave.used}/${data.paidLeave.allowance}`} tone="text-blue-300" />
+          <Stat label={`Paid leave (days)`} value={`${data.paidLeave.used}/${data.paidLeave.allowance}`} tone="text-blue-300" />
           <Stat label="Absent" value={data.month.absentDays} tone={data.month.absentDays ? "text-red-300" : "text-white/70"} />
           <Stat label="Late" value={data.month.lateCount} tone={data.month.lateCount ? "text-amber-300" : "text-white/70"} />
           <Stat label="Half days" value={data.month.halfDays} tone="text-orange-300" />
@@ -434,7 +434,7 @@ function LeaveModal({ onClose, onDone }: { onClose: () => void; onDone: () => vo
         <label className="text-xs text-white/60">Notes (optional)
           <textarea rows={2} className={field + " mt-1 resize-none"} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
         </label>
-        <p className="text-[11px] text-white/45">Your manager approves leave. The first paid leaves each month don&apos;t reduce your salary.</p>
+        <p className="text-[11px] text-white/45">Your manager approves leave. Your monthly paid leave days don&apos;t reduce your salary; days beyond the allowance are unpaid.</p>
         {err && <p className="text-sm text-red-300">{err}</p>}
         <button onClick={submit} disabled={pending || f.reason.trim().length < 3}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-gold-gradient py-3 text-sm font-bold text-background disabled:opacity-60">

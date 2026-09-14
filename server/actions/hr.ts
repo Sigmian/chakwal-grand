@@ -66,7 +66,7 @@ export async function getStaffPayroll(
         staffMemberId, status: "APPROVED",
         fromDate: { lte: to }, toDate: { gte: from },
       },
-      select: { fromDate: true, toDate: true, paid: true },
+      select: { fromDate: true, toDate: true, paid: true, overrideReason: true },
     }),
     prisma.payrollEntry.findMany({
       where: { staffMemberId, date: { gte: from, lte: to } },
@@ -86,12 +86,30 @@ export async function getStaffPayroll(
     fromDate: isoDate(l.fromDate),
     toDate: isoDate(l.toDate),
     paid: l.paid,
+    // A leave paid beyond the monthly day allowance carries an override reason.
+    override: !!l.overrideReason,
   }));
 
   const manual: ManualEntry[] = [];
   for (const e of entries) {
     const kind = MANUAL_KIND[e.type];
     if (kind) manual.push({ kind, amount: Number(e.amount), description: e.description });
+  }
+
+  // Surface outstanding (PENDING) advances in the CURRENT month's projection so
+  // "Estimated net" matches what the next payment will actually hand over. Past
+  // months use their finalized figures and are never adjusted by today's balance.
+  const todayStr = pktDateStr(new Date());
+  const isCurrentMonth = todayStr.slice(0, 7) === `${year}-${pad(month)}`;
+  if (isCurrentMonth) {
+    const pending = await prisma.staffAdvance.findMany({
+      where: { staffMemberId, status: "PENDING" },
+      select: { amount: true },
+    });
+    const pendingTotal = pending.reduce((s, a) => s + Number(a.amount), 0);
+    if (pendingTotal > 0) {
+      manual.push({ kind: "ADVANCE", amount: pendingTotal, description: "Outstanding advance (pending deduction)" });
+    }
   }
 
   return computeMonthlyPayroll({
@@ -101,7 +119,7 @@ export async function getStaffPayroll(
     leaves: leaveInputs,
     manual,
     holidays: config.holidays,   // company holidays are paid, never deducted
-    todayStr: pktDateStr(new Date()),
+    todayStr,
   });
 }
 
@@ -119,12 +137,21 @@ export async function getPaidLeaveUsage(staffMemberId: string, month: number, ye
   const to = new Date(Date.UTC(year, month, 0, 23, 59, 59));
   const config = await getHrConfig(staff.branch.companyId);
 
-  const usedPaid = await prisma.leaveRequest.count({
+  // Count paid-leave DAYS (each clamped to the month), matching the engine's
+  // day-based allowance — not the number of leave requests.
+  const paidLeaves = await prisma.leaveRequest.findMany({
     where: {
       staffMemberId, status: "APPROVED", paid: true,
       fromDate: { lte: to }, toDate: { gte: from },
     },
+    select: { fromDate: true, toDate: true },
   });
+  const DAY = 86400000;
+  const usedPaid = paidLeaves.reduce((s, l) => {
+    const start = Math.max(l.fromDate.getTime(), from.getTime());
+    const end = Math.min(l.toDate.getTime(), to.getTime());
+    return end < start ? s : s + Math.floor((end - start) / DAY) + 1;
+  }, 0);
 
   return { used: usedPaid, allowance: config.paidLeavesPerMonth, remaining: Math.max(0, config.paidLeavesPerMonth - usedPaid) };
 }

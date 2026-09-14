@@ -21,6 +21,15 @@ const dbDate = (dateStr: string) => new Date(`${dateStr}T00:00:00.000Z`);
 const iso = (d: Date) => new Date(d).toISOString();
 const isoDate = (d: Date) => new Date(d).toISOString().slice(0, 10);
 
+/** Inclusive number of calendar days of [from,to] that fall within [lo,hi]. */
+function clampedDays(from: Date, to: Date, lo: Date, hi: Date): number {
+  const DAY = 86400000;
+  const s = Math.max(from.getTime(), lo.getTime());
+  const e = Math.min(to.getTime(), hi.getTime());
+  if (e < s) return 0;
+  return Math.floor((e - s) / DAY) + 1;
+}
+
 async function assertScope(branchId: string, companyId: string) {
   const user = await requireAuth();
   if (companyId !== user.companyId) throw new Error("Access denied");
@@ -63,12 +72,14 @@ export async function getPendingApprovals() {
   const now = new Date();
   const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59));
-  const usageRows = await prisma.leaveRequest.groupBy({
-    by: ["staffMemberId"],
+  const usageRows = await prisma.leaveRequest.findMany({
     where: { status: "APPROVED", paid: true, fromDate: { lte: to }, toDate: { gte: from } },
-    _count: { _all: true },
+    select: { staffMemberId: true, fromDate: true, toDate: true },
   });
-  const usedByStaff = new Map(usageRows.map((r) => [r.staffMemberId, r._count._all]));
+  const usedByStaff = new Map<string, number>();
+  for (const r of usageRows) {
+    usedByStaff.set(r.staffMemberId, (usedByStaff.get(r.staffMemberId) ?? 0) + clampedDays(r.fromDate, r.toDate, from, to));
+  }
 
   return {
     allowance: config.paidLeavesPerMonth,
@@ -115,24 +126,41 @@ export async function decideLeave(raw: z.input<typeof leaveDecisionSchema>) {
     return { success: true, paid: false };
   }
 
-  // Approve — decide paid vs unpaid against the month's allowance.
+  // Approve — decide paid vs unpaid against the month's allowance, in DAYS.
+  // The allowance (paidLeavesPerMonth) is a number of paid *days* per month.
+  // A leave that only partly fits is stamped paid-eligible; the payroll engine
+  // then pays exactly the days that fit and leaves the remainder unpaid.
   const config = await getHrConfig(leave.branch.companyId);
-  const from = new Date(Date.UTC(leave.fromDate.getUTCFullYear(), leave.fromDate.getUTCMonth(), 1));
-  const to = new Date(Date.UTC(leave.fromDate.getUTCFullYear(), leave.fromDate.getUTCMonth() + 1, 0, 23, 59, 59));
-  const usedPaid = await prisma.leaveRequest.count({
-    where: { staffMemberId: leave.staffMemberId, status: "APPROVED", paid: true, fromDate: { lte: to }, toDate: { gte: from } },
-  });
-  const withinAllowance = usedPaid < config.paidLeavesPerMonth;
+  const my = leave.fromDate.getUTCFullYear();
+  const mm = leave.fromDate.getUTCMonth();
+  const monthStart = new Date(Date.UTC(my, mm, 1));
+  const monthEnd = new Date(Date.UTC(my, mm + 1, 0, 23, 59, 59));
 
-  let paid = withinAllowance;
+  // Sum paid-leave DAYS already approved this month (each clamped to the month).
+  const priorPaid = await prisma.leaveRequest.findMany({
+    where: {
+      staffMemberId: leave.staffMemberId, status: "APPROVED", paid: true,
+      fromDate: { lte: monthEnd }, toDate: { gte: monthStart },
+    },
+    select: { fromDate: true, toDate: true },
+  });
+  const usedPaidDays = priorPaid.reduce((s, l) => s + clampedDays(l.fromDate, l.toDate, monthStart, monthEnd), 0);
+  const requestedDays = clampedDays(leave.fromDate, leave.toDate, monthStart, monthEnd);
+  const remaining = config.paidLeavesPerMonth - usedPaidDays;
+  const fitsAllowance = remaining >= requestedDays;   // fully paid within allowance
+  const partlyFits = remaining > 0 && remaining < requestedDays;
+
+  // Eligible for (at least partial) paid crediting when any allowance remains.
+  let paid = remaining > 0;
   let overrideReason: string | null = null;
-  if (!withinAllowance && input.paidOverride) {
+  if ((!fitsAllowance) && input.paidOverride) {
     if (!input.overrideReason || input.overrideReason.trim().length < 3) {
       throw new Error("An override reason is required to pay a leave beyond the monthly allowance.");
     }
     paid = true;
     overrideReason = input.overrideReason.trim();
   }
+  void partlyFits; // (informational; engine performs the day-level split)
 
   await prisma.leaveRequest.update({
     where: { id: leave.id },

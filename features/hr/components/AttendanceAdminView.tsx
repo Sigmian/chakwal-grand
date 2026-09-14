@@ -152,7 +152,13 @@ function LeaveRow({ l, allowance }: { l: LeaveItem; allowance: number }) {
   const [err, setErr] = useState<string | null>(null);
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
-  const exhausted = l.paidUsed >= allowance;
+  // Day-based allowance: how many paid days this leave requests, and whether it
+  // fully fits in what remains this month. A partial fit still needs an override
+  // only for the days beyond the allowance.
+  const DAY = 86400000;
+  const requestedDays = Math.max(1, Math.floor((Date.parse(l.to) - Date.parse(l.from)) / DAY) + 1);
+  const remaining = Math.max(0, allowance - l.paidUsed);
+  const exhausted = requestedDays > remaining; // won't fully fit → override needed to pay in full
 
   function act(decision: "APPROVE" | "REJECT", paidOverride = false) {
     setErr(null);
@@ -173,7 +179,8 @@ function LeaveRow({ l, allowance }: { l: LeaveItem; allowance: number }) {
           </p>
           {l.notes && <p className="text-xs text-muted-foreground mt-0.5">{l.notes}</p>}
           <p className={cn("text-[11px] mt-1", exhausted ? "text-amber-400" : "text-muted-foreground")}>
-            Paid leaves used this month: {l.paidUsed}/{allowance}
+            Paid leave days used this month: {l.paidUsed}/{allowance}
+            {requestedDays > 1 ? ` · this request: ${requestedDays} days` : ""}
           </p>
         </div>
         <div className="flex gap-2">
@@ -191,7 +198,7 @@ function LeaveRow({ l, allowance }: { l: LeaveItem; allowance: number }) {
       {exhausted && overrideOpen && (
         <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
           <p className="flex items-center gap-1.5 text-xs text-amber-300 mb-2">
-            <AlertTriangle className="w-3.5 h-3.5" /> Both paid leaves are used. Approving is <b>unpaid</b> (salary deducted) unless you override.
+            <AlertTriangle className="w-3.5 h-3.5" /> This request exceeds the {allowance}-day monthly paid allowance ({remaining} day{remaining === 1 ? "" : "s"} left). The days beyond it are <b>unpaid</b> (salary deducted) unless you override.
           </p>
           <input value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} placeholder="Override reason (to pay anyway)"
             className="input-luxury w-full text-sm mb-2" />

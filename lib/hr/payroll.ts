@@ -31,7 +31,8 @@ export interface AttendanceInput {
 export interface LeaveInput {
   fromDate: string;               // YYYY-MM-DD
   toDate: string;                 // YYYY-MM-DD
-  paid: boolean;                  // decided at approval
+  paid: boolean;                  // approved as paid-eligible
+  override?: boolean;             // paid beyond the monthly day allowance (manager override)
 }
 
 export type ManualKind =
@@ -110,16 +111,34 @@ export function computeMonthlyPayroll(p: PayrollParams): PayrollResult {
   const attByDate = new Map(p.attendance.map((a) => [a.workDate, a]));
   const holidaySet = new Set(p.holidays ?? []);
 
-  // Expand approved leaves into a per-date paid/unpaid map.
-  const leaveByDate = new Map<string, boolean>(); // date -> paid
+  // Expand approved leaves into a per-date map. Each date remembers whether a
+  // leave was approved as paid-eligible and whether it carries a manager
+  // override (paid beyond the monthly day allowance).
+  type LeaveDay = { eligible: boolean; override: boolean };
+  const leaveByDate = new Map<string, LeaveDay>();
   for (const lv of p.leaves) {
     let d = lv.fromDate;
     while (d <= lv.toDate) {
-      // A day already covered as paid stays paid.
-      leaveByDate.set(d, (leaveByDate.get(d) ?? false) || lv.paid);
+      const prev = leaveByDate.get(d);
+      // Overlapping leaves: the more favourable flags win for the day.
+      leaveByDate.set(d, {
+        eligible: (prev?.eligible ?? false) || lv.paid,
+        override: (prev?.override ?? false) || (lv.override ?? false),
+      });
       d = nextDate(d);
     }
   }
+  // Paid-leave day allowance (config value is now interpreted in DAYS).
+  const paidLeaveAllowance = Math.max(0, config.paidLeavesPerMonth);
+  let paidLeaveUsed = 0; // non-override paid-leave days consumed so far, in date order
+
+  // Resolve one leave day to paid/unpaid, honouring the day allowance in date order.
+  const resolveLeaveDay = (ld: LeaveDay): boolean => {
+    if (!ld.eligible) return false;          // approved unpaid
+    if (ld.override) return true;            // paid beyond allowance (extra, no cap consumed)
+    if (paidLeaveUsed < paidLeaveAllowance) { paidLeaveUsed++; return true; }
+    return false;                            // eligible but allowance exhausted → unpaid
+  };
 
   let presentDays = 0, paidLeaveDays = 0, unpaidLeaveDays = 0, absentDays = 0;
   let halfDays = 0, lateCount = 0, earlyCount = 0, weeklyOffDays = 0, holidayDays = 0;
@@ -135,7 +154,7 @@ export function computeMonthlyPayroll(p: PayrollParams): PayrollResult {
     if (dateStr > todayStr) continue; // future day — not yet earned or missed
 
     const att = attByDate.get(dateStr);
-    const leavePaid = leaveByDate.get(dateStr);
+    const leaveDay = leaveByDate.get(dateStr);
     const isWeeklyOff = config.weeklyOffDays.includes(weekdayOf(year, month, day));
     const isHoliday = holidaySet.has(dateStr);
 
@@ -153,11 +172,13 @@ export function computeMonthlyPayroll(p: PayrollParams): PayrollResult {
     } else if (att && att.status === "WEEKLY_OFF") {
       weeklyOffDays++; creditDays++; credit = daily; label = "Weekly off";
     } else if (att && att.status === "APPROVED_LEAVE") {
-      // Approval already stamped paid/unpaid; fall through to leave handling.
-      if (leavePaid ?? false) { paidLeaveDays++; creditDays++; credit = daily; label = "Approved paid leave"; }
+      // Approved leave day — the engine enforces the monthly paid-day allowance.
+      const paid = leaveDay ? resolveLeaveDay(leaveDay) : false;
+      if (paid) { paidLeaveDays++; creditDays++; credit = daily; label = "Approved paid leave"; }
       else { unpaidLeaveDays++; deduction = daily; label = "Unpaid leave"; }
-    } else if (leavePaid !== undefined) {
-      if (leavePaid) { paidLeaveDays++; creditDays++; credit = daily; label = "Approved paid leave"; }
+    } else if (leaveDay !== undefined) {
+      const paid = resolveLeaveDay(leaveDay);
+      if (paid) { paidLeaveDays++; creditDays++; credit = daily; label = "Approved paid leave"; }
       else { unpaidLeaveDays++; deduction = daily; label = "Unpaid leave"; }
     } else if (isHoliday) {
       holidayDays++; creditDays++; credit = daily; label = "Holiday";
@@ -222,17 +243,4 @@ function nextDate(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString().slice(0, 10);
-}
-
-/**
- * How many of a month's approved leaves are paid, honouring the monthly
- * allowance in order of approval. Used at approval time to stamp each leave.
- */
-export function paidLeaveDecision(
-  approvedPaidCountThisMonth: number,
-  allowance: number,
-): { paid: boolean; remainingAfter: number } {
-  const paid = approvedPaidCountThisMonth < allowance;
-  const remainingAfter = Math.max(0, allowance - approvedPaidCountThisMonth - (paid ? 1 : 0));
-  return { paid, remainingAfter };
 }

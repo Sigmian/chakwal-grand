@@ -116,7 +116,7 @@ function RulesForm({ initial }: { initial: Settings }) {
             <p className="text-[10px] text-muted-foreground mt-1">Daily salary = monthly ÷ this</p>
           </div>
           <div>
-            <label className={label}>Paid leaves / month</label>
+            <label className={label}>Paid leave days / month</label>
             <input type="number" className={field} value={f.paidLeavesPerMonth} onChange={num("paidLeavesPerMonth")} />
           </div>
         </div>
