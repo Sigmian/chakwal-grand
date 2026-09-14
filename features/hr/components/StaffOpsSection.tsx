@@ -13,9 +13,18 @@ import {
   PlayCircle, CheckCircle2, Plus, X,
 } from "lucide-react";
 import { setTaskStatus, acknowledgeWarning, acknowledgeHandover, createHandover } from "@/server/actions/hr-ops";
+import { TaskThread } from "@/features/hr/components/TaskThread";
 import { cn, formatPKR } from "@/utils";
 
-interface Task { id: string; title: string; description: string | null; status: string; dueAt: string | null }
+type Priority = "URGENT" | "HIGH" | "NORMAL" | "LOW";
+interface Task { id: string; title: string; description: string | null; status: string; priority: Priority; commentCount: number; seen: boolean; dueAt: string | null }
+
+const PRIORITY_TONE: Record<Priority, { label: string; cls: string }> = {
+  URGENT: { label: "Urgent", cls: "bg-red-500/20 text-red-300 border-red-500/40" },
+  HIGH:   { label: "High",   cls: "bg-orange-500/20 text-orange-300 border-orange-500/40" },
+  NORMAL: { label: "Normal", cls: "bg-blue-500/20 text-blue-300 border-blue-500/40" },
+  LOW:    { label: "Low",    cls: "bg-white/10 text-white/60 border-white/20" },
+};
 interface Warning { id: string; type: string; title: string; description: string | null; acknowledged: boolean; createdAt: string | null }
 interface Handover { id: string; from: string; cashInHand: number | null; pendingBookings: string | null; complaints: string | null; roomsToClean: string | null; pendingPayments: string | null; maintenance: string | null; notes: string | null; createdAt: string | null }
 
@@ -76,19 +85,26 @@ function TaskRow({ t }: { t: Task }) {
   const next = t.status === "PENDING" ? "IN_PROGRESS" : "COMPLETED";
   const nextLabel = t.status === "PENDING" ? "Start" : "Done";
   const NextIcon = t.status === "PENDING" ? PlayCircle : CheckCircle2;
+  const pr = PRIORITY_TONE[t.priority] ?? PRIORITY_TONE.NORMAL;
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl bg-white/5 p-3">
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-white truncate">{t.title}</p>
-        {t.description && <p className="text-xs text-white/55 truncate">{t.description}</p>}
-        {t.dueAt && <p className="text-[10px] text-white/40">Due {t.dueAt.slice(0, 10)}</p>}
+    <div className="rounded-xl bg-white/5 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className={cn("rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide", pr.cls)}>{pr.label}</span>
+            <p className="text-sm font-medium text-white truncate">{t.title}</p>
+          </div>
+          {t.description && <p className="text-xs text-white/55 mt-0.5">{t.description}</p>}
+          {t.dueAt && <p className="text-[10px] text-white/40 mt-0.5">Due {t.dueAt.slice(0, 10)}</p>}
+        </div>
+        <button disabled={pending}
+          onClick={() => start(async () => { await setTaskStatus({ id: t.id, status: next }); router.refresh(); })}
+          className="flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-gold-500/15 border border-gold-500/30 px-3 py-1.5 text-xs font-semibold text-gold-300 disabled:opacity-60">
+          {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <NextIcon className="h-3.5 w-3.5" />} {nextLabel}
+        </button>
       </div>
-      <button disabled={pending}
-        onClick={() => start(async () => { await setTaskStatus({ id: t.id, status: next }); router.refresh(); })}
-        className="flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-gold-500/15 border border-gold-500/30 px-3 py-1.5 text-xs font-semibold text-gold-300 disabled:opacity-60">
-        {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <NextIcon className="h-3.5 w-3.5" />} {nextLabel}
-      </button>
+      <TaskThread taskId={t.id} count={t.commentCount} tone="portal" />
     </div>
   );
 }

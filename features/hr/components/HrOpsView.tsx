@@ -12,9 +12,11 @@ import {
   Clock, CheckCircle2, PlayCircle, ThumbsUp, AlertTriangle,
 } from "lucide-react";
 import { createTask, setTaskStatus, issueWarning } from "@/server/actions/hr-ops";
+import { TaskThread } from "@/features/hr/components/TaskThread";
 import { cn, formatPKR } from "@/utils";
 
-interface Task { id: string; title: string; description: string | null; status: string; assignee: string | null; branch: string; dueAt: string | null; createdAt: string | null }
+type Priority = "URGENT" | "HIGH" | "NORMAL" | "LOW";
+interface Task { id: string; title: string; description: string | null; status: string; priority: Priority; assignee: string | null; branch: string; commentCount: number; seen: boolean; dueAt: string | null; createdAt: string | null }
 interface Warning { id: string; staff: string; type: string; title: string; description: string | null; acknowledged: boolean; createdAt: string | null }
 interface Handover { id: string; from: string; branch?: string; to?: string | null; cashInHand: number | null; pendingBookings: string | null; complaints: string | null; roomsToClean: string | null; pendingPayments: string | null; maintenance: string | null; notes: string | null; acknowledged: boolean; createdAt: string | null }
 interface StaffLite { id: string; name: string }
@@ -57,18 +59,27 @@ const TASK_TONE: Record<string, { label: string; cls: string; icon: React.Elemen
   OVERDUE:     { label: "Overdue",     cls: "text-red-400",    icon: AlertTriangle },
 };
 
+const PRIORITY_TONE: Record<Priority, { label: string; cls: string }> = {
+  URGENT: { label: "Urgent", cls: "bg-red-500/15 text-red-400 border-red-500/30" },
+  HIGH:   { label: "High",   cls: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
+  NORMAL: { label: "Normal", cls: "bg-blue-500/15 text-blue-400 border-blue-500/25" },
+  LOW:    { label: "Low",    cls: "bg-muted text-muted-foreground border-border" },
+};
+const PRIORITY_OPTIONS: Priority[] = ["URGENT", "HIGH", "NORMAL", "LOW"];
+
 function TasksPanel({ tasks, staff }: { tasks: Task[]; staff: StaffLite[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
-  const [f, setF] = useState({ title: "", description: "", assignedToId: "", dueAt: "" });
+  const [f, setF] = useState<{ title: string; description: string; assignedToId: string; priority: Priority; dueAt: string }>(
+    { title: "", description: "", assignedToId: "", priority: "NORMAL", dueAt: "" });
 
   function add() {
     setErr(null);
     start(async () => {
       try {
-        await createTask({ title: f.title, description: f.description || undefined, assignedToId: f.assignedToId || null, dueAt: f.dueAt || undefined });
-        setF({ title: "", description: "", assignedToId: "", dueAt: "" });
+        await createTask({ title: f.title, description: f.description || undefined, assignedToId: f.assignedToId || null, priority: f.priority, dueAt: f.dueAt || undefined });
+        setF({ title: "", description: "", assignedToId: "", priority: "NORMAL", dueAt: "" });
         router.refresh();
       } catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
     });
@@ -83,6 +94,9 @@ function TasksPanel({ tasks, staff }: { tasks: Task[]; staff: StaffLite[] }) {
           <select className="input-luxury" value={f.assignedToId} onChange={(e) => setF({ ...f, assignedToId: e.target.value })}>
             <option value="">Unassigned</option>
             {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <select className="input-luxury" value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value as Priority })}>
+            {PRIORITY_OPTIONS.map((p) => <option key={p} value={p}>{PRIORITY_TONE[p].label} priority</option>)}
           </select>
           <input type="date" className="input-luxury" value={f.dueAt} onChange={(e) => setF({ ...f, dueAt: e.target.value })} />
           <input className="input-luxury sm:col-span-2" placeholder="Details (optional)" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
@@ -99,11 +113,18 @@ function TasksPanel({ tasks, staff }: { tasks: Task[]; staff: StaffLite[] }) {
         {tasks.map((t) => {
           const tone = TASK_TONE[t.status] ?? TASK_TONE.PENDING;
           const Icon = tone.icon;
+          const pr = PRIORITY_TONE[t.priority] ?? PRIORITY_TONE.NORMAL;
           return (
             <div key={t.id} className={cn("card-luxury p-4", t.status === "COMPLETED" && "opacity-60")}>
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-foreground">{t.title}</p>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide", pr.cls)}>{pr.label}</span>
+                    <p className="font-semibold text-foreground">{t.title}</p>
+                    {t.assignee && !t.seen && t.status !== "COMPLETED" && (
+                      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400">Unseen</span>
+                    )}
+                  </div>
                   {t.description && <p className="text-sm text-muted-foreground mt-0.5">{t.description}</p>}
                   <p className="text-[11px] text-muted-foreground mt-1">
                     {t.assignee ?? "Unassigned"} · {t.branch}{t.dueAt && ` · due ${t.dueAt.slice(0, 10)}`}
@@ -114,6 +135,7 @@ function TasksPanel({ tasks, staff }: { tasks: Task[]; staff: StaffLite[] }) {
                   <TaskStatusSelect id={t.id} status={t.status} />
                 </div>
               </div>
+              <TaskThread taskId={t.id} count={t.commentCount} tone="admin" />
             </div>
           );
         })}

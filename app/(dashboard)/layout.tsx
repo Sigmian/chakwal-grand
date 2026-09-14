@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 import { DASHBOARD_ROLES } from "@/lib/auth/permissions";
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
 import { DashboardHeader }  from "@/components/layout/DashboardHeader";
+import { TaskAlerts } from "@/features/hr/components/TaskAlerts";
 
 export default async function DashboardLayout({
   children,
@@ -40,6 +41,9 @@ export default async function DashboardLayout({
           </div>
         </main>
       </div>
+
+      {/* Pop-up alerts for tasks assigned to this user (managers can be assignees too) */}
+      <TaskAlerts portalHref="/portal" />
     </div>
   );
 }

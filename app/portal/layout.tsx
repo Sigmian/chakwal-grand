@@ -5,6 +5,7 @@
 // ============================================================
 
 import { requireAuth } from "@/lib/auth/session";
+import { TaskAlerts } from "@/features/hr/components/TaskAlerts";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function PortalLayout({ children }: { children: React.React
   return (
     <div className="min-h-[100dvh] bg-[#0b0d10] text-white">
       <div className="mx-auto w-full max-w-md px-4 pb-16 pt-5">{children}</div>
+      <TaskAlerts portalHref="/portal" />
     </div>
   );
 }

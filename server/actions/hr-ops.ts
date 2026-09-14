@@ -11,6 +11,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, requirePermission, getScopedBranchId } from "@/lib/auth/session";
+import { hasPermission } from "@/lib/auth/permissions";
+
+// Priority ordering for sorting (highest first). Enum can't be ordered by the DB.
+const PRIORITY_RANK: Record<string, number> = { URGENT: 0, HIGH: 1, NORMAL: 2, LOW: 3 };
 
 async function requireStaffSelf() {
   const user = await requireAuth();
@@ -32,10 +36,14 @@ const iso = (d: Date | null) => (d ? d.toISOString() : null);
 // ══════════════════════════════════════════════════════════════
 // TASKS
 // ══════════════════════════════════════════════════════════════
+const PRIORITY_VALUES = ["URGENT", "HIGH", "NORMAL", "LOW"] as const;
+type TaskPriorityValue = (typeof PRIORITY_VALUES)[number];
+
 const taskSchema = z.object({
   title:        z.string().min(2).max(120),
   description:  z.string().max(500).optional(),
   assignedToId: z.string().nullable(),
+  priority:     z.enum(PRIORITY_VALUES).default("NORMAL"),
   dueAt:        z.string().optional(), // YYYY-MM-DD or ISO
 });
 
@@ -61,34 +69,80 @@ export async function createTask(raw: z.input<typeof taskSchema>) {
   }
   if (!branchId) throw new Error("No branch available");
 
-  await prisma.staffTask.create({
+  const task = await prisma.staffTask.create({
     data: {
       branchId,
       assignedToId: input.assignedToId,
       title: input.title,
       description: input.description ?? null,
+      priority: input.priority,
       dueAt: input.dueAt ? new Date(input.dueAt.length === 10 ? `${input.dueAt}T23:59:59+05:00` : input.dueAt) : null,
       assignedById: user.id,
       status: "PENDING",
+      seenAt: null, // unseen → pops up for the assignee
     },
   });
   revalidatePath("/staff/ops");
-  return { success: true };
+  revalidatePath("/portal");
+  return { success: true, id: task.id };
 }
 
 export async function listTasks() {
   const user = await requirePermission("hr:manage");
   const tasks = await prisma.staffTask.findMany({
     where: branchScope(user),
-    include: { assignedTo: { include: { user: { select: { name: true } } } }, branch: { select: { name: true } } },
+    include: {
+      assignedTo: { include: { user: { select: { name: true } } } },
+      branch: { select: { name: true } },
+      _count: { select: { comments: true } },
+    },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     take: 100,
   });
-  return tasks.map((t) => ({
-    id: t.id, title: t.title, description: t.description, status: t.status,
-    assignee: t.assignedTo?.user.name ?? null, branch: t.branch.name,
-    dueAt: iso(t.dueAt), createdAt: iso(t.createdAt),
-  }));
+  return tasks
+    .map((t) => ({
+      id: t.id, title: t.title, description: t.description, status: t.status,
+      priority: t.priority as TaskPriorityValue,
+      assignee: t.assignedTo?.user.name ?? null, branch: t.branch.name,
+      commentCount: t._count.comments,
+      seen: !!t.seenAt,
+      dueAt: iso(t.dueAt), createdAt: iso(t.createdAt),
+    }))
+    // Open tasks first, then by priority, then newest — completed sink to the bottom.
+    .sort((a, b) => {
+      const ac = a.status === "COMPLETED" ? 1 : 0, bc = b.status === "COMPLETED" ? 1 : 0;
+      if (ac !== bc) return ac - bc;
+      const pr = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+      if (pr !== 0) return pr;
+      return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
+    });
+}
+
+// ─── Dashboard widget summary (managers) ──────────────────────
+export interface TaskSummary {
+  open: number;
+  urgent: number;
+  unseen: number;
+  top: { id: string; title: string; priority: TaskPriorityValue; assignee: string | null; status: string }[];
+}
+
+export async function getTaskSummary(): Promise<TaskSummary> {
+  const user = await requirePermission("hr:manage");
+  const tasks = await prisma.staffTask.findMany({
+    where: { ...branchScope(user), status: { not: "COMPLETED" } },
+    include: { assignedTo: { include: { user: { select: { name: true } } } } },
+    take: 200,
+  });
+  const ranked = tasks.sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
+  return {
+    open: tasks.length,
+    urgent: tasks.filter((t) => t.priority === "URGENT").length,
+    unseen: tasks.filter((t) => t.assignedToId && !t.seenAt).length,
+    top: ranked.slice(0, 4).map((t) => ({
+      id: t.id, title: t.title, priority: t.priority as TaskPriorityValue,
+      assignee: t.assignedTo?.user.name ?? null, status: t.status,
+    })),
+  };
 }
 
 const taskStatusSchema = z.object({ id: z.string(), status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "OVERDUE"]) });
@@ -112,7 +166,12 @@ export async function setTaskStatus(raw: z.input<typeof taskStatusSchema>) {
 
   await prisma.staffTask.update({
     where: { id },
-    data: { status, completedAt: status === "COMPLETED" ? new Date() : null },
+    // The assignee acting on a task also marks it seen (dismisses the pop-up).
+    data: {
+      status,
+      completedAt: status === "COMPLETED" ? new Date() : null,
+      ...(isAssignee ? { seenAt: new Date() } : {}),
+    },
   });
   revalidatePath("/staff/ops");
   revalidatePath("/portal");
@@ -123,10 +182,124 @@ export async function getMyTasks() {
   const { staff } = await requireStaffSelf();
   const tasks = await prisma.staffTask.findMany({
     where: { assignedToId: staff.id, status: { not: "COMPLETED" } },
+    include: { _count: { select: { comments: true } } },
     orderBy: [{ dueAt: "asc" }, { createdAt: "desc" }],
-    take: 20,
+    take: 30,
   });
-  return tasks.map((t) => ({ id: t.id, title: t.title, description: t.description, status: t.status, dueAt: iso(t.dueAt) }));
+  return tasks
+    .map((t) => ({
+      id: t.id, title: t.title, description: t.description, status: t.status,
+      priority: t.priority as TaskPriorityValue,
+      commentCount: t._count.comments,
+      seen: !!t.seenAt,
+      dueAt: iso(t.dueAt),
+    }))
+    .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
+}
+
+// ─── Live pop-up feed for the assignee (polled by the client) ──
+export interface TaskAlert {
+  id: string; title: string; priority: TaskPriorityValue; assignedBy: string | null; createdAt: string | null;
+}
+
+/** Unseen open tasks for the signed-in staffer. Safe (returns []) for non-staff. */
+export async function getMyTaskAlerts(): Promise<TaskAlert[]> {
+  const user = await requireAuth();
+  const staff = await prisma.staffMember.findUnique({ where: { userId: user.id }, select: { id: true } });
+  if (!staff) return [];
+  const tasks = await prisma.staffTask.findMany({
+    where: { assignedToId: staff.id, seenAt: null, status: { not: "COMPLETED" } },
+    orderBy: [{ createdAt: "desc" }],
+    take: 10,
+  });
+  // Resolve who assigned each (userId → name).
+  const byIds = [...new Set(tasks.map((t) => t.assignedById))];
+  const assigners = byIds.length
+    ? await prisma.user.findMany({ where: { id: { in: byIds } }, select: { id: true, name: true } })
+    : [];
+  const nameById = new Map(assigners.map((u) => [u.id, u.name]));
+  return tasks
+    .map((t) => ({
+      id: t.id, title: t.title, priority: t.priority as TaskPriorityValue,
+      assignedBy: nameById.get(t.assignedById) ?? null, createdAt: iso(t.createdAt),
+    }))
+    .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
+}
+
+/** Mark the given (or all) of my assigned tasks as seen — dismisses the pop-up. */
+export async function markTasksSeen(ids?: string[]) {
+  const user = await requireAuth();
+  const staff = await prisma.staffMember.findUnique({ where: { userId: user.id }, select: { id: true } });
+  if (!staff) return { success: true };
+  await prisma.staffTask.updateMany({
+    where: { assignedToId: staff.id, seenAt: null, ...(ids && ids.length ? { id: { in: ids } } : {}) },
+    data: { seenAt: new Date() },
+  });
+  revalidatePath("/portal");
+  return { success: true };
+}
+
+// ─── Task comments ────────────────────────────────────────────
+export interface TaskCommentRow { id: string; author: string; isManager: boolean; body: string; createdAt: string | null; mine: boolean }
+
+/** The comment thread for a task — visible to its assignee or a scoped manager. */
+export async function getTaskThread(taskId: string): Promise<TaskCommentRow[]> {
+  const user = await requireAuth();
+  const task = await prisma.staffTask.findUnique({
+    where: { id: taskId },
+    include: { assignedTo: { select: { userId: true } }, branch: { select: { companyId: true } } },
+  });
+  if (!task) throw new Error("Task not found");
+
+  const isAssignee = task.assignedTo?.userId === user.id;
+  if (!isAssignee) {
+    await requirePermission("hr:manage");
+    const scoped = getScopedBranchId(user);
+    if (scoped && task.branchId !== scoped) throw new Error("Access denied");
+    if (task.branch.companyId !== user.companyId) throw new Error("Access denied");
+  }
+
+  const comments = await prisma.taskComment.findMany({
+    where: { taskId }, orderBy: { createdAt: "asc" },
+  });
+  return comments.map((c) => ({
+    id: c.id, author: c.authorName, isManager: c.isManager, body: c.body,
+    createdAt: iso(c.createdAt), mine: c.authorId === user.id,
+  }));
+}
+
+const commentSchema = z.object({ taskId: z.string(), body: z.string().min(1).max(1000) });
+
+export async function addTaskComment(raw: z.input<typeof commentSchema>) {
+  const input = commentSchema.parse(raw);
+  const user = await requireAuth();
+  const task = await prisma.staffTask.findUnique({
+    where: { id: input.taskId },
+    include: { assignedTo: { select: { userId: true } }, branch: { select: { companyId: true } } },
+  });
+  if (!task) throw new Error("Task not found");
+
+  const isAssignee = task.assignedTo?.userId === user.id;
+  const isManager = hasPermission(user.role, "hr:manage");
+  if (!isAssignee) {
+    if (!isManager) throw new Error("Access denied");
+    const scoped = getScopedBranchId(user);
+    if (scoped && task.branchId !== scoped) throw new Error("Access denied");
+    if (task.branch.companyId !== user.companyId) throw new Error("Access denied");
+  }
+
+  await prisma.taskComment.create({
+    data: {
+      taskId: input.taskId,
+      authorId: user.id,
+      authorName: user.name ?? "User",
+      isManager: !isAssignee && isManager,
+      body: input.body.trim(),
+    },
+  });
+  revalidatePath("/staff/ops");
+  revalidatePath("/portal");
+  return { success: true };
 }
 
 // ══════════════════════════════════════════════════════════════

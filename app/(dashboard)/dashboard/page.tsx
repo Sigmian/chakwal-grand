@@ -24,7 +24,9 @@ import {
   getStaffBookingStats,
 } from "@/server/actions/analytics";
 import { getTodayOverview } from "@/server/actions/hr-approvals";
+import { getTaskSummary } from "@/server/actions/hr-ops";
 import { StaffTodayWidget } from "@/features/hr/components/StaffTodayWidget";
+import { ListTodo } from "lucide-react";
 import {
   StatCard, SectionHeader, Badge, ProgressBar,
 } from "@/components/shared";
@@ -53,7 +55,7 @@ export default async function DashboardPage() {
   const canManageHr      = hasPermission(user.role, "hr:manage");
 
   // Fetch data based on what the role can see
-  const [overview, chartData, topRooms, activity, schedule, forecast, staffToday, todayCollected, staffBookings] = await Promise.all([
+  const [overview, chartData, topRooms, activity, schedule, forecast, staffToday, todayCollected, staffBookings, taskSummary] = await Promise.all([
     canViewAnalytics ? getDashboardOverview(user.branchId)    : Promise.resolve(null),
     canViewAnalytics ? getRevenueChartData(user.branchId)     : Promise.resolve([]),
     // getTopRooms requires analytics:branch (not rooms:read), so gate it on the
@@ -66,6 +68,7 @@ export default async function DashboardPage() {
     canManageHr      ? getTodayOverview()                     : Promise.resolve(null),
     canViewAnalytics ? getTodayCollected(user.branchId)       : Promise.resolve(null),
     canViewAnalytics ? getStaffBookingStats()                 : Promise.resolve([]),
+    canManageHr      ? getTaskSummary()                        : Promise.resolve(null),
   ]);
 
   // Branch comparison only for super admin
@@ -317,6 +320,45 @@ export default async function DashboardPage() {
 
       {/* ── Staff Today (hr:manage roles only) ── */}
       {canManageHr && staffToday && <StaffTodayWidget overview={staffToday} />}
+
+      {/* ── Tasks quick widget (hr:manage roles only) ── */}
+      {canManageHr && taskSummary && (
+      <div className="card-luxury p-6">
+        <SectionHeader
+          title="Tasks"
+          subtitle={`${taskSummary.open} open${taskSummary.urgent ? ` · ${taskSummary.urgent} urgent` : ""}${taskSummary.unseen ? ` · ${taskSummary.unseen} unseen` : ""}`}
+          actions={
+            <Link href="/staff/ops" className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1">
+              Assign / manage <ArrowRight className="w-3 h-3" />
+            </Link>
+          }
+        />
+        {taskSummary.top.length === 0 ? (
+          <Link href="/staff/ops" className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-6 text-sm text-muted-foreground hover:text-foreground hover:border-gold-500/30">
+            <ListTodo className="w-4 h-4" /> No open tasks — assign one
+          </Link>
+        ) : (
+          <div className="space-y-2">
+            {taskSummary.top.map((t) => {
+              const prCls = t.priority === "URGENT" ? "bg-red-500/15 text-red-400 border-red-500/30"
+                : t.priority === "HIGH" ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
+                : t.priority === "NORMAL" ? "bg-blue-500/15 text-blue-400 border-blue-500/25"
+                : "bg-muted text-muted-foreground border-border";
+              return (
+                <Link key={t.id} href="/staff/ops"
+                  className="flex items-center gap-3 rounded-xl bg-surface-highlight p-3 hover:brightness-110 transition-all">
+                  <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide flex-shrink-0", prCls)}>
+                    {t.priority.charAt(0) + t.priority.slice(1).toLowerCase()}
+                  </span>
+                  <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">{t.title}</span>
+                  <span className="text-xs text-muted-foreground flex-shrink-0">{t.assignee ?? "Unassigned"}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      )}
 
       {/* ── Bookings by Staff (this month) ── */}
       {canViewAnalytics && staffBookings.length > 0 && (
