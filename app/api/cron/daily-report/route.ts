@@ -228,10 +228,11 @@ export async function GET(req: Request) {
 
   // Housekeeping: prune WhatsApp message-dedup lock rows older than 2 days so
   // the SiteContent table doesn't grow unbounded (keys look like "wamid:<id>").
-  const wamidCutoff = String(Date.now() - 2 * 24 * 60 * 60 * 1000);
-  await prisma.siteContent.deleteMany({
-    where: { key: { startsWith: "wamid:" }, value: { lt: wamidCutoff } },
-  }).catch((e) => console.error("[Cron] wamid cleanup failed:", e));
+  const dedupCutoff = String(Date.now() - 3 * 24 * 60 * 60 * 1000);
+  await Promise.all([
+    prisma.siteContent.deleteMany({ where: { key: { startsWith: "wamid:" }, value: { lt: dedupCutoff } } }),
+    prisma.siteContent.deleteMany({ where: { key: { startsWith: "rem:" },   value: { lt: dedupCutoff } } }),
+  ]).catch((e) => console.error("[Cron] dedup cleanup failed:", e));
 
   console.log("[Cron] daily-report run complete:", JSON.stringify({ sent, ...stats }));
 

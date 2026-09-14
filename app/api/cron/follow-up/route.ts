@@ -43,6 +43,22 @@ function endOfDayPKT(offsetDays: number): Date {
   return new Date(startOfDayPKT(offsetDays + 1).getTime() - 1);
 }
 
+// Idempotency: claim a one-time key (durable, cross-instance) so a re-run or a
+// rare cron double-fire can't send the same reminder twice. Returns true only
+// on the first claim. On a non-unique DB error we allow the send (a rare
+// duplicate is better than a silently-missed reminder). The date-window query
+// prevents re-selection once the day passes, so these rows are pruned by the
+// daily-report cron.
+async function claimOnce(key: string): Promise<boolean> {
+  try {
+    await prisma.siteContent.create({ data: { key, value: String(Date.now()), type: "text" } });
+    return true;
+  } catch (e) {
+    if ((e as { code?: string })?.code === "P2002") return false;
+    return true;
+  }
+}
+
 export async function GET(req: Request) {
   if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -71,6 +87,7 @@ export async function GET(req: Request) {
   });
 
   for (const b of checkingInTomorrow) {
+    if (!(await claimOnce(`rem:ci:${b.id}`))) continue;
     const res = await sendCheckinReminder({
       phone:      b.customer.phone,
       guestName:  b.customer.name,
@@ -100,6 +117,7 @@ export async function GET(req: Request) {
   });
 
   for (const b of checkingOutToday) {
+    if (!(await claimOnce(`rem:co:${b.id}`))) continue;
     const res = await sendCheckoutReminder({
       phone:      b.customer.phone,
       guestName:  b.customer.name,
@@ -129,6 +147,7 @@ export async function GET(req: Request) {
   const reviewUrl = siteConfig.social.googleReviewUrl;
 
   for (const b of checkedOutYesterday) {
+    if (!(await claimOnce(`rem:rv:${b.id}`))) continue;
     const res = await sendReviewRequest({
       phone:     b.customer.phone,
       guestName: b.customer.name,
