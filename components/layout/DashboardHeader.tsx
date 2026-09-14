@@ -195,8 +195,8 @@ export function DashboardHeader({ user }: Props) {
           </div>
         )}
 
-        {/* Push notification toggle */}
-        <div className="hidden sm:block">
+        {/* Push notification toggle — visible on mobile too so phone users can enable alerts */}
+        <div className="block">
           <PushNotificationToggle />
         </div>
 
