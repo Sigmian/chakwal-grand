@@ -519,6 +519,11 @@ export async function createPublicBooking(input: {
   discountAmount = Math.min(discountAmount, baseAmount);
 
   let customer = await prisma.customer.findUnique({ where: { phone: cleanPhone } });
+  // Blacklisted guests are blocked on the staff booking path — enforce the same
+  // on the public/website path so they can't simply book online instead.
+  if (customer?.isBlacklisted) {
+    return { success: false, error: "We're unable to process this booking online. Please contact reception." };
+  }
   if (!customer) {
     customer = await prisma.customer.create({
       data: {
