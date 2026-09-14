@@ -4,7 +4,7 @@ import prisma from "@/lib/db/prisma";
 import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { BookingStatus, RoomStatus } from "@/types";
 import { startOfDay, endOfDay, startOfMonth, endOfMonth, subMonths, format } from "date-fns";
-import { getCashRevenueForPeriod, getPKTMonthPeriod, getPKTMonthPeriods } from "@/lib/finance/reporting";
+import { getCashRevenueForPeriod, getPKTMonthPeriod, getPKTMonthPeriods, getPKTDayPeriod } from "@/lib/finance/reporting";
 
 // ---- DASHBOARD OVERVIEW -----------------------------------------------
 export async function getDashboardOverview(branchId?: string) {
@@ -12,12 +12,17 @@ export async function getDashboardOverview(branchId?: string) {
   const scopedBranch = getScopedBranchId(user, branchId);
 
   const now        = new Date();
-  const todayStart = startOfDay(now);
-  const todayEnd   = endOfDay(now);
+  // PKT day — must match the PKT month/day basis used for every money figure.
+  const { start: todayStart, end: todayEnd } = getPKTDayPeriod(0, now);
   const { start: monthStart, end: monthEnd } = getPKTMonthPeriod(0, now);
   const { start: lastMonthStart, end: lastMonthEnd } = getPKTMonthPeriod(-1, now);
 
   const branchFilter = scopedBranch ? { branchId: scopedBranch } : {};
+  // Expense/Booking aggregates must stay inside the company when no branch is
+  // scoped — a bare {} would span every company in the database.
+  const companyScopedFilter = scopedBranch
+    ? { branchId: scopedBranch }
+    : { branch: { companyId: user.companyId } };
 
   const [
     roomStats,
@@ -30,6 +35,7 @@ export async function getDashboardOverview(branchId?: string) {
     checkInsToday,
     checkOutsToday,
     lastMonthRevenue,
+    openBookings,
   ] = await Promise.all([
     prisma.room.groupBy({
       by:    ["status"],
@@ -54,7 +60,7 @@ export async function getDashboardOverview(branchId?: string) {
     }),
     prisma.expense.aggregate({
       where: {
-        ...branchFilter,
+        ...companyScopedFilter,
         paidAt: { gte: monthStart, lte: monthEnd },
       },
       _sum: { amount: true },
@@ -81,6 +87,15 @@ export async function getDashboardOverview(branchId?: string) {
       },
     }),
     getCashRevenueForPeriod(lastMonthStart, lastMonthEnd, scopedBranch, user.companyId),
+    // Money guests still owe on live bookings. Revenue is cash-basis, so a new
+    // booking shows here (not in revenue) until its payment is recorded.
+    prisma.booking.findMany({
+      where: {
+        ...branchFilter,
+        status: { notIn: [BookingStatus.CANCELLED, BookingStatus.NO_SHOW] },
+      },
+      select: { totalAmount: true, paidAmount: true },
+    }),
   ]);
 
   const lowStockCount = allInventory.filter(
@@ -97,6 +112,12 @@ export async function getDashboardOverview(branchId?: string) {
   const totalDiscountThisMonth = Number(monthDiscounts._sum.discountAmount ?? 0);
   const expensesThisMonth    = Number(monthExpenses._sum.amount ?? 0);
   const profitThisMonth      = revenueThisMonth - expensesThisMonth;
+  // Outstanding = what guests still owe on live bookings (never negative per
+  // booking, so overpayments on one don't mask a debt on another).
+  const outstandingReceivable = openBookings.reduce(
+    (sum, b) => sum + Math.max(0, Number(b.totalAmount) - Number(b.paidAmount)),
+    0,
+  );
   const occupancyRate     = totalRooms > 0
     ? Math.round((occupiedRooms / totalRooms) * 100)
     : 0;
@@ -118,6 +139,7 @@ export async function getDashboardOverview(branchId?: string) {
     totalDiscountThisMonth,
     expensesThisMonth,
     profitThisMonth,
+    outstandingReceivable,
     bookingsToday:    todayBookings,
     checkInsToday,
     checkOutsToday,
@@ -131,7 +153,11 @@ export async function getDashboardOverview(branchId?: string) {
 export async function getRevenueChartData(branchId?: string, months = 6) {
   const user         = await requirePermission("analytics:branch");
   const scopedBranch = getScopedBranchId(user, branchId);
-  const branchFilter = scopedBranch ? { branchId: scopedBranch } : {};
+  // Company-scoped so the expense side matches the (already company-scoped)
+  // revenue side; a bare {} would sum every company's expenses.
+  const branchFilter = scopedBranch
+    ? { branchId: scopedBranch }
+    : { branch: { companyId: user.companyId } };
 
   const periods = getPKTMonthPeriods(months);
 
@@ -335,7 +361,7 @@ export async function getRevenueForecast(branchId?: string) {
 
   // Anchor to the START of today so a booking checking in today (stored at
   // midnight) isn't excluded by a mid-day `now` timestamp.
-  const dayStart = startOfDay(new Date());
+  const dayStart = getPKTDayPeriod().start;
   const thirtyDaysLater = new Date(dayStart.getTime() + 30 * 86_400_000);
 
   // Get all confirmed/pending bookings in next 30 days
@@ -430,7 +456,7 @@ export async function getOccupancyHeatmapData(branchId?: string) {
   const scopedBranch = getScopedBranchId(user, branchId);
   const branchFilter = scopedBranch ? { branchId: scopedBranch } : {};
 
-  const today    = startOfDay(new Date());
+  const today    = getPKTDayPeriod().start;
   const since    = new Date(today.getTime() - 89 * 86_400_000);
 
   const [totalRooms, bookings] = await Promise.all([
@@ -770,7 +796,7 @@ export async function getRevenuePipeline30Day(branchId?: string) {
   const scopedBranch = getScopedBranchId(user, branchId);
   const branchFilter = scopedBranch ? { branchId: scopedBranch } : {};
 
-  const today = startOfDay(new Date());
+  const today = getPKTDayPeriod().start;
   const end30 = new Date(today.getTime() + 29 * 86_400_000);
 
   const bookings = await prisma.booking.findMany({
@@ -814,7 +840,7 @@ export async function getAISuggestions(branchId?: string) {
   ] = await Promise.all([
     prisma.room.count({ where: { isActive: true, ...branchFilter } }),
     prisma.booking.count({
-      where: { ...branchFilter, status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] }, checkInDate: { gte: startOfDay(now), lte: next7End } },
+      where: { ...branchFilter, status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] }, checkInDate: { gte: getPKTDayPeriod(0, now).start, lte: next7End } },
     }),
     getCashRevenueForPeriod(thisStart, thisEnd, scopedBranch, user.companyId),
     getCashRevenueForPeriod(lastStart, lastEnd, scopedBranch, user.companyId),
@@ -886,8 +912,8 @@ export async function getTodaySchedule(branchId?: string) {
   const scopedBranch = getScopedBranchId(user, branchId);
   const branchFilter = scopedBranch ? { branchId: scopedBranch } : {};
 
-  const todayStart = startOfDay(new Date());
-  const todayEnd   = endOfDay(new Date());
+  // PKT day, so the night shift (00:00–05:00 PKT) sees the correct day.
+  const { start: todayStart, end: todayEnd } = getPKTDayPeriod();
 
   const [checkIns, checkOuts] = await Promise.all([
     prisma.booking.findMany({

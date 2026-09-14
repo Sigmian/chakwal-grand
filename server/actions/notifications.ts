@@ -10,7 +10,7 @@ import prisma from "@/lib/db/prisma";
 import { requireAuth, getScopedBranchId } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
 import { BookingStatus } from "@/types";
-import { startOfDay, endOfDay } from "date-fns";
+import { getPKTDayPeriod } from "@/lib/finance/reporting";
 
 export interface HeaderNotification {
   id:    string;                        // stable — used for client-side read tracking
@@ -32,8 +32,8 @@ export async function getHeaderNotifications(): Promise<HeaderNotification[]> {
   const canRooms      = hasPermission(user.role, "rooms:read");
 
   const now        = new Date();
-  const todayStart = startOfDay(now);
-  const todayEnd   = endOfDay(now);
+  // PKT day — matches the rest of the app's day basis.
+  const { start: todayStart, end: todayEnd } = getPKTDayPeriod(0, now);
 
   const [pendingBookings, todayArrivals, inventory, complaints, maintenance] = await Promise.all([
     canBookings ? prisma.booking.findMany({

@@ -50,7 +50,9 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 export function FinanceReportView({ branches, defaultBranchId }: Props) {
   const [branchId, setBranchId] = useState(defaultBranchId ?? "");
-  const [months, setMonths]     = useState(6);
+  // Default to the current month so this page ties to the dashboard's
+  // "Collected This Month" out of the box. Widening the range is explicit.
+  const [months, setMonths]     = useState(1);
   const [data, setData]         = useState<MonthlyData[]>([]);
   const [breakdown, setBreakdown] = useState<ExpenseBreakdown>({
     inventory:  { total: 0, byCategory: {} },
@@ -95,6 +97,14 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
 
   const totalProfit  = ghProfit + invProfit;
   const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+  // Spell out exactly which months these totals cover — the #1 source of
+  // "the dashboard says a different number" confusion.
+  const periodLabel = data.length === 0
+    ? `${months} month${months > 1 ? "s" : ""}`
+    : data.length === 1
+      ? `${data[0].label} only`
+      : `${data[0].label} – ${data[data.length - 1].label} (${data.length} months)`;
 
   const handleExport = () => {
     const rows = [
@@ -164,11 +174,19 @@ export function FinanceReportView({ branches, defaultBranchId }: Props) {
         </div>
       )}
 
+      {/* Basis banner — states the accounting rule these figures follow. */}
+      <div className="rounded-xl border border-border bg-surface-highlight/50 px-4 py-3 text-xs text-muted-foreground">
+        Showing <span className="font-semibold text-foreground">{periodLabel}</span>
+        {branchId ? "" : " · all branches"}. Revenue is <span className="font-semibold text-foreground">cash received</span> —
+        it counts payments actually recorded in the period, not the booked value of stays. A booking only adds
+        revenue once you record its payment.
+      </div>
+
       {/* Overall KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Revenue",   value: formatPKR(totalRevenue),  sub: `${months}m period`,        icon: DollarSign,  color: "text-gold-400",  bg: "bg-gold-500/15" },
-          { label: "Total Expenses",  value: formatPKR(totalExpenses), sub: `GH + Inventory`,           icon: TrendingDown, color: "text-red-400",   bg: "bg-red-500/15" },
+          { label: "Total Revenue",   value: formatPKR(totalRevenue),  sub: periodLabel,                icon: DollarSign,  color: "text-gold-400",  bg: "bg-gold-500/15" },
+          { label: "Total Expenses",  value: formatPKR(totalExpenses), sub: `GH + Inventory · ${periodLabel}`, icon: TrendingDown, color: "text-red-400",   bg: "bg-red-500/15" },
           { label: "Net Profit",      value: formatPKR(totalProfit),   sub: `${profitMargin.toFixed(1)}% margin`, icon: TrendingUp, color: totalProfit >= 0 ? "text-green-400" : "text-red-400", bg: totalProfit >= 0 ? "bg-green-500/15" : "bg-red-500/15" },
           { label: "Profit Margin",   value: `${profitMargin.toFixed(1)}%`, sub: "Net / Revenue",       icon: TrendingUp,  color: profitMargin >= 30 ? "text-green-400" : profitMargin >= 15 ? "text-amber-400" : "text-red-400", bg: "bg-accent" },
         ].map(({ label, value, sub, icon: Icon, color, bg }) => (

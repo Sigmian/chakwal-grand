@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   BedDouble, DollarSign, CalendarCheck, TrendingUp,
   AlertTriangle, ArrowRight, Clock, UserCheck, UserMinus,
-  Building2, Package, Lightbulb, CheckCircle2, Info, Tag,
+  Building2, Package, Lightbulb, CheckCircle2, Info, Tag, Receipt,
 } from "lucide-react";
 import { requireAuth } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
@@ -151,6 +151,13 @@ export default async function DashboardPage() {
           icon={<DollarSign className="w-5 h-5 text-gold-400" />}
           iconBg="bg-gold-500/15"
           trend={overview.revenueTrend !== null ? { value: overview.revenueTrend, label: "vs last month" } : undefined}
+        />
+        <StatCard
+          title="Outstanding"
+          value={formatPKRShort(overview.outstandingReceivable)}
+          subtitle="Owed across all live bookings"
+          icon={<Receipt className="w-5 h-5 text-amber-400" />}
+          iconBg="bg-amber-500/15"
         />
         <StatCard
           title="Occupancy Rate"

@@ -42,6 +42,24 @@ export function getPKTMonthPeriod(monthOffset = 0, from = new Date()): FinancePe
   return { label: MONTH_LABELS[month], start, end };
 }
 
+/**
+ * Calendar-DAY boundaries for Asia/Karachi, returned as UTC instants.
+ *
+ * Use this for every "today" figure. date-fns startOfDay/endOfDay resolve in the
+ * server's local zone (UTC on Vercel), which rolls over 5 hours late relative to
+ * PKT — so between 00:00 and 05:00 PKT they still report the previous day while
+ * PKT-based money figures have already moved to the new one.
+ */
+export function getPKTDayPeriod(dayOffset = 0, from = new Date()): FinancePeriod {
+  const pktNow = new Date(from.getTime() + PKT_OFFSET_MS);
+  const y = pktNow.getUTCFullYear();
+  const m = pktNow.getUTCMonth();
+  const d = pktNow.getUTCDate() + dayOffset;
+  const start = new Date(Date.UTC(y, m, d) - PKT_OFFSET_MS);
+  const end = new Date(Date.UTC(y, m, d + 1) - PKT_OFFSET_MS - 1);
+  return { label: new Date(Date.UTC(y, m, d)).toISOString().slice(0, 10), start, end };
+}
+
 export function getPKTMonthPeriods(months: number): FinancePeriod[] {
   const safeMonths = Math.min(12, Math.max(1, Math.trunc(months)));
   return Array.from({ length: safeMonths }, (_, index) =>

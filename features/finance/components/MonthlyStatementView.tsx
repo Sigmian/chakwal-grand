@@ -136,12 +136,13 @@ function buildCsv(s: MonthlyStatement): string {
 
 // ── Component ─────────────────────────────────────────────────
 export function MonthlyStatementView({ branches, defaultBranchId }: Props) {
-  const now = new Date();
-  // Default to last completed month — that's the sheet an owner usually wants.
-  const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  // Default to the CURRENT PKT month so this sheet agrees with the dashboard and
+  // Finance Reports out of the box; the picker still opens any closed month.
+  // (PKT, not UTC: on the 1st before 05:00 PKT a UTC month would be a month behind.)
+  const pktNow = new Date(Date.now() + 5 * 60 * 60 * 1000);
 
-  const [year,  setYear]  = useState(lastMonth.getUTCFullYear());
-  const [month, setMonth] = useState(lastMonth.getUTCMonth() + 1);
+  const [year,  setYear]  = useState(pktNow.getUTCFullYear());
+  const [month, setMonth] = useState(pktNow.getUTCMonth() + 1);
   const [branchId, setBranchId] = useState(defaultBranchId ?? "");
   const [data, setData] = useState<MonthlyStatement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -176,7 +177,7 @@ export function MonthlyStatementView({ branches, defaultBranchId }: Props) {
     URL.revokeObjectURL(url);
   }
 
-  const years = Array.from({ length: 5 }, (_, i) => now.getUTCFullYear() - i);
+  const years = Array.from({ length: 5 }, (_, i) => pktNow.getUTCFullYear() - i);
   const sm = data?.summary;
 
   return (
@@ -275,16 +276,25 @@ export function MonthlyStatementView({ branches, defaultBranchId }: Props) {
             </div>
           </div>
 
+          {/* Basis note — the Guests tab lists booked value, these tiles list cash. */}
+          <div className="rounded-xl border border-border bg-surface-highlight/50 px-4 py-3 text-xs text-muted-foreground print:border-black/20">
+            Revenue below is <span className="font-semibold text-foreground">cash received in this month</span>.
+            The <span className="font-semibold text-foreground">Guests</span> tab lists each stay&apos;s
+            <span className="font-semibold text-foreground"> booked value</span>, which will differ: a stay booked this
+            month but paid next month counts here only when the payment lands, and
+            <span className="font-semibold text-foreground"> Outstanding</span> is what guests still owe.
+          </div>
+
           {/* KPI grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Room Revenue",     value: formatPKR(sm.roomRevenue),     color: "text-gold-400" },
-              { label: "Product Revenue",  value: formatPKR(sm.productRevenue),  color: "text-gold-400" },
-              { label: "Total Revenue",    value: formatPKR(sm.totalRevenue),    color: "text-green-400" },
+              { label: "Room Revenue (cash)",    value: formatPKR(sm.roomRevenue),     color: "text-gold-400" },
+              { label: "Product Revenue (cash)", value: formatPKR(sm.productRevenue),  color: "text-gold-400" },
+              { label: "Total Revenue (cash)",   value: formatPKR(sm.totalRevenue),    color: "text-green-400" },
               { label: "Total Expenses",   value: formatPKR(sm.totalExpenses),   color: "text-red-400" },
               { label: "Guesthouse Exp.",  value: formatPKR(sm.guesthouseExpenses), color: "text-foreground" },
               { label: "Inventory Exp.",   value: formatPKR(sm.inventoryExpenses),  color: "text-foreground" },
-              { label: "Outstanding (owed)", value: formatPKR(sm.outstanding),
+              { label: "Outstanding (this month's guests)", value: formatPKR(sm.outstanding),
                 color: sm.outstanding > 0 ? "text-amber-400" : "text-muted-foreground" },
               { label: "Profit Margin",    value: `${sm.profitMargin.toFixed(1)}%`,
                 color: sm.profitMargin >= 0 ? "text-green-400" : "text-red-400" },
