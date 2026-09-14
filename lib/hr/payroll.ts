@@ -113,7 +113,8 @@ export function computeMonthlyPayroll(p: PayrollParams): PayrollResult {
 
   // Expand approved leaves into a per-date map. Each date remembers whether a
   // leave was approved as paid-eligible and whether it carries a manager
-  // override (paid beyond the monthly day allowance).
+  // override permitting the days that fall *beyond* the monthly allowance to
+  // still be paid.
   type LeaveDay = { eligible: boolean; override: boolean };
   const leaveByDate = new Map<string, LeaveDay>();
   for (const lv of p.leaves) {
@@ -132,12 +133,14 @@ export function computeMonthlyPayroll(p: PayrollParams): PayrollResult {
   const paidLeaveAllowance = Math.max(0, config.paidLeavesPerMonth);
   let paidLeaveUsed = 0; // non-override paid-leave days consumed so far, in date order
 
-  // Resolve one leave day to paid/unpaid, honouring the day allowance in date order.
+  // Resolve one leave day to paid/unpaid, honouring the day allowance in date
+  // order. Every eligible day consumes the allowance first; a day that falls
+  // beyond the allowance is paid only when the leave carries an override
+  // (so an override pays just the overflow, not the whole leave as free extra).
   const resolveLeaveDay = (ld: LeaveDay): boolean => {
-    if (!ld.eligible) return false;          // approved unpaid
-    if (ld.override) return true;            // paid beyond allowance (extra, no cap consumed)
-    if (paidLeaveUsed < paidLeaveAllowance) { paidLeaveUsed++; return true; }
-    return false;                            // eligible but allowance exhausted → unpaid
+    if (!ld.eligible) return false;                                  // approved unpaid
+    if (paidLeaveUsed < paidLeaveAllowance) { paidLeaveUsed++; return true; } // within allowance
+    return ld.override;                                             // overflow: paid only if overridden
   };
 
   let presentDays = 0, paidLeaveDays = 0, unpaidLeaveDays = 0, absentDays = 0;

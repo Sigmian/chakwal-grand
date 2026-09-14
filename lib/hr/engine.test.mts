@@ -148,19 +148,44 @@ const I = computeMonthlyPayroll({
 eq("I paidLeaveDays (cap 2 across requests)", I.paidLeaveDays, 2);
 eq("I unpaidLeaveDays", I.unpaidLeaveDays, 1);
 
-// ── Scenario J: manager override pays a leave beyond the allowance (extra) ──
-// Override days are always paid and never consume the normal allowance.
+// ── Scenario J: override pays the overflow days beyond the allowance ──
+// Allowance (2) filled by the first leave; the override leave's 2 days are all
+// beyond the allowance, so the override pays them.
 const J = computeMonthlyPayroll({
   ...base, todayStr: "2026-09-04",
   attendance: [],
   leaves: [
     { fromDate: "2026-09-01", toDate: "2026-09-02", paid: true },                     // 2 paid, fills allowance
-    { fromDate: "2026-09-03", toDate: "2026-09-04", paid: true, override: true },      // 2 extra paid via override
+    { fromDate: "2026-09-03", toDate: "2026-09-04", paid: true, override: true },      // 2 overflow paid via override
   ],
 });
-eq("J paidLeaveDays (2 + 2 override)", J.paidLeaveDays, 4);
+eq("J paidLeaveDays (2 + 2 overflow)", J.paidLeaveDays, 4);
 eq("J unpaidLeaveDays", J.unpaidLeaveDays, 0);
 eq("J totalDeductions", J.totalDeductions, 0);
+
+// ── Scenario L: a single override leave pays ONLY its overflow, and its
+// within-allowance days still consume the base allowance ──
+// 3-day override leave under a 2-day cap → 2 within + 1 overflow, all paid.
+const L = computeMonthlyPayroll({
+  ...base, todayStr: "2026-09-03",
+  attendance: [],
+  leaves: [{ fromDate: "2026-09-01", toDate: "2026-09-03", paid: true, override: true }],
+});
+eq("L paidLeaveDays (all paid)", L.paidLeaveDays, 3);
+eq("L unpaidLeaveDays", L.unpaidLeaveDays, 0);
+
+// ── Scenario M: an override leave consumes the allowance, leaving none for a
+// later normal leave (override is not free extra allowance) ──
+const M = computeMonthlyPayroll({
+  ...base, todayStr: "2026-09-04",
+  attendance: [],
+  leaves: [
+    { fromDate: "2026-09-01", toDate: "2026-09-02", paid: true, override: true }, // 2 within allowance, paid
+    { fromDate: "2026-09-03", toDate: "2026-09-04", paid: true },                 // beyond cap, no override → unpaid
+  ],
+});
+eq("M paidLeaveDays (only first leave)", M.paidLeaveDays, 2);
+eq("M unpaidLeaveDays (later leave overflow)", M.unpaidLeaveDays, 2);
 
 // ── Scenario K: an approved *unpaid* leave still deducts, regardless of allowance ──
 const K = computeMonthlyPayroll({
