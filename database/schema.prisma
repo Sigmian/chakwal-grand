@@ -1182,6 +1182,7 @@ model HrSettings {
   payrollDivisor         Int      @default(30)
   paidLeavesPerMonth     Int      @default(2)
   weeklyOffDays          String[] @default([])
+  holidays               String[] @default([])  // paid company holidays "YYYY-MM-DD"
 
   graceMinutes           Int      @default(15)
   autoAbsentAfterMinutes Int      @default(240)

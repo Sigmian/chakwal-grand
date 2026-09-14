@@ -21,6 +21,7 @@ const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
 interface Settings {
   payrollDivisor: number; paidLeavesPerMonth: number; weeklyOffDays: string[];
+  holidays?: string[];
   graceMinutes: number; autoAbsentAfterMinutes: number; minHalfDayMinutes: number;
   earlyCheckoutMinutes: number; lateWarnAfterCount: number;
   lateToHalfDayCount: number | null; lateToDayCount: number | null;
@@ -135,6 +136,14 @@ function RulesForm({ initial }: { initial: Settings }) {
             })}
           </div>
           <p className="text-[10px] text-muted-foreground mt-1">Paid rest days. Leave empty for a 7-day operation.</p>
+        </div>
+        <div className="mt-3">
+          <label className={label}>Public holidays (paid)</label>
+          <HolidaysEditor
+            value={f.holidays ?? []}
+            onChange={(hs) => setF((s) => ({ ...s, holidays: hs }))}
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">Staff are not marked absent or deducted on these dates. Add each holiday (e.g. Eid).</p>
         </div>
       </Section>
 
@@ -395,6 +404,36 @@ function AssignRow({ a, shifts }: { a: Assignment; shifts: Shift[] }) {
 }
 
 // ─── small shared bits ────────────────────────────────────────
+function HolidaysEditor({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [date, setDate] = useState("");
+  const add = () => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || value.includes(date)) { setDate(""); return; }
+    onChange([...value, date].sort());
+    setDate("");
+  };
+  return (
+    <div>
+      <div className="flex gap-2">
+        <input type="date" className="input-luxury text-sm" value={date} onChange={(e) => setDate(e.target.value)} />
+        <button type="button" onClick={add}
+          className="flex items-center gap-1 rounded-xl border border-gold-500/30 bg-gold-500/10 px-3 text-xs font-semibold text-gold-300 hover:bg-gold-500/20">
+          <Plus className="w-3.5 h-3.5" /> Add
+        </button>
+      </div>
+      {value.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {value.map((h) => (
+            <span key={h} className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-accent px-2 py-1 text-xs text-foreground">
+              {h}
+              <button type="button" onClick={() => onChange(value.filter((x) => x !== h))} className="text-muted-foreground hover:text-red-400"><X className="w-3 h-3" /></button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="card-luxury p-5">

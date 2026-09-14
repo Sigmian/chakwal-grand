@@ -100,6 +100,7 @@ export async function getStaffPayroll(
     attendance: attInputs,
     leaves: leaveInputs,
     manual,
+    holidays: config.holidays,   // company holidays are paid, never deducted
     todayStr: pktDateStr(new Date()),
   });
 }

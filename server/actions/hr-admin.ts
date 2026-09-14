@@ -24,6 +24,7 @@ const settingsSchema = z.object({
   payrollDivisor:         z.number().int().min(1).max(31),
   paidLeavesPerMonth:     z.number().int().min(0).max(31),
   weeklyOffDays:          z.array(z.enum(["SUN","MON","TUE","WED","THU","FRI","SAT"])),
+  holidays:               z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(60).optional(),
   graceMinutes:           z.number().int().min(0).max(240),
   autoAbsentAfterMinutes: z.number().int().min(0).max(1440),
   minHalfDayMinutes:      z.number().int().min(0).max(1440),

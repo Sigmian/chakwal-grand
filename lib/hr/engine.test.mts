@@ -105,5 +105,24 @@ const F2 = computeMonthlyPayroll({
 });
 eq("F payroll one work-date", F2.presentDays, 1);
 
+// ── Scenario G: a configured holiday is PAID, not an absence ──
+// Day 1 present, day 2 a public holiday with no check-in.
+const Gholiday = computeMonthlyPayroll({
+  ...base, todayStr: "2026-09-02", holidays: ["2026-09-02"],
+  attendance: [{ workDate: "2026-09-01", status: "PRESENT" }],
+});
+eq("G holidayDays", Gholiday.holidayDays, 1);
+eq("G absentDays (holiday not absent)", Gholiday.absentDays, 0);
+eq("G absenceDeduction (holiday paid)", Gholiday.absenceDeduction, 0);
+eq("G earnedToDate (2 paid days)", Gholiday.earnedToDate, 2000);
+
+// Same setup WITHOUT the holiday configured → day 2 is a deducted absence.
+const GnoHoliday = computeMonthlyPayroll({
+  ...base, todayStr: "2026-09-02", holidays: [],
+  attendance: [{ workDate: "2026-09-01", status: "PRESENT" }],
+});
+eq("G no-holiday absentDays", GnoHoliday.absentDays, 1);
+eq("G no-holiday absenceDeduction", GnoHoliday.absenceDeduction, 1000);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

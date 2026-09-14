@@ -8,6 +8,7 @@ export interface HrConfig {
   payrollDivisor: number;
   paidLeavesPerMonth: number;
   weeklyOffDays: string[]; // ["SUN"]
+  holidays: string[];      // paid company holidays, ["YYYY-MM-DD"] — no deduction
 
   graceMinutes: number;
   autoAbsentAfterMinutes: number;
@@ -29,6 +30,7 @@ export const DEFAULT_HR_CONFIG: HrConfig = {
   payrollDivisor: 30,
   paidLeavesPerMonth: 2,
   weeklyOffDays: [],
+  holidays: [],
   graceMinutes: 15,
   autoAbsentAfterMinutes: 240,
   minHalfDayMinutes: 240,
@@ -46,6 +48,7 @@ type HrSettingsRow = {
   payrollDivisor: number;
   paidLeavesPerMonth: number;
   weeklyOffDays: string[];
+  holidays?: string[];
   graceMinutes: number;
   autoAbsentAfterMinutes: number;
   minHalfDayMinutes: number;
@@ -66,6 +69,7 @@ export function toHrConfig(row: HrSettingsRow | null | undefined): HrConfig {
     payrollDivisor: row.payrollDivisor,
     paidLeavesPerMonth: row.paidLeavesPerMonth,
     weeklyOffDays: row.weeklyOffDays,
+    holidays: row.holidays ?? [],
     graceMinutes: row.graceMinutes,
     autoAbsentAfterMinutes: row.autoAbsentAfterMinutes,
     minHalfDayMinutes: row.minHalfDayMinutes,
