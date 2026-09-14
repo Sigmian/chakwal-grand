@@ -57,6 +57,20 @@ export async function sendPushToAllStaff(payload: PushPayload, companyId?: strin
   await cleanExpired(active, results);
 }
 
+export async function sendPushToUser(userId: string, payload: PushPayload) {
+  if (!VAPID_EMAIL || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
+  const subs = await prisma.pushSubscription.findMany({
+    where: { userId, user: { isActive: true } },
+    select: { endpoint: true, p256dh: true, auth: true },
+  });
+  if (subs.length === 0) return;
+
+  const results = await Promise.allSettled(
+    subs.map((sub) => webpush.sendNotification(toWebPushSub(sub), JSON.stringify(payload)))
+  );
+  await cleanExpired(subs, results);
+}
+
 export async function sendPushToBranch(branchId: string, payload: PushPayload) {
   if (!VAPID_EMAIL || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
   const subs = await prisma.pushSubscription.findMany({

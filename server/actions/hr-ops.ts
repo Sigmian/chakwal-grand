@@ -12,6 +12,7 @@ import { z } from "zod";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
+import { sendPushToUser } from "@/lib/push/send";
 
 // Priority ordering for sorting (highest first). Enum can't be ordered by the DB.
 const PRIORITY_RANK: Record<string, number> = { URGENT: 0, HIGH: 1, NORMAL: 2, LOW: 3 };
@@ -53,14 +54,16 @@ export async function createTask(raw: z.input<typeof taskSchema>) {
 
   // Determine branch from the assignee, or the manager's own branch.
   let branchId = getScopedBranchId(user);
+  let assigneeUserId: string | null = null;
   if (input.assignedToId) {
     const staff = await prisma.staffMember.findUnique({
       where: { id: input.assignedToId },
-      select: { branchId: true, branch: { select: { companyId: true } } },
+      select: { branchId: true, userId: true, branch: { select: { companyId: true } } },
     });
     if (!staff || staff.branch.companyId !== user.companyId) throw new Error("Staff member not found");
     if (branchId && staff.branchId !== branchId) throw new Error("Access denied");
     branchId = staff.branchId;
+    assigneeUserId = staff.userId;
   }
   if (!branchId) {
     // Company-level admin with an unassigned task: attach to first branch.
@@ -82,6 +85,19 @@ export async function createTask(raw: z.input<typeof taskSchema>) {
       seenAt: null, // unseen → pops up for the assignee
     },
   });
+  // Instant OS-level nudge to the assignee (best-effort; never blocks the task).
+  if (assigneeUserId && assigneeUserId !== user.id) {
+    const prefix = input.priority === "URGENT" ? "🔴 Urgent task" : input.priority === "HIGH" ? "🟠 New task" : "📋 New task";
+    try {
+      await sendPushToUser(assigneeUserId, {
+        title: `${prefix} from ${user.name ?? "your manager"}`,
+        body: input.title,
+        tag: `task-${task.id}`,
+        data: { url: "/portal" },
+      });
+    } catch { /* push failure must not fail assignment */ }
+  }
+
   revalidatePath("/staff/ops");
   revalidatePath("/portal");
   return { success: true, id: task.id };
@@ -288,15 +304,31 @@ export async function addTaskComment(raw: z.input<typeof commentSchema>) {
     if (task.branch.companyId !== user.companyId) throw new Error("Access denied");
   }
 
+  const text = input.body.trim();
   await prisma.taskComment.create({
     data: {
       taskId: input.taskId,
       authorId: user.id,
       authorName: user.name ?? "User",
       isManager: !isAssignee && isManager,
-      body: input.body.trim(),
+      body: text,
     },
   });
+
+  // Notify the other side of the thread (best-effort).
+  // Assignee commented → ping the manager who assigned it; manager commented → ping the assignee.
+  const recipientId = isAssignee ? task.assignedById : task.assignedTo?.userId ?? null;
+  if (recipientId && recipientId !== user.id) {
+    try {
+      await sendPushToUser(recipientId, {
+        title: `💬 ${user.name ?? "Someone"} commented on “${task.title.slice(0, 40)}”`,
+        body: text.slice(0, 120),
+        tag: `task-${task.id}`,
+        data: { url: isAssignee ? "/staff/ops" : "/portal" },
+      });
+    } catch { /* push failure must not fail the comment */ }
+  }
+
   revalidatePath("/staff/ops");
   revalidatePath("/portal");
   return { success: true };
