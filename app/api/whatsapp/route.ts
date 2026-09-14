@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import prisma from "@/lib/db/prisma";
 import { processWhatsAppMessage } from "@/lib/agent/whatsapp-agent";
 import { runGroupAgent } from "@/lib/agent/group-agent";
 import { checkRateLimit } from "@/lib/agent/rate-limiter";
@@ -141,6 +142,11 @@ async function processInBackground(body: Record<string, unknown>) {
     }
 
     // ── A3: Idempotency — dedupe by WhatsApp message ID ──────
+    // In-memory set catches retries on the same warm instance; a durable
+    // per-message lock row (unique key) catches retries that land on a
+    // different/cold serverless instance where the set is empty. Only a
+    // unique-constraint hit means "already processed" — other DB errors must
+    // NOT drop a legitimate message.
     const msgId = msg.id as string | undefined;
     if (msgId) {
       if (processedIds.has(msgId)) {
@@ -148,6 +154,15 @@ async function processInBackground(body: Record<string, unknown>) {
         return;
       }
       processedIds.add(msgId);
+      try {
+        await prisma.siteContent.create({ data: { key: `wamid:${msgId}`, value: String(Date.now()), type: "text" } });
+      } catch (e) {
+        if ((e as { code?: string })?.code === "P2002") {
+          console.log(`[WhatsApp Dedup] Message ${msgId} already claimed (durable) — skipping`);
+          return;
+        }
+        console.error("[WhatsApp Dedup] lock write failed, processing anyway:", e);
+      }
     }
 
     // ── A4: Coalesce rapid messages (50ms debounce) ───────────

@@ -226,6 +226,13 @@ export async function GET(req: Request) {
     lowStockCount,
   };
 
+  // Housekeeping: prune WhatsApp message-dedup lock rows older than 2 days so
+  // the SiteContent table doesn't grow unbounded (keys look like "wamid:<id>").
+  const wamidCutoff = String(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  await prisma.siteContent.deleteMany({
+    where: { key: { startsWith: "wamid:" }, value: { lt: wamidCutoff } },
+  }).catch((e) => console.error("[Cron] wamid cleanup failed:", e));
+
   console.log("[Cron] daily-report run complete:", JSON.stringify({ sent, ...stats }));
 
   return NextResponse.json({
