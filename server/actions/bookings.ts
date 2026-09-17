@@ -298,7 +298,17 @@ export async function createBooking(rawInput: CreateBookingInput) {
           extraCharges: 0,
         });
 
-        return tx.booking.create({
+        // Advance taken at the desk: validated against the FINAL total computed
+        // here (after any offer), and recorded as a real Payment in this same
+        // transaction — so revenue can never miss money that was handed over.
+        const advance = Math.round((input.advanceAmount ?? 0) * 100) / 100;
+        if (advance > committedTotal + 0.001) throw new Error(`ADVANCE_EXCEEDS:${committedTotal}`);
+        const advancePaymentStatus =
+          advance <= 0 ? PaymentStatus.UNPAID
+          : advance >= committedTotal ? PaymentStatus.PAID
+          : PaymentStatus.PARTIAL;
+
+        const created = await tx.booking.create({
           data: {
             bookingRef:   generateBookingRef(),
             branchId,
@@ -315,9 +325,9 @@ export async function createBooking(rawInput: CreateBookingInput) {
             taxAmount,
             extraCharges: 0,
             totalAmount: committedTotal,
-            paidAmount:   0,
+            paidAmount:   advance,
             status:       BookingStatus.PENDING,
-            paymentStatus: PaymentStatus.UNPAID,
+            paymentStatus: advancePaymentStatus,
             source:       input.source ?? "website",
             offerId:      committedOfferId,
             specialRequests: input.specialRequests || null,
@@ -330,11 +340,30 @@ export async function createBooking(rawInput: CreateBookingInput) {
             branch:   { select: { name: true, address: true } },
           },
         });
+
+        if (advance > 0) {
+          await tx.payment.create({
+            data: {
+              bookingId:    created.id,
+              amount:       advance,
+              method:       input.advanceMethod!,
+              reference:    input.advanceReference || null,
+              receivedById: user.id,
+              notes:        "Advance received at booking",
+            },
+          });
+        }
+        return created;
       });
     } catch (err) {
       const code = (err as { code?: string })?.code;
       if ((err as Error)?.message === "ROOM_CONFLICT" || code === "P2034") {
         return { success: false, error: "Room was just booked for these dates. Please refresh and try again." };
+      }
+      const msg = (err as Error)?.message ?? "";
+      if (msg.startsWith("ADVANCE_EXCEEDS:")) {
+        const total = Number(msg.split(":")[1]);
+        return { success: false, error: `The advance is more than this booking's total of ₨${total.toLocaleString("en-PK")}.` };
       }
       throw err;
     }
@@ -357,9 +386,18 @@ export async function createBooking(rawInput: CreateBookingInput) {
       `New booking ${booking.bookingRef} created for ${booking.customer.name}`
     );
 
-    // Note: the booking-count bonus is awarded when a booking becomes PAID
-    // (see addPayment / extendBooking), not at creation — a fresh booking is
-    // still UNPAID, so it doesn't yet count toward the milestone.
+    const advancePaid = Number(booking.paidAmount);
+    if (advancePaid > 0) {
+      await logActivity(user.id, "PAYMENT_RECEIVED", "Booking", booking.id,
+        `Advance of ₨${advancePaid} received via ${input.advanceMethod} when booking ${booking.bookingRef}`);
+    }
+
+    // The booking-count bonus is awarded when a booking becomes PAID. Usually
+    // that happens later (addPayment / extendBooking); a full advance paid at
+    // the desk makes it PAID right now.
+    if (booking.paymentStatus === PaymentStatus.PAID) {
+      await maybeAwardBookingBonus(user.id);
+    }
 
     revalidatePath("/bookings");
     revalidatePath("/dashboard");
@@ -475,7 +513,23 @@ export async function checkInBooking(bookingId: string) {
 }
 
 // ─── CHECK OUT ────────────────────────────────────────────────
-export async function checkOutBooking(bookingId: string) {
+export interface CheckoutResult {
+  success: boolean;
+  error?: string;
+  /** Set when checkout was refused because money is still owed. */
+  code?: "BALANCE_DUE";
+  outstanding?: number;
+}
+
+/**
+ * Check a guest out. If money is still owed the checkout is REFUSED unless
+ * staff give a written reason (e.g. "Company will pay by bank transfer") —
+ * which is recorded on the booking and in the audit log with their name.
+ */
+export async function checkOutBooking(
+  bookingId: string,
+  opts?: { balanceReason?: string },
+): Promise<CheckoutResult> {
   const user = await requirePermission("bookings:checkout");
 
   try {
@@ -513,6 +567,24 @@ export async function checkOutBooking(bookingId: string) {
       extraCharges,
     });
 
+    // ── Balance guard ──────────────────────────────────────────
+    const outstanding = Math.round((newTotal - Number(booking.paidAmount)) * 100) / 100;
+    const balanceReason = opts?.balanceReason?.trim() ?? "";
+    if (outstanding > 0 && balanceReason.length < 5) {
+      return {
+        success: false,
+        code: "BALANCE_DUE",
+        outstanding,
+        error: `Guest still owes ₨${outstanding.toLocaleString("en-PK")}. Record the payment, or give a reason to check out with a balance.`,
+      };
+    }
+    if (balanceReason.length > 300) {
+      return { success: false, error: "Reason is too long (max 300 characters)." };
+    }
+    const owedNote = outstanding > 0
+      ? `[Checked out owing ₨${outstanding.toLocaleString("en-PK")} — ${user.name}, ${new Date().toLocaleString("en-PK", { timeZone: "Asia/Karachi" })}: ${balanceReason}]`
+      : null;
+
     await prisma.$transaction([
       // Update booking
       prisma.booking.update({
@@ -522,6 +594,9 @@ export async function checkOutBooking(bookingId: string) {
           actualCheckOut: new Date(),
           extraCharges,
           totalAmount:    newTotal,
+          ...(owedNote
+            ? { internalNotes: booking.internalNotes ? `${booking.internalNotes}\n${owedNote}` : owedNote }
+            : {}),
           paymentStatus:
             Number(booking.paidAmount) >= newTotal
               ? PaymentStatus.PAID
@@ -548,6 +623,11 @@ export async function checkOutBooking(bookingId: string) {
 
     await logActivity(user.id, "BOOKING_CHECKOUT", "Booking", bookingId,
       `Guest checked out from ${booking.room.number}. Total: ₨${newTotal}`);
+    if (outstanding > 0) {
+      await logActivity(user.id, "CHECKOUT_WITH_BALANCE", "Booking", bookingId,
+        `${booking.bookingRef}: ${booking.customer.name} checked out owing ₨${outstanding.toLocaleString("en-PK")} — ${balanceReason}`,
+        { outstanding, reason: balanceReason });
+    }
 
     // ── Loyalty: free night reward ─────────────────────────────
     // A booking qualifies when it's a premium room (VIP, SUITE, DELUXE) or has

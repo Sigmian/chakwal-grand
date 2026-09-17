@@ -119,7 +119,7 @@ export function PaymentPanel(props: Props) {
   if (isCancelled) return null;
 
   return (
-    <div className="card-luxury p-5 space-y-4">
+    <div id="payment" className="card-luxury p-5 space-y-4 scroll-mt-4">
       {/* Header */}
       <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
         <CreditCard className="w-4 h-4 text-gold-400" />

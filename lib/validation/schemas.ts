@@ -167,7 +167,19 @@ export const createBookingSchema = z
     offerId:      z.string().optional(),
     specialRequests: z.string().max(500).optional(),
     internalNotes: z.string().max(500).optional(),
+    // Advance received while booking (recorded as a real Payment in the same transaction)
+    advanceAmount:    z.number().min(0, "Advance cannot be negative").max(10_000_000).optional(),
+    advanceMethod:    z.nativeEnum(PaymentMethod).optional(),
+    advanceReference: z.string().max(100).optional(),
   })
+  .refine(
+    (d) => !(d.advanceAmount && d.advanceAmount > 0) || !!d.advanceMethod,
+    { message: "Choose how the advance was paid", path: ["advanceMethod"] }
+  )
+  .refine(
+    (d) => d.advanceAmount === undefined || Math.abs(Math.round(d.advanceAmount * 100) - d.advanceAmount * 100) < 1e-6,
+    { message: "Advance can have at most 2 decimals", path: ["advanceAmount"] }
+  )
   .refine(
     (d) => {
       const checkIn  = new Date(d.checkInDate);

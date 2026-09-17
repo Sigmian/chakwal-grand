@@ -41,6 +41,7 @@ const PATH_LABELS: Record<string, string> = {
   settings:    "Settings",
   offers:      "Promo Codes",
   history:     "Receipt History",
+  unpaid:      "Unpaid Checkouts",
   edit:        "Edit",
 };
 

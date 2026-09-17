@@ -153,6 +153,21 @@ export async function GET(req: Request) {
   `;
   const lowStockCount = Number(lowStockRows[0]?.count ?? 0);
 
+  // ── 8. Guests who checked out still owing money ───────────
+  const unpaidCheckouts = await prisma.booking.findMany({
+    where: {
+      status:        BookingStatus.CHECKED_OUT,
+      paymentStatus: { not: "REFUNDED" },
+      paidAmount:    { lt: prisma.booking.fields.totalAmount },
+    },
+    select: { totalAmount: true, paidAmount: true, customer: { select: { name: true } } },
+  });
+  const owedRows  = unpaidCheckouts
+    .map((b) => ({ name: b.customer.name, owed: Number(b.totalAmount) - Number(b.paidAmount) }))
+    .filter((r) => r.owed > 0.009)
+    .sort((a, b) => b.owed - a.owed);
+  const owedTotal = owedRows.reduce((s, r) => s + r.owed, 0);
+
   // ── Build the WhatsApp message ────────────────────────────
   const checkInNames  = checkInsToday.map(b => b.customer.name);
   const checkOutNames = checkOutsToday.map(b => b.customer.name);
@@ -176,6 +191,10 @@ export async function GET(req: Request) {
 
   const alertLines: string[] = [];
   if (pendingCount  > 0) alertLines.push(`• ${pendingCount} booking${pendingCount   === 1 ? "" : "s"} awaiting confirmation`);
+  if (owedRows.length > 0) {
+    const top = owedRows.slice(0, 3).map((r) => `${r.name} (PKR ${Math.round(r.owed).toLocaleString("en-PK")})`).join(", ");
+    alertLines.push(`• ${owedRows.length} checked-out guest${owedRows.length === 1 ? "" : "s"} still owe PKR ${Math.round(owedTotal).toLocaleString("en-PK")} — ${top}${owedRows.length > 3 ? " …" : ""}`);
+  }
   if (lowStockCount > 0) alertLines.push(`• ${lowStockCount} item${lowStockCount === 1 ? "" : "s"} low on stock`);
 
   const parts: string[] = [

@@ -68,6 +68,7 @@ export const DASHBOARD_NAV: NavItem[] = [
     children: [
       { label: "All Bookings", href: "/bookings" },
       { label: "New Booking",  href: "/bookings/new" },
+      { label: "Unpaid Checkouts", href: "/bookings/unpaid" },
     ],
   },
   {

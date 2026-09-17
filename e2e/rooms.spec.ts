@@ -26,7 +26,8 @@ test("clicking room card navigates to room detail", async ({ page }) => {
   const firstRoomLink = page.getByRole("link", { name: /^details$/i }).first();
   await expect(firstRoomLink).toBeVisible({ timeout: 15_000 });
   await firstRoomLink.click();
-  await expect(page).toHaveURL(/\/rooms\/(?!pick)[^/]+$/);
+  // Room pages render from the database; allow for a slow first load (seen on mobile WebKit).
+  await expect(page).toHaveURL(/\/rooms\/(?!pick)[^/]+$/, { timeout: 20_000 });
 });
 
 test("room detail page shows booking CTA", async ({ page }) => {
@@ -35,7 +36,8 @@ test("room detail page shows booking CTA", async ({ page }) => {
   const details = page.getByRole("link", { name: /^details$/i }).first();
   await expect(details).toBeVisible({ timeout: 15_000 });
   await details.click();
-  await expect(page).toHaveURL(/\/rooms\/(?!pick)[^/]+$/);
+  // Room pages render from the database; allow for a slow first load (seen on mobile WebKit).
+  await expect(page).toHaveURL(/\/rooms\/(?!pick)[^/]+$/, { timeout: 20_000 });
   // Booking CTA on the room page ("Book Now" / "Book This Room"), visible at any size.
   await expect(
     page.locator("main a[href^='/book']:visible").filter({ hasText: /book now|book this room|reserve/i }).first(),

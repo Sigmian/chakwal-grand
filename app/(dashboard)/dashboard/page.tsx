@@ -26,6 +26,7 @@ import {
 import { getTodayOverview } from "@/server/actions/hr-approvals";
 import { getTaskSummary } from "@/server/actions/hr-ops";
 import { getPosTodaySummary } from "@/server/actions/guest-receipts";
+import { getUnpaidCheckouts } from "@/server/actions/receivables";
 import { StaffTodayWidget } from "@/features/hr/components/StaffTodayWidget";
 import { ListTodo, Receipt as ReceiptIcon, Plus } from "lucide-react";
 import {
@@ -57,7 +58,7 @@ export default async function DashboardPage() {
   const canSeePosProfit  = hasPermission(user.role, "pos:receipts:profit");
 
   // Fetch data based on what the role can see
-  const [overview, chartData, topRooms, activity, schedule, forecast, staffToday, todayCollected, staffBookings, taskSummary, posToday] = await Promise.all([
+  const [overview, chartData, topRooms, activity, schedule, forecast, staffToday, todayCollected, staffBookings, taskSummary, posToday, unpaid] = await Promise.all([
     canViewAnalytics ? getDashboardOverview(user.branchId)    : Promise.resolve(null),
     canViewAnalytics ? getRevenueChartData(user.branchId)     : Promise.resolve([]),
     // getTopRooms requires analytics:branch (not rooms:read), so gate it on the
@@ -72,6 +73,7 @@ export default async function DashboardPage() {
     canViewAnalytics ? getStaffBookingStats()                 : Promise.resolve([]),
     canManageHr      ? getTaskSummary()                        : Promise.resolve(null),
     canSeePosProfit  ? getPosTodaySummary(user.branchId)       : Promise.resolve(null),
+    canViewBookings  ? getUnpaidCheckouts()                    : Promise.resolve(null),
   ]);
 
   // Branch comparison only for super admin
@@ -330,6 +332,34 @@ export default async function DashboardPage() {
 
       {/* ── Staff Today (hr:manage roles only) ── */}
       {canManageHr && staffToday && <StaffTodayWidget overview={staffToday} />}
+
+      {/* ── Checked out but still owes (front desk + management) ── */}
+      {unpaid && unpaid.rows.length > 0 && (
+      <div className="card-luxury p-6 border-amber-500/25">
+        <SectionHeader
+          title="Checked Out — Still Owes"
+          subtitle={`${unpaid.rows.length} guest${unpaid.rows.length === 1 ? "" : "s"} · ${formatPKR(unpaid.totalOwed)} to collect`}
+          actions={
+            <Link href="/bookings/unpaid" className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          }
+        />
+        <div className="space-y-2">
+          {unpaid.rows.slice(0, 5).map((r) => (
+            <Link key={r.id} href={`/bookings/${r.id}#payment`}
+              className="flex items-center gap-3 rounded-xl bg-amber-500/5 border border-amber-500/15 p-3 hover:bg-amber-500/10 transition-colors">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{r.guestName} <span className="text-xs font-normal text-muted-foreground">· Room {r.roomNumber}</span></p>
+                <p className="text-xs text-muted-foreground">{r.guestPhone} · left {r.daysSince === 0 ? "today" : `${r.daysSince}d ago`}</p>
+              </div>
+              <span className="text-sm font-bold text-amber-400 tabular-nums flex-shrink-0">{formatPKR(r.balance)}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+      )}
 
       {/* ── Guest Orders POS — today (management only) ── */}
       {canSeePosProfit && posToday && (

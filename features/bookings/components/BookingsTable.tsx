@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { confirmBooking, checkInBooking, checkOutBooking } from "@/server/actions/bookings";
+import { CheckoutBalanceDialog, type BalanceDue } from "./CheckoutBalanceDialog";
 import { Badge } from "@/components/shared";
 import {
   formatDate, formatPKR,
@@ -102,6 +103,7 @@ function QuickActions({ booking, onAction }: {
 export function BookingsTable({ bookings, pagination }: Props) {
   const router      = useRouter();
   const [pending, startTransition] = useTransition();
+  const [balanceDue, setBalanceDue] = useState<BalanceDue | null>(null);
 
   const handleAction = (id: string, action: string) => {
     // Early check-in / check-out guard — mirrors BookingActions.tsx
@@ -121,7 +123,7 @@ export function BookingsTable({ bookings, pagination }: Props) {
     }
 
     startTransition(async () => {
-      let result: { success: boolean; error?: string } | undefined;
+      let result: { success: boolean; error?: string; code?: string; outstanding?: number } | undefined;
 
       if (action === "confirm")  result = await confirmBooking(id);
       if (action === "checkin")  result = await checkInBooking(id);
@@ -134,6 +136,8 @@ export function BookingsTable({ bookings, pagination }: Props) {
       if (result?.success) {
         toast.success(`Booking ${action} successful`);
         router.refresh();
+      } else if (result?.code === "BALANCE_DUE" && result.outstanding) {
+        setBalanceDue({ bookingId: id, bookingRef: bookings.find((b) => b.id === id)?.bookingRef, outstanding: result.outstanding });
       } else {
         toast.error(result?.error ?? "Action failed");
       }
@@ -156,6 +160,7 @@ export function BookingsTable({ bookings, pagination }: Props) {
 
   return (
     <div className="space-y-4">
+      {balanceDue && <CheckoutBalanceDialog due={balanceDue} onClose={() => setBalanceDue(null)} />}
       <div className="card-luxury rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="data-table w-full">

@@ -50,7 +50,10 @@ export function NewBookingWizard({ branches, rooms }: {
     startTransition(async () => {
       const result = await createBooking(data);
       if (result.success) {
-        toast.success(`Booking ${result.data?.bookingRef} created successfully!`);
+        const paid = Number(result.data?.paidAmount ?? 0);
+        toast.success(
+          `Booking ${result.data?.bookingRef} created${paid > 0 ? ` with ${formatPKR(paid)} advance recorded` : ""}!`,
+        );
         router.push(`/bookings/${result.data?.id}`);
       } else {
         toast.error(result.error ?? "Failed to create booking");
@@ -274,6 +277,57 @@ export function NewBookingWizard({ branches, rooms }: {
                   </div>
                 ))}
               </div>
+
+              {/* Advance received at the desk — recorded as a payment with the booking */}
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Advance received now <span className="text-xs font-normal text-muted-foreground">(optional)</span></p>
+                  <p className="text-xs text-muted-foreground">If the guest has paid anything, enter it here so it&apos;s recorded straight away — nothing to remember later.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label htmlFor="advance-amount" className="block text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Amount (PKR)</label>
+                    <input
+                      id="advance-amount" type="number" inputMode="decimal" min={0} step="0.01" placeholder="0"
+                      {...form.register("advanceAmount", { setValueAs: (v) => (v === "" || v === null ? undefined : Number(v)) })}
+                      className="w-full bg-surface-elevated border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-gold-500/60"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="advance-method" className="block text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Paid by</label>
+                    <select
+                      id="advance-method"
+                      {...form.register("advanceMethod", { setValueAs: (v) => (v === "" ? undefined : v) })}
+                      className="w-full bg-surface-elevated border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-gold-500/60"
+                    >
+                      <option value="">Select…</option>
+                      <option value="CASH">Cash</option>
+                      <option value="BANK_TRANSFER">Bank transfer</option>
+                      <option value="EASYPAISA">Easypaisa</option>
+                      <option value="JAZZCASH">JazzCash</option>
+                      <option value="ONLINE_CARD">Card</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="advance-ref" className="block text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Reference</label>
+                    <input
+                      id="advance-ref" placeholder="Txn ID (optional)" maxLength={100}
+                      {...form.register("advanceReference")}
+                      className="w-full bg-surface-elevated border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-gold-500/60"
+                    />
+                  </div>
+                </div>
+                {(errors.advanceAmount || errors.advanceMethod) && (
+                  <p className="text-red-400 text-xs">{errors.advanceAmount?.message ?? errors.advanceMethod?.message}</p>
+                )}
+                {!!values.advanceAmount && values.advanceAmount > 0 && (
+                  <p className="text-xs text-emerald-400">
+                    Balance after advance: {formatPKR(Math.max(0, (selectedRoom?.pricePerNight ?? 0) * nights - values.advanceAmount))}
+                    <span className="text-muted-foreground"> (any offer discount is applied when saving)</span>
+                  </p>
+                )}
+              </div>
+
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep(3)} className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="w-4 h-4" /> Back

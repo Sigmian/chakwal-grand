@@ -11,6 +11,7 @@ import { CheckCircle2, LogIn, LogOut, XCircle, Loader2, CalendarPlus } from "luc
 import { confirmBooking, checkInBooking, checkOutBooking, cancelBooking } from "@/server/actions/bookings";
 import { BookingStatus } from "@/types";
 import { ExtendStayModal } from "./ExtendStayModal";
+import { CheckoutBalanceDialog, type BalanceDue } from "./CheckoutBalanceDialog";
 
 interface BookingForExtend {
   id:             string;
@@ -46,6 +47,7 @@ export function BookingActions({ booking, extendData, showCancel }: Props) {
   const [extendOpen,   setExtendOpen]   = useState(false);
   const [reason,       setReason]       = useState("");
   const [confirmWarn,  setConfirmWarn]  = useState<{ action: "checkin" | "checkout"; msg: string } | null>(null);
+  const [balanceDue,   setBalanceDue]   = useState<BalanceDue | null>(null);
 
   const executeAction = (action: "confirm" | "checkin" | "checkout") => {
     startTransition(async () => {
@@ -57,6 +59,8 @@ export function BookingActions({ booking, extendData, showCancel }: Props) {
       if (result.success) {
         toast.success(`${action === "confirm" ? "Confirmed" : action === "checkin" ? "Checked in" : "Checked out"} successfully`);
         router.refresh();
+      } else if ("code" in result && result.code === "BALANCE_DUE" && result.outstanding) {
+        setBalanceDue({ bookingId: booking.id, bookingRef: booking.bookingRef, outstanding: result.outstanding });
       } else {
         toast.error(result.error ?? "Action failed");
       }
@@ -107,6 +111,15 @@ export function BookingActions({ booking, extendData, showCancel }: Props) {
 
   return (
     <>
+    {balanceDue && (
+      <CheckoutBalanceDialog
+        due={balanceDue}
+        onClose={() => setBalanceDue(null)}
+        // Already on the booking page: scroll to the payment panel instead of navigating.
+        onTakePayment={() => document.getElementById("payment")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+      />
+    )}
+
     {extendOpen && extendData && (
       <ExtendStayModal booking={extendData} onClose={() => setExtendOpen(false)} />
     )}
