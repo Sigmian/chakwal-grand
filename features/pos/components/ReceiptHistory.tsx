@@ -101,7 +101,7 @@ export function ReceiptHistory({ data, filters }: { data: Data; filters: Receipt
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile label="Active receipts" value={String(data.totals.activeCount)} />
         <Tile label="POS sales" value={formatPKR(data.totals.sales)} tone="text-gold-400" />
-        {data.showProfit && data.totals.vendorCost !== null && <Tile label="Vendor cost" value={formatPKR(data.totals.vendorCost)} tone="text-red-400" />}
+        {data.showProfit && data.totals.vendorCost !== null && <Tile label="Vendor + stock cost" value={formatPKR(data.totals.vendorCost)} tone="text-red-400" />}
         {data.showProfit && data.totals.profit !== null && <Tile label="CGH profit" value={formatPKR(data.totals.profit)} tone="text-green-400" />}
       </div>
 

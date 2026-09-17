@@ -124,16 +124,17 @@ export function ReceiptViewer({ receipt: r, autoPrint }: { receipt: GuestReceipt
               <h3 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 <ShieldCheck className="h-4 w-4 text-gold-400" /> Internal accounting <span className="normal-case font-normal">(not on receipt)</span>
               </h3>
-              <dl className="grid grid-cols-3 gap-3 text-sm">
+              <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                 <div><dt className="text-[11px] text-muted-foreground">Customer charged</dt><dd className="font-bold text-foreground">{formatPKR(r.accounting.customerCharged)}</dd></div>
+                <div><dt className="text-[11px] text-muted-foreground">Stock cost</dt><dd className="font-bold text-foreground">{formatPKR(r.accounting.stockCost)}</dd></div>
                 <div><dt className="text-[11px] text-muted-foreground">Vendor cost</dt><dd className="font-bold text-foreground">{r.accounting.vendorCost === null ? <span className="text-amber-400">Not entered</span> : formatPKR(r.accounting.vendorCost)}</dd></div>
                 <div>
                   <dt className="text-[11px] text-muted-foreground">CGH profit</dt>
                   <dd className={cn("font-bold", r.accounting.profit >= 0 ? "text-green-400" : "text-red-400")}>{formatPKRBill(r.accounting.profit)}</dd>
                 </div>
               </dl>
-              {r.accounting.vendorCost === null && (
-                <p className="mt-2 text-[11px] text-amber-400/90">Without a vendor cost, the whole bill is counted as profit. {r.canEdit ? "Edit the receipt to add it." : ""}</p>
+              {r.accounting.vendorCost === null && r.items.some((i) => !i.inventoryItemId) && (
+                <p className="mt-2 text-[11px] text-amber-400/90">Without a vendor cost, the outside items are counted as pure profit. {r.canEdit ? "Edit the receipt to add it." : ""}</p>
               )}
             </div>
           )}

@@ -113,9 +113,15 @@ test("my-booking submit button is disabled when input is empty", async ({ page }
 test("my-booking accepts a reference and shows result or error", async ({ page }) => {
   await page.goto("/my-booking");
   const input = page.getByPlaceholder(/booking reference|BK-/i);
-  await input.fill("BK-2024-XXXYYY");
+  const phone = page.getByPlaceholder(/phone/i);
   const btn = page.getByRole("button", { name: /look up|find|search/i }).first();
-  await expect(btn).toBeEnabled({ timeout: 3_000 });
+  // Lookup needs the reference AND the phone used for the booking. Typing before
+  // React hydrates can be discarded (seen on WebKit), so retry until the form holds it.
+  await expect(async () => {
+    await input.fill("BK-2024-XXXYYY");
+    await phone.fill("03001234567");
+    await expect(btn).toBeEnabled({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
   await btn.click();
   // Should show either "not found" or a result — not crash
   await expect(

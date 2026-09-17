@@ -102,6 +102,8 @@ export const DASHBOARD_NAV: NavItem[] = [
     children: [
       { label: "Products",  href: "/inventory/products" },
       { label: "Point of Sale", href: "/inventory/pos" },
+      // Same stock is billable from the Guest Orders POS (mixed with outside items).
+      { label: "Guest Orders POS", href: "/pos/new", requiredRoles: [UserRole.SUPER_ADMIN, UserRole.BRANCH_MANAGER] },
       { label: "Stock Ledger", href: "/inventory/ledger" },
     ],
   },

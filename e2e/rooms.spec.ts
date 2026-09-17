@@ -22,21 +22,24 @@ test("room card shows price and amenities", async ({ page }) => {
 
 test("clicking room card navigates to room detail", async ({ page }) => {
   await page.goto("/rooms");
-  const firstRoomLink = page.getByRole("link", { name: /view details|book now|from pkr/i }).first();
-  if (await firstRoomLink.isVisible()) {
-    await firstRoomLink.click();
-    await expect(page).toHaveURL(/\/rooms\//);
-  }
+  // Room cards link to their detail page via "Details" (the page's "Book Now" goes to /book).
+  const firstRoomLink = page.getByRole("link", { name: /^details$/i }).first();
+  await expect(firstRoomLink).toBeVisible({ timeout: 15_000 });
+  await firstRoomLink.click();
+  await expect(page).toHaveURL(/\/rooms\/(?!pick)[^/]+$/);
 });
 
 test("room detail page shows booking CTA", async ({ page }) => {
   await page.goto("/rooms");
-  // Get first room link
-  const links = await page.$$("a[href^='/rooms/']");
-  if (links.length > 0) {
-    await links[0].click();
-    await expect(page.getByRole("link", { name: /book now|reserve/i })).toBeVisible({ timeout: 5_000 });
-  }
+  // Open a real room (the first /rooms/ link is "/rooms/pick", the floor picker).
+  const details = page.getByRole("link", { name: /^details$/i }).first();
+  await expect(details).toBeVisible({ timeout: 15_000 });
+  await details.click();
+  await expect(page).toHaveURL(/\/rooms\/(?!pick)[^/]+$/);
+  // Booking CTA on the room page ("Book Now" / "Book This Room"), visible at any size.
+  await expect(
+    page.locator("main a[href^='/book']:visible").filter({ hasText: /book now|book this room|reserve/i }).first(),
+  ).toBeVisible({ timeout: 10_000 });
 });
 
 test("Madina Town rooms show Grand Opening discount when active", async ({ page }) => {

@@ -15,8 +15,9 @@ test("branch selector shows both branch cards", async ({ page }) => {
   await page.goto("/rooms");
   const modal = page.getByRole("dialog");
   await expect(modal).toBeVisible({ timeout: 15_000 });
-  await expect(modal.getByText("Main Branch")).toBeVisible();
-  await expect(modal.getByText("Madina Town Branch")).toBeVisible();
+  // exact: "Main Branch" also appears inside the card description ("Our Main Branch near…")
+  await expect(modal.getByText("Main Branch", { exact: true })).toBeVisible();
+  await expect(modal.getByText("Madina Town Branch", { exact: true })).toBeVisible();
 });
 
 test("selecting a branch closes modal and shows branch in navbar", async ({ page }) => {
@@ -78,29 +79,43 @@ test("branch can be switched from navbar dropdown", async ({ page }) => {
   await setStoredBranch(page, "branch-chakwal");
   await page.goto("/rooms");
 
-  // Click the branch pill in navbar
-  const branchPill = page.locator("header button").filter({ hasText: /chakwal|main/i }).first();
-  await branchPill.click();
+  const toggle = page.getByRole("button", { name: /toggle menu/i });
+  if (await toggle.isVisible().catch(() => false)) {
+    // Phone layout: branches are listed as buttons inside the hamburger menu.
+    await toggle.click();
+    const madina = page.locator("header button:visible").filter({ hasText: /madina town branch/i }).first();
+    await expect(madina).toBeVisible();
+    await madina.click();
+  } else {
+    // Desktop: branch pill in the navbar opens a "Switch Branch" dropdown.
+    const branchPill = page.locator("header button").filter({ hasText: /chakwal|main/i }).first();
+    await branchPill.click();
+    // ("Madina Town Branch" also appears in room cards on /rooms, so target the switcher's button)
+    await expect(page.getByText("Switch Branch")).toBeVisible();
+    await expect(page.getByRole("button", { name: /madina town branch/i }).first()).toBeVisible();
+    await page.getByRole("button", { name: /madina town/i }).first().click();
+  }
 
-  // Dropdown should open with both branches
-  await expect(page.getByText("Switch Branch")).toBeVisible();
-  await expect(page.locator("text=Madina Town Branch")).toBeVisible();
-
-  // Click Madina Town
-  await page.getByRole("button", { name: /madina town/i }).first().click();
-
-  // Pill should now show Madina Town
-  await expect(page.locator("header").getByText(/madina/i).first()).toBeVisible();
+  // The chosen branch is persisted (the navbar reads it from here on every page).
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("cgh_branch"))).toBe("branch-madina");
 });
 
-test("Grand Opening badge is visible on Madina Town card", async ({ page }) => {
-  // This test is conditional on the offer being active in DB; skip gracefully if not
+test("Madina Town card shows its badge (Grand Opening while that offer is live)", async ({ page }) => {
   await clearStoredBranch(page);
   await page.goto("/rooms");
   const modal = page.getByRole("dialog");
   await expect(modal).toBeVisible({ timeout: 15_000 });
 
-  const goText = modal.getByText(/grand opening/i);
-  // Just assert it's visible (may or may not be active depending on DB state)
-  await expect(goText.or(modal.getByText(/50% off/i)).first()).toBeVisible();
+  const madinaCard = modal.getByRole("button", { name: /madina town branch/i });
+  await expect(madinaCard).toBeVisible();
+
+  // The Grand Opening offer (AUTO_GRANDOPEN50) ended 2026-07-31. While an opening
+  // offer is live the card advertises it; otherwise it carries the "NEW" badge.
+  const offer = madinaCard.getByText(/grand opening|50% off/i).first();
+  if (await offer.count()) {
+    await expect(offer).toBeVisible();
+  } else {
+    // DOM text is "New", uppercased by CSS
+    await expect(madinaCard.getByText(/^new$/i)).toBeVisible();
+  }
 });

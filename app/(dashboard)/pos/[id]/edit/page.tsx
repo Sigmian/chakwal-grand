@@ -36,15 +36,12 @@ export default async function EditReceiptPage({ params }: { params: { id: string
           roomNo: receipt.roomNo,
           guestName: receipt.guestName,
           notes: receipt.notes,
-          items: receipt.items.map((i) => ({ name: i.name, qty: i.qty, rate: i.rate })),
+          items: receipt.items.map((i) => ({ name: i.name, qty: i.qty, rate: i.rate, inventoryItemId: i.inventoryItemId })),
           deliveryCharges: receipt.deliveryCharges,
           otherCharges: receipt.otherCharges,
           discount: receipt.discount,
-          customerCharged:
-            receipt.accounting && receipt.accounting.customerCharged !== receipt.total
-              ? receipt.accounting.customerCharged
-              : null,
-          vendorCost: receipt.accounting?.vendorCost ?? null,
+          customerCharged: receipt.editValues?.customerCharged ?? null,
+          vendorCost: receipt.editValues?.vendorCost ?? null,
         }}
       />
     </div>

@@ -17,6 +17,10 @@ export interface ReceiptItemInput {
   name: string;
   qty: number | string;
   rate: number | string;
+  /** Set when the line is guest-house stock (whole quantities, inventory price). */
+  inventoryItemId?: string | null;
+  /** Purchase price per unit of a stock line (server-supplied). */
+  unitCost?: number | string | null;
 }
 
 export interface ReceiptInput {
@@ -36,6 +40,8 @@ export interface ComputedItem {
   qty: number;
   rate: number;
   amount: number;
+  inventoryItemId: string | null;
+  unitCost: number | null;
 }
 
 export interface ComputedReceipt {
@@ -47,6 +53,10 @@ export interface ComputedReceipt {
   total: number;
   customerCharged: number;
   vendorCost: number | null;
+  /** Σ purchase cost of guest-house stock lines. */
+  stockCost: number;
+  /** Σ amount of stock lines, before any bill-level discount. */
+  stockSubtotal: number;
   profit: number;
   errors: string[];
 }
@@ -74,6 +84,8 @@ export function computeReceipt(input: ReceiptInput): ComputedReceipt {
   const errors: string[] = [];
   const items: ComputedItem[] = [];
   let subtotalP = 0;
+  let stockCostP = 0;
+  let stockSubtotalP = 0;
 
   const rows = input.items ?? [];
   if (rows.length > MAX_ITEMS) errors.push(`A receipt can have at most ${MAX_ITEMS} items.`);
@@ -92,6 +104,7 @@ export function computeReceipt(input: ReceiptInput): ComputedReceipt {
     if (Number.isNaN(qty) || qty <= 0) errors.push(`Line ${line}: quantity must be more than 0.`);
     else if (qty > MAX_QTY) errors.push(`Line ${line}: quantity is too large.`);
     else if (!hasMax2dp(qty)) errors.push(`Line ${line}: quantity can have at most 2 decimals.`);
+    else if (row.inventoryItemId && !Number.isInteger(qty)) errors.push(`Line ${line}: stock items need a whole-number quantity.`);
     if (rateBlank) errors.push(`Line ${line}: rate is required.`);
     else if (Number.isNaN(rate) || rate < 0) errors.push(`Line ${line}: rate must be 0 or more.`);
     else if (rate > MAX_MONEY) errors.push(`Line ${line}: rate is too large.`);
@@ -102,7 +115,14 @@ export function computeReceipt(input: ReceiptInput): ComputedReceipt {
     // qty in hundredths × rate in paisa ÷ 100 → paisa, rounded half-up.
     const amountP = Math.round((toPaisa(safeQty) * toPaisa(safeRate)) / 100);
     subtotalP += amountP;
-    items.push({ position: items.length + 1, name, qty: safeQty, rate: safeRate, amount: fromPaisa(amountP) });
+    const inventoryItemId = row.inventoryItemId || null;
+    const unitCostRaw = inventoryItemId ? parseAmount(row.unitCost) : NaN;
+    const unitCost = inventoryItemId && Number.isFinite(unitCostRaw) && unitCostRaw >= 0 ? unitCostRaw : null;
+    if (inventoryItemId) {
+      stockSubtotalP += amountP;
+      if (unitCost !== null) stockCostP += Math.round((toPaisa(safeQty) * toPaisa(unitCost)) / 100);
+    }
+    items.push({ position: items.length + 1, name, qty: safeQty, rate: safeRate, amount: fromPaisa(amountP), inventoryItemId, unitCost });
   });
 
   if (items.length === 0) errors.push("Add at least one item.");
@@ -127,7 +147,7 @@ export function computeReceipt(input: ReceiptInput): ComputedReceipt {
   const chargedP = isBlank(input.customerCharged) ? totalP : money(input.customerCharged, "Customer charged");
   const vendorBlank = isBlank(input.vendorCost);
   const vendorP = vendorBlank ? null : money(input.vendorCost, "Outside vendor cost");
-  const profitP = chargedP - (vendorP ?? 0);
+  const profitP = chargedP - (vendorP ?? 0) - stockCostP;
 
   return {
     items,
@@ -138,9 +158,26 @@ export function computeReceipt(input: ReceiptInput): ComputedReceipt {
     total: fromPaisa(totalP),
     customerCharged: fromPaisa(chargedP),
     vendorCost: vendorP === null ? null : fromPaisa(vendorP),
+    stockCost: fromPaisa(stockCostP),
+    stockSubtotal: fromPaisa(stockSubtotalP),
     profit: fromPaisa(profitP),
     errors,
   };
+}
+
+/**
+ * Revenue to book for the stock part of a receipt: the stock lines' amount less
+ * their proportional share of the bill-level discount (charges are the guest
+ * house's own service, so the discount is shared across everything billed).
+ * Returned in rupees, rounded to the paisa. This is what the inventory Sale
+ * records, so Finance counts exactly what the guest paid for stock.
+ */
+export function allocateStockRevenue(c: Pick<ComputedReceipt, "stockSubtotal" | "subtotal" | "deliveryCharges" | "otherCharges" | "discount">): number {
+  const stockP = toPaisa(c.stockSubtotal);
+  const grossP = toPaisa(c.subtotal) + toPaisa(c.deliveryCharges) + toPaisa(c.otherCharges);
+  if (stockP <= 0 || grossP <= 0) return 0;
+  const shareP = Math.round((toPaisa(c.discount) * stockP) / grossP);
+  return fromPaisa(Math.max(0, stockP - shareP));
 }
 
 // ─── Receipt number ───────────────────────────────────────────

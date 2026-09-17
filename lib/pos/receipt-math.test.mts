@@ -83,3 +83,41 @@ eq("qty trims zeros", [formatQty(1), formatQty(2.5), formatQty(0.25)], ["1", "2.
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);
+
+// ── Guest-house stock lines ──
+{
+  const { computeReceipt: cr, allocateStockRevenue: alloc } = await import("./receipt-math.ts");
+  let p2 = 0, f2 = 0;
+  const eq2 = (name: string, got: unknown, want: unknown) => {
+    const ok = JSON.stringify(got) === JSON.stringify(want);
+    console.log(`${ok ? "PASS" : "FAIL"}  ${name}  got=${JSON.stringify(got)}${ok ? "" : ` want=${JSON.stringify(want)}`}`);
+    ok ? p2++ : f2++;
+  };
+  const mixed = cr({
+    items: [
+      { name: "Karahi (outside)", qty: 1, rate: 900 },
+      { name: "Water 1.5L", qty: 2, rate: 100, inventoryItemId: "inv1", unitCost: 60 },
+    ],
+    vendorCost: 700,
+  });
+  eq2("mixed subtotal", mixed.subtotal, 1100);
+  eq2("stock subtotal", mixed.stockSubtotal, 200);
+  eq2("stock cost = 2 × 60", mixed.stockCost, 120);
+  eq2("profit = 1100 − 700 vendor − 120 stock", mixed.profit, 280);
+  eq2("stock line keeps inventory link", mixed.items[1].inventoryItemId, "inv1");
+  eq2("stock revenue without discount", alloc(mixed), 200);
+
+  const disc = cr({
+    items: [{ name: "Food", qty: 1, rate: 800 }, { name: "Coke", qty: 2, rate: 100, inventoryItemId: "inv2", unitCost: 70 }],
+    deliveryCharges: 0, discount: 100,
+  });
+  eq2("discount shared: stock 200 of 1000 bears 20", alloc(disc), 180);
+  const fractional = cr({ items: [{ name: "Tea", qty: 1, rate: 100 }, { name: "Water", qty: 1, rate: 50, inventoryItemId: "i", unitCost: 30 }], discount: 10 });
+  eq2("discount share rounds to paisa (50 × 10/150 = 3.33)", alloc(fractional), 46.67);
+  eq2("only stock, no discount", alloc(cr({ items: [{ name: "W", qty: 3, rate: 40, inventoryItemId: "i", unitCost: 25 }] })), 120);
+  eq2("no stock → 0", alloc(cr({ items: [{ name: "Food", qty: 1, rate: 500 }] })), 0);
+  eq2("stock qty must be whole", cr({ items: [{ name: "Water", qty: 1.5, rate: 100, inventoryItemId: "i", unitCost: 60 }] }).errors.includes("Line 1: stock items need a whole-number quantity."), true);
+  eq2("free-text qty may be fractional", cr({ items: [{ name: "Chicken (kg)", qty: 1.5, rate: 900 }] }).errors, []);
+  console.log(`\nstock tests: ${p2} passed, ${f2} failed`);
+  if (f2) process.exit(1);
+}

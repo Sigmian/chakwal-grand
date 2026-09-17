@@ -82,12 +82,21 @@ function draw(doc: JsPDF, r: ReceiptView, size: PrintSize, logo: string | null):
   centered(safe(siteConfig.tagline).toUpperCase(), y, a4 ? 0.8 : 0.3);
   y += a4 ? 5 : 3.5;
 
-  const pillW = a4 ? 50 : 34, pillH = a4 ? 8.5 : 6;
-  doc.setFillColor(...NAVY);
-  doc.roundedRect(cx - pillW / 2, y, pillW, pillH, 1.5, 1.5, "F");
-  doc.setTextColor(255, 255, 255); font("bold", a4 ? 13 : 9.5);
-  centered("POS BILL", y + pillH / 2 + (a4 ? 1.6 : 1.2), a4 ? 2 : 1.2);
-  y += pillH + (a4 ? 6 : 4.5);
+  // Title between thin gold rules (matches the on-screen/printed receipt).
+  const title = "GUEST ORDER RECEIPT";
+  const titleSpace = a4 ? 1.1 : 0.55;
+  color(NAVY); font("bold", a4 ? 12 : 8.6);
+  const titleY = y + (a4 ? 5 : 3.8);
+  const titleW = doc.getTextWidth(title) + titleSpace * (title.length - 1);
+  centered(title, titleY, titleSpace);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.3);
+  const ruleY = titleY - (a4 ? 1.4 : 1);
+  const gap = a4 ? 4 : 2.5;
+  doc.line(x0, ruleY, cx - titleW / 2 - gap, ruleY);
+  doc.line(cx + titleW / 2 + gap, ruleY, x1, ruleY);
+  doc.setLineWidth(0.2);
+  y += a4 ? 12 : 8.5;
 
   // ── Meta ──
   const meta: [string, string][] = [

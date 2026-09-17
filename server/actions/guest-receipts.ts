@@ -19,15 +19,20 @@ import prisma from "@/lib/db/prisma";
 import { requirePermission, getScopedBranchId } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getPKTDayPeriod } from "@/lib/finance/reporting";
-import { computeReceipt, formatReceiptNo, MAX_ITEMS } from "@/lib/pos/receipt-math";
+import { computeReceipt, allocateStockRevenue, formatReceiptNo, MAX_ITEMS, type ComputedReceipt } from "@/lib/pos/receipt-math";
+import { sendPushToBranch } from "@/lib/push/send";
 import type { Prisma, GuestReceiptStatus } from "@prisma/client";
 import { UserRole, BookingStatus, type SessionUser } from "@/types";
 
 const COUNTER_KEY = "guest_receipt";
+// Prisma's default interactive-transaction limit is 5s. A receipt with several
+// stock lines makes a handful of round-trips; on a slow link that exceeded 5s
+// and the whole bill was rolled back. Give it headroom (it stays atomic).
+const TX_OPTIONS = { maxWait: 10_000, timeout: 20_000 };
 const PKT_OFFSET_MS = 5 * 60 * 60 * 1000;
 
 // ─── Types returned to the client (plain JSON only) ───────────
-export interface ReceiptLine { name: string; qty: number; rate: number; amount: number }
+export interface ReceiptLine { name: string; qty: number; rate: number; amount: number; inventoryItemId?: string | null }
 
 export interface GuestReceiptDetail {
   id: string;
@@ -47,8 +52,10 @@ export interface GuestReceiptDetail {
   otherCharges: number;
   discount: number;
   total: number;
-  /** Internal accounting — null when the viewer may not see it. */
-  accounting: { customerCharged: number; vendorCost: number | null; profit: number } | null;
+  /** Profit breakdown — managers/super admin only (pos:receipts:profit). */
+  accounting: { customerCharged: number; vendorCost: number | null; stockCost: number; profit: number } | null;
+  /** Values the editor needs to round-trip (anyone allowed to edit this receipt). */
+  editValues: { customerCharged: number | null; vendorCost: number | null } | null;
   createdByName: string;
   createdAt: string;
   updatedByName: string | null;
@@ -75,6 +82,7 @@ const receiptSchema = z.object({
     name: z.string().max(200),
     qty: z.union([z.number(), z.string().max(20)]),
     rate: z.union([z.number(), z.string().max(20)]),
+    inventoryItemId: z.string().max(60).nullable().optional(),
   })).max(MAX_ITEMS + 20), // spare blank rows are allowed and dropped
   deliveryCharges: money,
   otherCharges: money,
@@ -131,12 +139,172 @@ function validationError(errors: string[]): ActionResult {
   return { success: false, error: errors.slice(0, 3).join(" ") };
 }
 
+// ─── Guest-house stock lines ──────────────────────────────────
+// A line linked to an InventoryItem is the guest house's OWN stock. Unlike
+// outside-vendor lines it is real product revenue, so it is recorded as an
+// inventory Sale (counted by Finance exactly like the inventory POS) and its
+// stock is deducted in the same transaction as the receipt.
+
+type Tx = Prisma.TransactionClient;
+type RawItems = GuestReceiptInput["items"];
+
+/**
+ * Price and validate stock lines from the DATABASE: the rate is always the
+ * item's current selling price and the unit cost its purchase price — nothing
+ * the browser sends for a stock line is trusted except the item id and qty.
+ */
+async function priceStockLines(branchId: string, items: RawItems): Promise<{ items: RawItems & { unitCost?: number }[]; error?: string }> {
+  const ids = [...new Set(items.map((i) => i.inventoryItemId).filter((x): x is string => !!x))];
+  if (ids.length === 0) return { items };
+  const stock = await prisma.inventoryItem.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, branchId: true, isActive: true, sellingPrice: true, purchasePrice: true, product: { select: { name: true } } },
+  });
+  const byId = new Map(stock.map((s) => [s.id, s]));
+  for (const id of ids) {
+    const s = byId.get(id);
+    if (!s || s.branchId !== branchId) return { items, error: "A stock item doesn't belong to this branch. Remove it and pick it again." };
+    if (!s.isActive) return { items, error: `${s.product.name} is no longer stocked.` };
+  }
+  return {
+    items: items.map((i) => {
+      const s = i.inventoryItemId ? byId.get(i.inventoryItemId) : undefined;
+      return s ? { ...i, rate: Number(s.sellingPrice), unitCost: Number(s.purchasePrice) } : { ...i, inventoryItemId: null };
+    }),
+  };
+}
+
+/** Record the stock part of a receipt as an inventory Sale and deduct stock atomically. */
+async function postStockSale(tx: Tx, userId: string, branchId: string, receipt: { id: string; receiptNo: string }, c: ComputedReceipt) {
+  const lines = c.items.filter((i) => i.inventoryItemId);
+  if (lines.length === 0) return;
+
+  const sale = await tx.sale.create({
+    data: {
+      branchId,
+      type: "WALK_IN",
+      soldById: userId,
+      totalAmount: allocateStockRevenue(c),
+      notes: `Guest Orders POS ${receipt.receiptNo}`,
+      guestReceiptId: receipt.id,
+      lineItems: {
+        createMany: { data: lines.map((l) => ({ inventoryItemId: l.inventoryItemId!, quantity: l.qty, unitPrice: l.rate, totalPrice: l.amount })) },
+      },
+    },
+    select: { id: true },
+  });
+
+  const movements: Prisma.StockMovementCreateManyInput[] = [];
+  for (const l of lines) {
+    // Conditional decrement in ONE round-trip: only succeeds when enough stock
+    // remains, so two receptionists can never sell the last bottle twice.
+    const rows = await tx.$queryRaw<{ currentStock: number }[]>`
+      UPDATE "InventoryItem"
+         SET "currentStock" = "currentStock" - ${l.qty}, "updatedAt" = NOW()
+       WHERE "id" = ${l.inventoryItemId} AND "currentStock" >= ${l.qty}
+      RETURNING "currentStock"`;
+    if (rows.length === 0) {
+      const have = await tx.inventoryItem.findUnique({ where: { id: l.inventoryItemId! }, select: { currentStock: true } });
+      throw new Error(`STOCK:${l.name}:${have?.currentStock ?? 0}`);
+    }
+    const newStock = rows[0].currentStock;
+    movements.push({
+      inventoryItemId: l.inventoryItemId!,
+      type: "SALE",
+      quantity: -l.qty,
+      previousStock: newStock + l.qty,
+      newStock,
+      reference: sale.id,
+      notes: `Guest Orders POS ${receipt.receiptNo}`,
+      createdById: userId,
+    });
+  }
+  await tx.stockMovement.createMany({ data: movements });
+}
+
+/**
+ * Undo a receipt's stock effect without deleting anything: return the units to
+ * stock and post a reversing (negative) Sale dated now, so Finance's cash view
+ * nets to zero and the stock ledger shows the return.
+ */
+async function reverseStockSale(tx: Tx, userId: string, receipt: { id: string; receiptNo: string; branchId: string }, why: string) {
+  const [lines, sales] = await Promise.all([
+    tx.guestReceiptItem.findMany({ where: { receiptId: receipt.id, inventoryItemId: { not: null } } }),
+    tx.sale.aggregate({ where: { guestReceiptId: receipt.id }, _sum: { totalAmount: true } }),
+  ]);
+  const net = num(sales._sum.totalAmount);
+  if (lines.length === 0 && net === 0) return;
+
+  const reversal = await tx.sale.create({
+    data: {
+      branchId: receipt.branchId,
+      type: "WALK_IN",
+      soldById: userId,
+      totalAmount: -net,
+      notes: `Reversal of Guest Orders POS ${receipt.receiptNo} (${why})`,
+      guestReceiptId: receipt.id,
+      lineItems: lines.length
+        ? { createMany: { data: lines.map((l) => ({ inventoryItemId: l.inventoryItemId!, quantity: -num(l.qty), unitPrice: num(l.rate), totalPrice: -num(l.amount) })) } }
+        : undefined,
+    },
+    select: { id: true },
+  });
+
+  const movements: Prisma.StockMovementCreateManyInput[] = [];
+  for (const l of lines) {
+    const qty = num(l.qty);
+    const after = await tx.inventoryItem.update({
+      where: { id: l.inventoryItemId! },
+      data: { currentStock: { increment: qty } },
+      select: { currentStock: true },
+    });
+    movements.push({
+      inventoryItemId: l.inventoryItemId!,
+      type: "RETURN",
+      quantity: qty,
+      previousStock: after.currentStock - qty,
+      newStock: after.currentStock,
+      reference: reversal.id,
+      notes: `Guest Orders POS ${receipt.receiptNo} — ${why}`,
+      createdById: userId,
+    });
+  }
+  await tx.stockMovement.createMany({ data: movements });
+}
+
+function stockError(e: unknown): string | null {
+  const m = (e as Error)?.message ?? "";
+  if (!m.startsWith("STOCK:")) return null;
+  const [, name, have] = m.split(":");
+  return `Not enough stock for ${name} — only ${have} left. Lower the quantity or restock first.`;
+}
+
+/** Fire low-stock alerts for items this receipt touched (after commit, best-effort). */
+function alertLowStock(branchId: string, items: { inventoryItemId: string | null }[]) {
+  const ids = [...new Set(items.map((i) => i.inventoryItemId).filter((x): x is string => !!x))];
+  if (!ids.length) return;
+  void prisma.inventoryItem
+    .findMany({ where: { id: { in: ids } }, select: { id: true, currentStock: true, minStockLevel: true, product: { select: { name: true, unit: true } } } })
+    .then((rows) => {
+      for (const r of rows) {
+        if (r.minStockLevel > 0 && r.currentStock <= r.minStockLevel) {
+          sendPushToBranch(branchId, {
+            title: "⚠️ Low Stock Alert",
+            body: `${r.product.name}: only ${r.currentStock} ${r.product.unit ?? "units"} remaining`,
+            tag: `low-stock-${r.id}`,
+          }).catch(() => {});
+        }
+      }
+    })
+    .catch(() => {});
+}
+
 // ─── Context for the New Receipt screen ───────────────────────
 export async function getPosContext() {
   const user = await requirePermission("pos:receipts:create");
   const scoped = getScopedBranchId(user);
 
-  const [branches, stays] = await Promise.all([
+  const [branches, stays, stock] = await Promise.all([
     prisma.branch.findMany({
       where: { companyId: user.companyId, isActive: true, ...(scoped ? { id: scoped } : {}) },
       select: { id: true, name: true, address: true, phone: true },
@@ -152,14 +320,39 @@ export async function getPosContext() {
       orderBy: { room: { number: "asc" } },
       take: 200,
     }),
+    // Guest-house stock that can be billed on a receipt.
+    prisma.inventoryItem.findMany({
+      where: {
+        isActive: true,
+        ...(scoped ? { branchId: scoped } : { branch: { companyId: user.companyId } }),
+      },
+      select: {
+        id: true, branchId: true, sellingPrice: true, purchasePrice: true, currentStock: true,
+        product: { select: { name: true, unit: true } },
+      },
+      orderBy: { product: { name: "asc" } },
+      take: 500,
+    }),
   ]);
 
+  const seeProfit = canSeeProfit(user);
   return {
     cashierName: user.name,
     isSuperAdmin: user.role === UserRole.SUPER_ADMIN,
+    canSeeProfit: seeProfit,
     defaultBranchId: user.branchId ?? branches[0]?.id ?? "",
     branches,
     stays: stays.map((s) => ({ bookingId: s.id, branchId: s.branchId, roomNo: s.room.number, guestName: s.customer.name })),
+    stock: stock.map((s) => ({
+      id: s.id,
+      branchId: s.branchId,
+      name: s.product.name,
+      unit: s.product.unit,
+      price: Number(s.sellingPrice),
+      inStock: s.currentStock,
+      // Purchase price is commercially sensitive — only sent to profit viewers.
+      unitCost: seeProfit ? Number(s.purchasePrice) : null,
+    })),
   };
 }
 
@@ -170,11 +363,13 @@ export async function createGuestReceipt(raw: GuestReceiptInput): Promise<Action
   if (!parsed.success) return { success: false, error: "Some receipt fields are invalid." };
   const input = parsed.data;
 
-  const c = computeReceipt(input);
-  if (c.errors.length) return validationError(c.errors);
-
   const scope = await resolveBranch(user, input.branchId);
   if ("error" in scope) return { success: false, error: scope.error };
+
+  const priced = await priceStockLines(scope.branchId, input.items);
+  if (priced.error) return { success: false, error: priced.error };
+  const c = computeReceipt({ ...input, items: priced.items });
+  if (c.errors.length) return validationError(c.errors);
 
   // Only keep a booking link that genuinely belongs to this branch.
   let bookingId: string | null = null;
@@ -183,7 +378,9 @@ export async function createGuestReceipt(raw: GuestReceiptInput): Promise<Action
     bookingId = b?.id ?? null;
   }
 
-  const created = await prisma.$transaction(async (tx) => {
+  let created: { id: string; receiptNo: string; createdAt: Date };
+  try {
+  created = await prisma.$transaction(async (tx) => {
     // Atomic increment: the row lock serialises concurrent creators, and a
     // rollback of the insert below also rolls the counter back.
     const [{ value: seq }] = await tx.$queryRaw<{ value: number }[]>`
@@ -209,13 +406,21 @@ export async function createGuestReceipt(raw: GuestReceiptInput): Promise<Action
         total: c.total,
         customerCharged: c.customerCharged,
         vendorCost: c.vendorCost,
+        stockCost: c.stockCost,
         profit: c.profit,
         createdById: user.id,
         createdByName: user.name,
-        items: { create: c.items.map((i) => ({ position: i.position, name: i.name, qty: i.qty, rate: i.rate, amount: i.amount })) },
+        items: {
+          create: c.items.map((i) => ({
+            position: i.position, name: i.name, qty: i.qty, rate: i.rate, amount: i.amount,
+            inventoryItemId: i.inventoryItemId, unitCost: i.unitCost,
+          })),
+        },
       },
       select: { id: true, receiptNo: true, createdAt: true },
     });
+
+    await postStockSale(tx, user.id, scope.branchId, receipt, c);
 
     await tx.activityLog.create({
       data: {
@@ -225,14 +430,21 @@ export async function createGuestReceipt(raw: GuestReceiptInput): Promise<Action
         entityId: receipt.id,
         branchId: scope.branchId,
         description: `Created POS receipt ${receipt.receiptNo} — PKR ${c.total}`,
-        metadata: { total: c.total, items: c.items.length, roomNo: emptyToNull(input.roomNo) } as never,
+        metadata: { total: c.total, items: c.items.length, stockLines: c.items.filter((i) => i.inventoryItemId).length, roomNo: emptyToNull(input.roomNo) } as never,
       },
     });
     return receipt;
-  });
+  }, TX_OPTIONS);
+  } catch (e) {
+    const msg = stockError(e);
+    if (msg) return { success: false, error: msg };
+    throw e;
+  }
 
+  alertLowStock(scope.branchId, c.items);
   revalidatePath("/pos/history");
   revalidatePath("/dashboard");
+  revalidatePath("/inventory");
   return { success: true, id: created.id, receiptNo: created.receiptNo, createdAt: created.createdAt.toISOString() };
 }
 
@@ -253,7 +465,9 @@ export async function updateGuestReceipt(id: string, raw: GuestReceiptInput): Pr
   const parsed = receiptSchema.safeParse(raw);
   if (!parsed.success) return { success: false, error: "Some receipt fields are invalid." };
   const input = parsed.data;
-  const c = computeReceipt(input);
+  const priced = await priceStockLines(existing.branchId, input.items);
+  if (priced.error) return { success: false, error: priced.error };
+  const c = computeReceipt({ ...input, items: priced.items });
   if (c.errors.length) return validationError(c.errors);
 
   // A receipt's branch is fixed once issued (its number was issued there).
@@ -280,6 +494,7 @@ export async function updateGuestReceipt(id: string, raw: GuestReceiptInput): Pr
         total: c.total,
         customerCharged: c.customerCharged,
         vendorCost: c.vendorCost,
+        stockCost: c.stockCost,
         profit: c.profit,
         updatedById: user.id,
         updatedByName: user.name,
@@ -287,10 +502,17 @@ export async function updateGuestReceipt(id: string, raw: GuestReceiptInput): Pr
     });
     if (res.count !== 1) throw new Error("STALE");
 
+    // Stock: return what the old version took, then take what the new one needs
+    // (in that order, so the edit can reuse the units it is giving back).
+    await reverseStockSale(tx, user.id, existing, "edited");
     await tx.guestReceiptItem.deleteMany({ where: { receiptId: id } });
     await tx.guestReceiptItem.createMany({
-      data: c.items.map((i) => ({ receiptId: id, position: i.position, name: i.name, qty: i.qty, rate: i.rate, amount: i.amount })),
+      data: c.items.map((i) => ({
+        receiptId: id, position: i.position, name: i.name, qty: i.qty, rate: i.rate, amount: i.amount,
+        inventoryItemId: i.inventoryItemId, unitCost: i.unitCost,
+      })),
     });
+    await postStockSale(tx, user.id, existing.branchId, existing, c);
     await tx.activityLog.create({
       data: {
         userId: user.id,
@@ -302,14 +524,18 @@ export async function updateGuestReceipt(id: string, raw: GuestReceiptInput): Pr
         metadata: { before: num(existing.total), after: c.total } as never,
       },
     });
-  });
+  }, TX_OPTIONS);
   } catch (e) {
     if ((e as Error).message === "STALE") {
       return { success: false, error: "This receipt was changed or cancelled by someone else. Reload and try again." };
     }
+    const msg = stockError(e);
+    if (msg) return { success: false, error: msg };
     throw e;
   }
 
+  alertLowStock(existing.branchId, c.items);
+  revalidatePath("/inventory");
   revalidatePath("/pos/history");
   revalidatePath(`/pos/${id}`);
   revalidatePath("/dashboard");
@@ -340,6 +566,8 @@ export async function cancelGuestReceipt(id: string, reason: string): Promise<Ac
       },
     });
     if (res.count !== 1) throw new Error("ALREADY_CANCELLED");
+    // Put any guest-house stock back and reverse its revenue.
+    await reverseStockSale(tx, user.id, existing, "cancelled");
     await tx.activityLog.create({
       data: {
         userId: user.id,
@@ -351,12 +579,13 @@ export async function cancelGuestReceipt(id: string, reason: string): Promise<Ac
         metadata: { total: num(existing.total), reason: why } as never,
       },
     });
-  });
+  }, TX_OPTIONS);
   } catch (e) {
     if ((e as Error).message === "ALREADY_CANCELLED") return { success: false, error: "This receipt is already cancelled." };
     throw e;
   }
 
+  revalidatePath("/inventory");
   revalidatePath("/pos/history");
   revalidatePath(`/pos/${id}`);
   revalidatePath("/dashboard");
@@ -369,7 +598,8 @@ export async function getGuestReceipt(id: string): Promise<GuestReceiptDetail | 
   const r = await loadScopedReceipt(user, id);
   if (!r) return null;
 
-  const showAccounting = canSeeProfit(user) || r.createdById === user.id;
+  const showAccounting = canSeeProfit(user);
+  const editable = canEditReceipt(user, r);
   return {
     id: r.id,
     receiptNo: r.receiptNo,
@@ -382,14 +612,20 @@ export async function getGuestReceipt(id: string): Promise<GuestReceiptDetail | 
     roomNo: r.roomNo,
     guestName: r.guestName,
     notes: r.notes,
-    items: r.items.map((i) => ({ name: i.name, qty: num(i.qty), rate: num(i.rate), amount: num(i.amount) })),
+    items: r.items.map((i) => ({ name: i.name, qty: num(i.qty), rate: num(i.rate), amount: num(i.amount), inventoryItemId: i.inventoryItemId })),
     subtotal: num(r.subtotal),
     deliveryCharges: num(r.deliveryCharges),
     otherCharges: num(r.otherCharges),
     discount: num(r.discount),
     total: num(r.total),
     accounting: showAccounting
-      ? { customerCharged: num(r.customerCharged), vendorCost: r.vendorCost === null ? null : num(r.vendorCost), profit: num(r.profit) }
+      ? { customerCharged: num(r.customerCharged), vendorCost: r.vendorCost === null ? null : num(r.vendorCost), stockCost: num(r.stockCost), profit: num(r.profit) }
+      : null,
+    editValues: editable
+      ? {
+          customerCharged: num(r.customerCharged) !== num(r.total) ? num(r.customerCharged) : null,
+          vendorCost: r.vendorCost === null ? null : num(r.vendorCost),
+        }
       : null,
     createdByName: r.createdByName,
     createdAt: r.createdAt.toISOString(),
@@ -449,12 +685,12 @@ export async function listGuestReceipts(filters: ReceiptFilters) {
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      include: { branch: { select: { name: true } } },
+      include: { branch: { select: { name: true } }, items: { select: { inventoryItemId: true } } },
     }),
     prisma.guestReceipt.count({ where }),
     prisma.guestReceipt.aggregate({
       where: { ...where, status: "ACTIVE" },
-      _sum: { total: true, vendorCost: true, profit: true },
+      _sum: { total: true, vendorCost: true, stockCost: true, profit: true },
       _count: { _all: true },
     }),
     prisma.guestReceipt.findMany({
@@ -479,7 +715,7 @@ export async function listGuestReceipts(filters: ReceiptFilters) {
       branch: r.branch.name,
       total: num(r.total),
       profit: showProfit ? num(r.profit) : null,
-      vendorCostMissing: r.vendorCost === null,
+      vendorCostMissing: r.vendorCost === null && r.items.some((i) => !i.inventoryItemId),
       status: r.status,
       canEdit: canEditReceipt(user, r),
       canCancel: canManage(user) && r.status === "ACTIVE",
@@ -490,7 +726,7 @@ export async function listGuestReceipts(filters: ReceiptFilters) {
     totals: {
       activeCount: activeAgg._count._all,
       sales: num(activeAgg._sum.total),
-      vendorCost: showProfit ? num(activeAgg._sum.vendorCost) : null,
+      vendorCost: showProfit ? num(activeAgg._sum.vendorCost) + num(activeAgg._sum.stockCost) : null,
       profit: showProfit ? num(activeAgg._sum.profit) : null,
     },
     staff: staffRows.map((s) => ({ id: s.createdById, name: s.createdByName })),
@@ -512,13 +748,15 @@ export async function getPosTodaySummary(branchId?: string) {
       createdAt: { gte: start, lte: end },
       ...(scoped ? { branchId: scoped } : { branch: { companyId: user.companyId } }),
     },
-    _sum: { total: true, vendorCost: true, profit: true },
+    _sum: { total: true, vendorCost: true, stockCost: true, profit: true },
     _count: { _all: true },
   });
   const missingVendorCost = await prisma.guestReceipt.count({
     where: {
       status: "ACTIVE",
       vendorCost: null,
+      // Only bills with outside-vendor lines need a vendor cost; all-stock bills don't.
+      items: { some: { inventoryItemId: null } },
       createdAt: { gte: start, lte: end },
       ...(scoped ? { branchId: scoped } : { branch: { companyId: user.companyId } }),
     },
@@ -527,6 +765,7 @@ export async function getPosTodaySummary(branchId?: string) {
   return {
     sales: num(agg._sum.total),
     vendorCost: num(agg._sum.vendorCost),
+    stockCost: num(agg._sum.stockCost),
     profit: num(agg._sum.profit),
     receipts: agg._count._all,
     missingVendorCost,

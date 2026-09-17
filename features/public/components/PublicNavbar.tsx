@@ -207,7 +207,10 @@ export function PublicNavbar() {
 
         {/* Mobile menu */}
         {open && (
-          <div className="md:hidden border-t border-border bg-surface-elevated/95 backdrop-blur-md">
+          // The header is pinned, so a menu taller than the phone screen could not be
+          // scrolled — the branch switcher at the bottom was unreachable. Cap it to the
+          // space below the 5rem header bar and let it scroll on its own.
+          <div className="md:hidden border-t border-border bg-surface-elevated/95 backdrop-blur-md max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain">
             <div className="py-4 space-y-1 px-2">
               {NAV.map(({ label, href }) => (
                 <Link

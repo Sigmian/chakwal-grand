@@ -14,20 +14,22 @@ test("homepage is usable on mobile", async ({ page }) => {
   await page.goto("/");
   // Hamburger menu should be visible
   await expect(page.getByRole("button", { name: /toggle menu|menu/i })).toBeVisible();
-  // Hero CTA should be reachable
-  await expect(page.getByRole("link", { name: /book now/i }).first()).toBeVisible();
+  // Hero CTA should be reachable (currently "Book Your Room — Free")
+  await expect(page.getByRole("link", { name: /book (your|a) room|book now/i }).first()).toBeVisible();
 });
 
 test("mobile menu opens and closes", async ({ page }) => {
   await setStoredBranch(page, "branch-chakwal");
   await page.goto("/");
   const menuBtn = page.getByRole("button", { name: /toggle menu|menu/i });
+  // The header always contains the (hidden on mobile) desktop "Rooms" link, so count
+  // only VISIBLE header links: 0 while closed, 1 (the mobile menu's) while open.
+  const visibleHeaderRooms = page.locator('header a[href="/rooms"]:visible');
+  await expect(visibleHeaderRooms).toHaveCount(0);
   await menuBtn.click();
-  // The mobile nav menu contains a Rooms link — use exact match to avoid other page links
-  const mobileRoomsLink = page.locator('a[href="/rooms"]').first();
-  await expect(mobileRoomsLink).toBeVisible();
+  await expect(visibleHeaderRooms).toHaveCount(1);
   await menuBtn.click();
-  await expect(mobileRoomsLink).not.toBeVisible({ timeout: 2_000 });
+  await expect(visibleHeaderRooms).toHaveCount(0, { timeout: 2_000 });
 });
 
 test("branch selector modal is usable on mobile", async ({ page }) => {
@@ -36,8 +38,8 @@ test("branch selector modal is usable on mobile", async ({ page }) => {
   const modal = page.getByRole("dialog");
   await expect(modal).toBeVisible({ timeout: 3_000 });
   // Both cards should be visible (stacked vertically)
-  await expect(modal.getByText("Main Branch")).toBeVisible();
-  await expect(modal.getByText("Madina Town Branch")).toBeVisible();
+  await expect(modal.getByText("Main Branch", { exact: true })).toBeVisible();
+  await expect(modal.getByText("Madina Town Branch", { exact: true })).toBeVisible();
   // Select button should be tappable (≥44px)
   const btn = modal.getByRole("button", { name: /select this branch/i }).first();
   const box = await btn.boundingBox();

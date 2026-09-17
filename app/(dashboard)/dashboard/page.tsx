@@ -351,7 +351,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: "Today's POS Sales",     value: formatPKR(posToday.sales),      tone: "text-gold-400" },
-            { label: "Outside Vendor Cost",   value: formatPKR(posToday.vendorCost), tone: "text-red-400" },
+            { label: "Vendor + Stock Cost",   value: formatPKR(posToday.vendorCost + posToday.stockCost), tone: "text-red-400" },
             { label: "Today's POS Profit",    value: formatPKR(posToday.profit),     tone: posToday.profit >= 0 ? "text-green-400" : "text-red-400" },
             { label: "Receipts",              value: String(posToday.receipts),      tone: "text-foreground" },
           ].map((t) => (

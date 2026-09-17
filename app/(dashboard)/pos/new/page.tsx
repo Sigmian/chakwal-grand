@@ -28,11 +28,11 @@ export default async function NewReceiptPage({ searchParams }: { searchParams: {
         roomNo: src.roomNo,
         guestName: src.guestName,
         notes: src.notes,
-        items: src.items.map((i) => ({ name: i.name, qty: i.qty, rate: i.rate })),
+        items: src.items.map((i) => ({ name: i.name, qty: i.qty, rate: i.rate, inventoryItemId: i.inventoryItemId })),
         deliveryCharges: src.deliveryCharges,
         otherCharges: src.otherCharges,
         discount: src.discount,
-        vendorCost: src.accounting?.vendorCost ?? null,
+        vendorCost: src.accounting?.vendorCost ?? src.editValues?.vendorCost ?? null,
       };
     }
   }

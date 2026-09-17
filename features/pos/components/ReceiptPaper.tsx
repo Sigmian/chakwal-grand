@@ -52,7 +52,7 @@ export function ReceiptPaper({ receipt: r, size }: { receipt: ReceiptView; size:
         <img className="r-logo" src="/images/logo.png" alt="Chakwal Guest House" />
         <div className="r-brand">CHAKWAL GUEST HOUSE</div>
         <div className="r-tagline">{siteConfig.tagline}</div>
-        <div className="r-pill">POS BILL</div>
+        <div className="r-heading"><span>Guest Order Receipt</span></div>
       </div>
 
       {/* Pairs flow down columns on A4 (Receipt/Date/Time | Branch/Room/Cashier), one column on 80mm. */}

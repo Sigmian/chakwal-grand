@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  Plus, Trash2, Loader2, CheckCircle2, ReceiptText, RotateCcw, Eye, ChevronDown, Keyboard, Lock,
+  Plus, Trash2, Loader2, CheckCircle2, ReceiptText, RotateCcw, Eye, ChevronDown, Keyboard, Lock, Package,
 } from "lucide-react";
 import { cn } from "@/utils";
 import { computeReceipt, formatAmount, formatPKRBill, amountInWords } from "@/lib/pos/receipt-math";
@@ -27,12 +27,18 @@ import { PrintControls, ReceiptPrintPortal, printReceipt, usePrintSize } from ".
 import { downloadReceiptPdf } from "../lib/receipt-pdf";
 
 // ─── Types ────────────────────────────────────────────────────
+export interface StockOption {
+  id: string; branchId: string; name: string; unit: string; price: number; inStock: number; unitCost: number | null;
+}
+
 export interface PosContext {
   cashierName: string;
   isSuperAdmin: boolean;
+  canSeeProfit: boolean;
   defaultBranchId: string;
   branches: { id: string; name: string; address: string; phone: string | null }[];
   stays: { bookingId: string; branchId: string; roomNo: string; guestName: string }[];
+  stock: StockOption[];
 }
 
 export interface EditorInitial {
@@ -41,7 +47,7 @@ export interface EditorInitial {
   roomNo?: string | null;
   guestName?: string | null;
   notes?: string | null;
-  items: { name: string; qty: number; rate: number }[];
+  items: { name: string; qty: number; rate: number; inventoryItemId?: string | null }[];
   deliveryCharges?: number;
   otherCharges?: number;
   discount?: number;
@@ -49,7 +55,8 @@ export interface EditorInitial {
   vendorCost?: number | null;
 }
 
-interface Row { key: number; name: string; qty: string; rate: string }
+/** stockId set = guest-house stock line (price from inventory, whole qty). */
+interface Row { key: number; name: string; qty: string; rate: string; stockId: string | null }
 interface Saved { id: string; receiptNo: string; createdAt: string }
 
 type Props =
@@ -60,7 +67,7 @@ type Props =
     };
 
 let rowKey = 0;
-const newRow = (r?: Partial<Row>): Row => ({ key: ++rowKey, name: "", qty: "1", rate: "", ...r });
+const newRow = (r?: Partial<Row>): Row => ({ key: ++rowKey, name: "", qty: "1", rate: "", stockId: null, ...r });
 const str = (n: number | null | undefined) => (n === null || n === undefined || n === 0 ? "" : String(n));
 const nextFrame = () => new Promise<void>((res) => requestAnimationFrame(() => requestAnimationFrame(() => res())));
 
@@ -81,7 +88,12 @@ export function ReceiptEditor(props: Props) {
   const [notes, setNotes] = useState(init?.notes ?? "");
   const [rows, setRows] = useState<Row[]>(() =>
     init?.items?.length
-      ? init.items.map((i) => newRow({ name: i.name, qty: String(i.qty), rate: String(i.rate) }))
+      ? init.items.map((i) => {
+          const st = i.inventoryItemId ? context.stock.find((o) => o.id === i.inventoryItemId) : undefined;
+          return st
+            ? newRow({ name: st.name, qty: String(i.qty), rate: String(st.price), stockId: st.id })
+            : newRow({ name: i.name, qty: String(i.qty), rate: String(i.rate) });
+        })
       : [newRow()],
   );
   const [delivery, setDelivery] = useState(str(init?.deliveryCharges));
@@ -103,6 +115,11 @@ export function ReceiptEditor(props: Props) {
   const locked = mode === "create" && !!saved;
   const branch = context.branches.find((b) => b.id === branchId) ?? context.branches[0];
   const branchStays = context.stays.filter((s) => s.branchId === branchId);
+  const branchStock = context.stock.filter((s) => s.branchId === branchId);
+  const stockById = new Map(context.stock.map((s) => [s.id, s]));
+  /** Units of a stock item this receipt previously took (an edit gives them back first). */
+  const originallyTaken = (id: string) =>
+    mode === "edit" ? (props.initial.items ?? []).filter((i) => i.inventoryItemId === id).reduce((n, i) => n + i.qty, 0) : 0;
 
   // Live clock for a draft; frozen once saved.
   useEffect(() => {
@@ -129,13 +146,19 @@ export function ReceiptEditor(props: Props) {
   }, [dirty]);
 
   // ── Live math (same function the server runs) ──
-  const input: GuestReceiptInput = {
+  // Structural type (it also carries unitCost for the live profit preview; the
+  // server's schema ignores extras and re-prices stock lines itself).
+  const input = {
     branchId,
     bookingId,
     roomNo,
     guestName,
     notes,
-    items: rows.map((r) => ({ name: r.name, qty: r.qty, rate: r.rate })),
+    items: rows.map((r) => ({
+      name: r.name, qty: r.qty, rate: r.rate, inventoryItemId: r.stockId,
+      // unitCost is only known to profit viewers; the server always re-prices stock lines.
+      unitCost: r.stockId ? stockById.get(r.stockId)?.unitCost ?? null : null,
+    })),
     deliveryCharges: delivery,
     otherCharges: other,
     discount,
@@ -166,6 +189,30 @@ export function ReceiptEditor(props: Props) {
   // ── Row editing ──
   const setRow = (i: number, patch: Partial<Row>) =>
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+
+  /** Typing a name that exactly matches a stocked product links the line to stock. */
+  const setRowName = (i: number, value: string) => {
+    const match = branchStock.find((o) => o.name.toLowerCase() === value.trim().toLowerCase());
+    setRows((prev) => prev.map((r, idx) => {
+      if (idx !== i) return r;
+      if (match) {
+        const q = Number(r.qty);
+        return { ...r, name: match.name, stockId: match.id, rate: String(match.price), qty: Number.isInteger(q) && q > 0 ? r.qty : "1" };
+      }
+      // Editing a stock line's name turns it back into a free-text line.
+      return r.stockId ? { ...r, name: value, stockId: null, rate: "" } : { ...r, name: value };
+    }));
+  };
+  const unlinkStock = (i: number) => setRow(i, { stockId: null });
+
+  /** Units still available for a stock line, net of other lines using the same item. */
+  const availableFor = (i: number) => {
+    const r = rows[i];
+    const st = r.stockId ? stockById.get(r.stockId) : undefined;
+    if (!st) return null;
+    const usedElsewhere = rows.reduce((n, o, idx) => (idx !== i && o.stockId === st.id ? n + (Number(o.qty) || 0) : n), 0);
+    return st.inStock + originallyTaken(st.id) - usedElsewhere;
+  };
   const addRow = () => {
     setRows((prev) => [...prev, newRow()]);
     setFocusTarget({ row: rows.length, col: "name" });
@@ -178,6 +225,12 @@ export function ReceiptEditor(props: Props) {
     setFocusTarget({ row: Math.max(0, Math.min(i, rows.length - 2)), col: "name" });
   };
   const rowInvalid = (r: Row, col: "name" | "qty" | "rate") => {
+    if (col === "qty" && r.stockId) {
+      const i = rows.indexOf(r);
+      const avail = availableFor(i);
+      const q = Number(r.qty || 1);
+      if (avail !== null && (q > avail || !Number.isInteger(q))) return true;
+    }
     if (!attempted || (!r.name.trim() && !r.rate.trim())) return false;
     if (col === "name") return !r.name.trim();
     if (col === "rate") return !r.rate.trim() || Number.isNaN(Number(r.rate.replace(/,/g, ""))) || Number(r.rate.replace(/,/g, "")) < 0;
@@ -233,6 +286,15 @@ export function ReceiptEditor(props: Props) {
   };
 
   // ── Save / print / PDF ──
+  /** Client-side stock check (the server re-checks atomically). */
+  const stockProblem = (): string | null => {
+    for (let i = 0; i < rows.length; i++) {
+      const avail = availableFor(i);
+      if (avail !== null && Number(rows[i].qty || 1) > avail) return `Only ${Math.max(0, avail)} ${rows[i].name} left in stock.`;
+    }
+    return null;
+  };
+
   async function persist(): Promise<Saved | null> {
     if (saved) return saved;
     setAttempted(true);
@@ -240,6 +302,8 @@ export function ReceiptEditor(props: Props) {
       toast.error(c.errors[0]);
       return null;
     }
+    const sp = stockProblem();
+    if (sp) { toast.error(sp); return null; }
     const res = await createGuestReceipt(input);
     if (!res.success || !res.id || !res.receiptNo) {
       toast.error(res.error ?? "Could not save the receipt.");
@@ -285,6 +349,8 @@ export function ReceiptEditor(props: Props) {
     if (mode !== "edit" || busy) return;
     setAttempted(true);
     if (c.errors.length) { toast.error(c.errors[0]); return; }
+    const sp = stockProblem();
+    if (sp) { toast.error(sp); return; }
     setBusy("save");
     try {
       const res = await updateGuestReceipt(props.receiptId, input);
@@ -357,7 +423,11 @@ export function ReceiptEditor(props: Props) {
               {context.isSuperAdmin && mode === "create" ? (
                 <select
                   id="pos-branch" data-pos-field className={field} value={branchId}
-                  onChange={(e) => { setBranchId(e.target.value); setBookingId(null); }}
+                  onChange={(e) => {
+                    setBranchId(e.target.value); setBookingId(null);
+                    // Stock belongs to a branch — drop links to the previous branch's items.
+                    setRows((prev) => prev.map((r) => (r.stockId ? { ...r, stockId: null, rate: "" } : r)));
+                  }}
                 >
                   {context.branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
@@ -419,10 +489,29 @@ export function ReceiptEditor(props: Props) {
                       <td className="py-1 pr-2">
                         <input
                           data-pos-field data-row={i} data-col="name" value={r.name} maxLength={80} autoComplete="off"
-                          onChange={(e) => setRow(i, { name: e.target.value })}
-                          placeholder={i === 0 ? "e.g. Chicken Karahi" : "Item name"}
-                          className={cn(field, rowInvalid(r, "name") && "border-red-500/60")}
+                          list={branchStock.length ? "pos-stock-list" : undefined}
+                          onChange={(e) => setRowName(i, e.target.value)}
+                          placeholder={i === 0 ? (branchStock.length ? "Type any item, or pick from stock" : "e.g. Chicken Karahi") : "Item name"}
+                          className={cn(field, rowInvalid(r, "name") && "border-red-500/60", r.stockId && "border-emerald-500/40")}
                         />
+                        {r.stockId && (() => {
+                          const avail = availableFor(i);
+                          const short = avail !== null && Number(r.qty || 1) > avail;
+                          return (
+                            <div className="mt-1 flex items-center gap-2 text-[11px]">
+                              <span className={cn(
+                                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold",
+                                short ? "border-red-500/40 bg-red-500/10 text-red-400" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+                              )}>
+                                <Package className="h-3 w-3" /> Stock · {Math.max(0, avail ?? 0)} left
+                              </span>
+                              <button type="button" tabIndex={-1} onClick={() => unlinkStock(i)}
+                                className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
+                                not from stock
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="py-1 pr-2">
                         <input
@@ -437,8 +526,11 @@ export function ReceiptEditor(props: Props) {
                           data-pos-field data-row={i} data-col="rate" value={r.rate} inputMode="decimal" autoComplete="off"
                           onFocus={(e) => e.target.select()}
                           onChange={(e) => setRow(i, { rate: e.target.value })}
+                          // Stock lines always bill at the inventory selling price.
+                          readOnly={!!r.stockId}
+                          title={r.stockId ? "Price comes from inventory" : undefined}
                           placeholder="0"
-                          className={cn(field, "text-right tabular-nums", rowInvalid(r, "rate") && "border-red-500/60")}
+                          className={cn(field, "text-right tabular-nums", rowInvalid(r, "rate") && "border-red-500/60", r.stockId && "cursor-not-allowed opacity-80")}
                         />
                       </td>
                       <td className="py-1 pr-2 pt-3 text-right font-semibold tabular-nums text-foreground">
@@ -457,6 +549,12 @@ export function ReceiptEditor(props: Props) {
                 })}
               </tbody>
             </table>
+            {/* Guest-house stock suggestions for every item-name field */}
+            <datalist id="pos-stock-list">
+              {branchStock.map((o) => (
+                <option key={o.id} value={o.name}>{`₨${formatAmount(o.price)} · ${o.inStock} ${o.unit}${o.inStock === 1 ? "" : "s"} in stock`}</option>
+              ))}
+            </datalist>
           </div>
 
           <button
@@ -532,12 +630,25 @@ export function ReceiptEditor(props: Props) {
                 </div>
                 <div>
                   <span className={label}>Guest House Profit</span>
-                  <p className={cn(
-                    "flex h-[38px] items-center justify-end rounded-xl px-3 text-base font-bold tabular-nums",
-                    c.vendorCost === null ? "text-muted-foreground" : c.profit >= 0 ? "text-green-400 bg-green-500/10" : "text-red-400 bg-red-500/10",
-                  )}>
-                    {c.vendorCost === null ? "Enter vendor cost" : formatPKRBill(c.profit)}
-                  </p>
+                  {(() => {
+                    // Vendor cost only matters when the bill has outside (non-stock) lines.
+                    const hasOutside = rows.some((r) => r.name.trim() && !r.stockId);
+                    const waiting = hasOutside && c.vendorCost === null;
+                    if (!context.canSeeProfit) {
+                      return <p className="flex h-[38px] items-center justify-end px-3 text-xs text-muted-foreground">Visible to managers</p>;
+                    }
+                    return (
+                      <p className={cn(
+                        "flex h-[38px] items-center justify-end rounded-xl px-3 text-base font-bold tabular-nums",
+                        waiting ? "text-muted-foreground" : c.profit >= 0 ? "text-green-400 bg-green-500/10" : "text-red-400 bg-red-500/10",
+                      )}>
+                        {waiting ? "Enter vendor cost" : formatPKRBill(c.profit)}
+                      </p>
+                    );
+                  })()}
+                  {context.canSeeProfit && c.stockCost > 0 && (
+                    <p className="mt-1 text-right text-[11px] text-muted-foreground">incl. stock cost {formatPKRBill(c.stockCost)}</p>
+                  )}
                 </div>
               </div>
             )}
