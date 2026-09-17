@@ -260,6 +260,7 @@ export const DASHBOARD_NAV: NavItem[] = [
       // Zara AI settings require settings:ai — super admin only. Without this the
       // link showed to branch managers and clicking it hit Access Denied.
       { label: "Zara AI",      href: "/settings/zara", requiredRoles: [UserRole.SUPER_ADMIN] },
+      { label: "System Health", href: "/settings/system" },
     ],
   },
 ];

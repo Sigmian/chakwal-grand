@@ -8,10 +8,10 @@
 
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { siteConfig } from "@/config/site";
 import { BookingStatus, RoomStatus } from "@/types";
 
 import { isCronAuthorized } from "@/lib/cron-auth";
+import { raiseOwnerAlert, flushOwnerAlerts } from "@/lib/alerts/owner-alert";
 
 // ── PKT date helpers (mirrors follow-up/route.ts) ─────────────
 // PKT = UTC+5. Calculate day boundaries in UTC that correspond to PKT midnight.
@@ -26,54 +26,6 @@ function startOfDayPKT(offsetDays: number): Date {
 
 function endOfDayPKT(offsetDays: number): Date {
   return new Date(startOfDayPKT(offsetDays + 1).getTime() - 1);
-}
-
-// ── WhatsApp sender (mirrors sendOwnerAlertWithRetry in lib/agent/tools.ts) ──
-const cleanEnv = (s: string | undefined) =>
-  s ? s.replace(/^﻿/, "").replace(/[​-‍﻿]/g, "").trim() : undefined;
-
-async function sendReportMessage(message: string, attempt = 1): Promise<void> {
-  const token   = cleanEnv(process.env.WHATSAPP_API_TOKEN);
-  const phoneId = cleanEnv(process.env.WHATSAPP_PHONE_NUMBER_ID);
-
-  if (!token || !phoneId) {
-    console.warn("[Daily Report] WHATSAPP_API_TOKEN or WHATSAPP_PHONE_NUMBER_ID not set — skipping");
-    return;
-  }
-
-  try {
-    const res = await fetch(
-      `https://graph.facebook.com/v19.0/${phoneId}/messages`,
-      {
-        method:  "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to:   siteConfig.whatsapp,
-          type: "text",
-          text: { body: message, preview_url: false },
-        }),
-      },
-    );
-
-    if (res.ok) {
-      console.log(`[Daily Report] Delivered on attempt ${attempt}`);
-      return;
-    }
-
-    const errBody = await res.text();
-    throw new Error(`Meta ${res.status}: ${errBody}`);
-
-  } catch (err) {
-    if (attempt >= 3) {
-      console.error(`[Daily Report] Failed after ${attempt} attempts:`, err);
-      throw err;
-    }
-    const delayMs = 2000 * Math.pow(2, attempt - 1); // 2s, 4s, 8s
-    console.warn(`[Daily Report] Attempt ${attempt} failed — retrying in ${delayMs}ms`, err);
-    await new Promise(r => setTimeout(r, delayMs));
-    return sendReportMessage(message, attempt + 1);
-  }
 }
 
 // ── Readable date label for the report header (PKT timezone) ─────
@@ -223,15 +175,13 @@ export async function GET(req: Request) {
   const message = parts.join("\n");
 
   // ── Send ──────────────────────────────────────────────────
-  let sent = false;
-  let sendError: string | null = null;
-  try {
-    await sendReportMessage(message);
-    sent = true;
-  } catch (err) {
-    sendError = String(err);
-    console.error("[Daily Report] WhatsApp send failed:", err);
-  }
+  // First retry anything still undelivered (e.g. an approved template may now
+  // exist), then send today's report through the same tracked service. A
+  // "200 OK" from Meta isn't delivery — the status webhook confirms it later.
+  const flushed = await flushOwnerAlerts();
+  const report = await raiseOwnerAlert({ kind: "DAILY_REPORT", message, href: "/dashboard" });
+  const sent = report.status === "SENT";
+  const sendError = sent ? null : "Not accepted by WhatsApp — see Settings → System Health";
 
   const stats = {
     checkIns:           checkInsToday.length,
@@ -253,7 +203,7 @@ export async function GET(req: Request) {
     prisma.siteContent.deleteMany({ where: { key: { startsWith: "rem:" },   value: { lt: dedupCutoff } } }),
   ]).catch((e) => console.error("[Cron] dedup cleanup failed:", e));
 
-  console.log("[Cron] daily-report run complete:", JSON.stringify({ sent, ...stats }));
+  console.log("[Cron] daily-report run complete:", JSON.stringify({ sent, retriedAlerts: flushed, ...stats }));
 
   return NextResponse.json({
     ok: true,

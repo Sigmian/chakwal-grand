@@ -10,60 +10,10 @@ import { siteConfig } from "@/config/site";
 import { BookingStatus, RoomType } from "@/types";
 import { sendPushToAllStaff } from "@/lib/push/send";
 import { sendWhatsAppImages } from "@/lib/whatsapp/send";
+import { raiseOwnerAlert } from "@/lib/alerts/owner-alert";
 
-// ── Owner alert with retry ────────────────────────────────────
-// Retries up to 3 times with exponential backoff (2s, 4s, 8s).
-// A single fire-and-forget fetch means a 5-second Meta blip loses
-// a HIGH complaint alert forever — this ensures delivery.
-const cleanEnv = (s: string | undefined) =>
-  s ? s.replace(/^﻿/, "").replace(/[​-‍﻿]/g, "").trim() : undefined;
-
-async function sendOwnerAlertWithRetry(
-  message: string,
-  attempt = 1,
-): Promise<void> {
-  const token   = cleanEnv(process.env.WHATSAPP_API_TOKEN);
-  const phoneId = cleanEnv(process.env.WHATSAPP_PHONE_NUMBER_ID);
-
-  if (!token || !phoneId) {
-    console.warn("[Owner Alert] WHATSAPP_API_TOKEN or WHATSAPP_PHONE_NUMBER_ID not set — skipping");
-    return;
-  }
-
-  try {
-    const res = await fetch(
-      `https://graph.facebook.com/v19.0/${phoneId}/messages`,
-      {
-        method:  "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to:   siteConfig.whatsapp,
-          type: "text",
-          text: { body: message, preview_url: false },
-        }),
-      },
-    );
-
-    if (res.ok) {
-      console.log(`[Owner Alert] Delivered on attempt ${attempt}`);
-      return;
-    }
-
-    const errBody = await res.text();
-    throw new Error(`Meta ${res.status}: ${errBody}`);
-
-  } catch (err) {
-    if (attempt >= 3) {
-      console.error(`[Owner Alert] Failed after ${attempt} attempts:`, err);
-      throw err;
-    }
-    const delayMs = 2000 * Math.pow(2, attempt - 1); // 2s, 4s, 8s
-    console.warn(`[Owner Alert] Attempt ${attempt} failed — retrying in ${delayMs}ms`, err);
-    await new Promise(r => setTimeout(r, delayMs));
-    return sendOwnerAlertWithRetry(message, attempt + 1);
-  }
-}
+// Owner WhatsApp alerts go through lib/alerts/owner-alert (stored, window-aware,
+// template fallback, delivery tracked by Meta status webhooks, re-delivered).
 
 // ── Customer memory helpers ───────────────────────────────────
 // Bot-learned preferences are stored as JSON inside Customer.notes.
@@ -510,7 +460,10 @@ async function logComplaintTool(input: Record<string, unknown>) {
     data:  { url: "/complaints" },
   }).catch((err) => console.error("[Push Error]", err));
 
-  // HIGH severity: also WhatsApp the owner directly with retry
+  // HIGH severity: also WhatsApp the owner. Awaited (a detached promise is
+  // frozen on serverless once the reply is sent) and recorded, so a blocked or
+  // failed alert is visible and re-delivered rather than lost.
+  let ownerAlertStatus: string | null = null;
   if (escalated) {
     const alertMsg =
       `🚨 *HIGH Severity Complaint*\n\n` +
@@ -520,9 +473,8 @@ async function logComplaintTool(input: Record<string, unknown>) {
       `\n"${text.slice(0, 300)}"\n\n` +
       `Action needed immediately. View: ${siteConfig.url}/complaints`;
 
-    sendOwnerAlertWithRetry(alertMsg).catch((err) =>
-      console.error("[Owner WhatsApp Alert Failed after retries]", err),
-    );
+    const alert = await raiseOwnerAlert({ kind: "HIGH_COMPLAINT", message: alertMsg, href: "/complaints", complaintId: complaint.id });
+    ownerAlertStatus = alert.status;
   }
 
   return {
@@ -530,6 +482,8 @@ async function logComplaintTool(input: Record<string, unknown>) {
     complaintId: complaint.id,
     severity,
     escalated,
+    // SENT = accepted by WhatsApp; FAILED = not delivered yet (staff still got a push + it's on the dashboard)
+    ownerAlertStatus,
   };
 }
 

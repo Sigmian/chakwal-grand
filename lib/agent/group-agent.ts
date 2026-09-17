@@ -8,6 +8,9 @@
 //   - Log a guest complaint on behalf of front desk
 // ============================================================
 
+import { raiseOwnerAlert } from "@/lib/alerts/owner-alert";
+import { siteConfig } from "@/config/site";
+import { sendPushToAllStaff } from "@/lib/push/send";
 import Anthropic from "@anthropic-ai/sdk";
 import prisma from "@/lib/db/prisma";
 import { BookingStatus, RoomStatus } from "@/types";
@@ -251,14 +254,54 @@ async function groupLogComplaint(input: Record<string, unknown>) {
       source:      "whatsapp_group",
       status:      "OPEN",
     },
-    select: { id: true, severity: true },
+    select: { id: true, severity: true, guestName: true, text: true },
   });
+
+  // Staff-reported complaints previously alerted NO ONE while telling staff the
+  // owner had been notified. Now: push to staff for every report, WhatsApp the
+  // owner for HIGH — and report back truthfully what actually happened.
+  sendPushToAllStaff({
+    title: complaint.severity === "HIGH" ? `🚨 HIGH complaint reported by staff` : `Complaint reported by staff`,
+    body:  `${complaint.guestName ?? "Guest"}: ${description.slice(0, 110)}`,
+    data:  { url: "/complaints" },
+  }).catch((err) => console.error("[Push group complaint]", err));
+
+  let ownerAlertStatus: string | null = null;
+  if (complaint.severity === "HIGH") {
+    const alert = await raiseOwnerAlert({
+      kind: "HIGH_COMPLAINT",
+      href: "/complaints",
+      complaintId: complaint.id,
+      message:
+        `🚨 *HIGH Severity Complaint* (reported by staff)
+
+` +
+        `Guest: ${complaint.guestName ?? "Unknown"}
+` +
+        (guestPhone && guestPhone !== "group-staff-report" ? `Phone: ${guestPhone}
+` : "") +
+        `
+"${description.slice(0, 300)}"
+
+` +
+        `Action needed immediately. View: ${siteConfig.url}/complaints`,
+    });
+    ownerAlertStatus = alert.status;
+  }
+
+  const note =
+    complaint.severity !== "HIGH"
+      ? "Complaint dashboard mein record ho gayi aur staff ko notification bhej di gayi."
+      : ownerAlertStatus === "SENT"
+        ? "Owner ko WhatsApp alert bhej diya gaya. Complaint dashboard mein bhi record ho gayi."
+        : "Complaint dashboard mein record ho gayi aur staff ko notification gayi. Owner ka WhatsApp alert abhi deliver nahi ho saka — dashboard par dikh raha hai aur dobara bheja jayega.";
 
   return {
     logged: true,
     complaint_id: complaint.id,
     severity:     complaint.severity,
-    note:         "Owner ko notification mil gayi. Complaint dashboard mein bhi record ho gayi.",
+    owner_alert:  ownerAlertStatus,
+    note,
   };
 }
 

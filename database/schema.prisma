@@ -1605,3 +1605,35 @@ model DocumentCounter {
   value     Int
   updatedAt DateTime @updatedAt
 }
+
+// ─────────────────────────────────────────────
+// OWNER ALERTS — durable, tracked WhatsApp alerts to the owner
+// ─────────────────────────────────────────────
+// Meta only allows free-form WhatsApp text to a number that messaged the bot
+// in the last 24h; outside that window only approved templates go through.
+// Every alert is stored so a failure is visible and can be re-delivered
+// (e.g. the moment the owner next messages the bot) instead of vanishing
+// into a server log.
+model OwnerAlert {
+  id          String    @id @default(cuid())
+  kind        String    // HIGH_COMPLAINT | DAILY_REPORT
+  message     String    @db.Text
+  href        String?
+  complaintId String?
+  // PENDING (not accepted yet) → SENT (Meta accepted) → DELIVERED (webhook confirmed)
+  // or FAILED (rejected now, or reported failed later via the status webhook)
+  status      String    @default("PENDING")
+  channel     String?   // "text" | "template"
+  wamid       String?   @unique // Meta message id — matches delivery status webhooks
+  deliveredAt DateTime?
+  attempts    Int       @default(0)
+  lastError   String?   @db.Text
+  /// Meta refused because the 24h window is closed and no approved template exists.
+  windowClosed Boolean  @default(false)
+  sentAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([kind])
+}

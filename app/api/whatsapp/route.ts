@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/db/prisma";
+import { handleOwnerAlertStatus, isOwnerNumber, recordOwnerInbound, flushOwnerAlerts } from "@/lib/alerts/owner-alert";
+import { sendPushToAllStaff } from "@/lib/push/send";
 import { processWhatsAppMessage } from "@/lib/agent/whatsapp-agent";
 import { runGroupAgent } from "@/lib/agent/group-agent";
 import { checkRateLimit } from "@/lib/agent/rate-limiter";
@@ -104,7 +106,15 @@ async function processInBackground(body: Record<string, unknown>) {
     const value   = changes?.value as Record<string, unknown>;
     const msgs    = value?.messages as Array<Record<string, unknown>>;
 
-    // Ignore status updates (delivered/read receipts)
+    // Delivery-status updates: used to confirm (or catch the failure of) owner
+    // alerts. Meta often accepts a message and reports its failure only here.
+    const statuses = value?.statuses as Array<Record<string, unknown>> | undefined;
+    if (statuses?.length) {
+      for (const st of statuses) {
+        await handleOwnerAlertStatus(st as Parameters<typeof handleOwnerAlertStatus>[0])
+          .catch((err) => console.error("[OwnerAlert status]", err));
+      }
+    }
     if (!msgs?.length) return;
 
     const msg = msgs[0];
@@ -165,6 +175,19 @@ async function processInBackground(body: Record<string, unknown>) {
       }
     }
 
+    // ── Owner messaged the bot → Meta's 24h window is open again ──
+    // Record it and immediately re-deliver any alerts that were blocked while
+    // the window was closed (best-effort; never blocks the reply).
+    if (isOwnerNumber(from)) {
+      try {
+        await recordOwnerInbound();
+        const r = await flushOwnerAlerts();
+        if (r.tried) console.log(`[OwnerAlert] owner inbound → re-sent ${r.sent}/${r.tried} pending alerts`);
+      } catch (err) {
+        console.error("[OwnerAlert] inbound flush failed:", err);
+      }
+    }
+
     // ── A4: Coalesce rapid messages (50ms debounce) ───────────
     // If multiple messages arrive from the same number in quick succession,
     // cancel the previous timer and wait — we process only the latest text.
@@ -188,7 +211,14 @@ async function processInBackground(body: Record<string, unknown>) {
       text = (msg.text as Record<string, string>)?.body?.trim();
     } else if (msg.type === "audio" || msg.type === "voice") {
       if (!process.env.OPENAI_API_KEY) {
+        // Voice transcription isn't configured (OPENAI_API_KEY missing). The
+        // guest is asked to type — and staff are told so nobody's request is lost.
         await sendReply(from, "Voice messages abhi available nahi hain. Please text mein likhein, main zaroor help karungi!");
+        sendPushToAllStaff({
+          title: "📞 Voice note Zara couldn't hear",
+          body: `+${from} sent a voice note. Voice transcription is not set up — please call them back.`,
+          data: { url: "/settings/system" },
+        }).catch((err) => console.error("[Push voice-missed]", err));
         return;
       }
       const media = (msg.audio ?? msg.voice) as { id: string } | undefined;

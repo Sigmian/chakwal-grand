@@ -11,6 +11,7 @@ import { requireAuth, getScopedBranchId } from "@/lib/auth/session";
 import { hasPermission } from "@/lib/auth/permissions";
 import { BookingStatus } from "@/types";
 import { getPKTDayPeriod } from "@/lib/finance/reporting";
+import { getUndeliveredOwnerAlerts } from "@/lib/alerts/owner-alert";
 
 export interface HeaderNotification {
   id:    string;                        // stable — used for client-side read tracking
@@ -78,6 +79,23 @@ export async function getHeaderNotifications(): Promise<HeaderNotification[]> {
   ]);
 
   const items: HeaderNotification[] = [];
+
+  // Owner WhatsApp alerts that did NOT arrive — never let one vanish silently.
+  if (hasPermission(user.role, "settings:branch")) {
+    const undelivered = await getUndeliveredOwnerAlerts().catch(() => []);
+    for (const a of undelivered.slice(0, 5)) {
+      items.push({
+        id:    `owner-alert-${a.id}-${a.attempts}`,
+        type:  "warning",
+        title: a.kind === "HIGH_COMPLAINT" ? "🚨 Urgent complaint alert NOT delivered to WhatsApp" : "Morning report NOT delivered to WhatsApp",
+        body:  a.windowClosed
+          ? "WhatsApp window closed — message the bot from the owner's number to receive it."
+          : (a.lastError ?? "Delivery failed — will retry.").slice(0, 110),
+        href:  a.kind === "HIGH_COMPLAINT" ? "/complaints" : "/settings/system",
+        at:    a.createdAt.toISOString(),
+      });
+    }
+  }
 
   for (const b of pendingBookings) {
     items.push({
