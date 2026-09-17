@@ -192,6 +192,7 @@ model Branch {
   monthlyPayrolls    MonthlyPayroll[]
   tasks              StaffTask[]
   handovers          ShiftHandover[]
+  guestReceipts      GuestReceipt[]
 
   @@index([companyId])
   @@index([slug])
@@ -1516,4 +1517,82 @@ model ShiftHandover {
 
   @@index([branchId])
   @@index([fromStaffId])
+}
+
+// ─────────────────────────────────────────────
+// GUEST ORDERS POS — free-text receipts
+// ─────────────────────────────────────────────
+// Guests ask reception to arrange food/drinks from outside restaurants and
+// shops, so there is no fixed menu: every line is typed at billing time.
+// Financial records are never hard-deleted — a receipt is CANCELLED instead.
+// NOTE: POS receipts are deliberately NOT part of getCashRevenueForPeriod —
+// most of the bill is pass-through vendor cost; only `profit` belongs to CGH.
+
+enum GuestReceiptStatus {
+  ACTIVE
+  CANCELLED
+}
+
+model GuestReceipt {
+  id              String             @id @default(cuid())
+  receiptNo       String             @unique          // "CGH-000124"
+  seq             Int                @unique          // numeric part, from DocumentCounter
+  branchId        String
+  branch          Branch             @relation(fields: [branchId], references: [id])
+  bookingId       String?                               // optional link when picked from a live stay
+  roomNo          String?
+  guestName       String?
+  notes           String?
+
+  subtotal        Decimal            @db.Decimal(12, 2) // Σ item amounts
+  deliveryCharges Decimal            @default(0) @db.Decimal(12, 2)
+  otherCharges    Decimal            @default(0) @db.Decimal(12, 2)
+  discount        Decimal            @default(0) @db.Decimal(12, 2)
+  total           Decimal            @db.Decimal(12, 2) // subtotal + delivery + other − discount
+
+  // Internal accounting — never printed on the customer receipt.
+  customerCharged Decimal            @db.Decimal(12, 2) // defaults to total
+  vendorCost      Decimal?           @db.Decimal(12, 2) // null = not entered yet
+  profit          Decimal            @db.Decimal(12, 2) // customerCharged − (vendorCost ?? 0)
+
+  status          GuestReceiptStatus @default(ACTIVE)
+  items           GuestReceiptItem[]
+
+  createdById     String
+  createdByName   String
+  updatedById     String?
+  updatedByName   String?
+  cancelledById   String?
+  cancelledByName String?
+  cancelledAt     DateTime?
+  cancelReason    String?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([branchId, createdAt])
+  @@index([status])
+  @@index([createdById])
+  @@index([roomNo])
+}
+
+model GuestReceiptItem {
+  id        String       @id @default(cuid())
+  receiptId String
+  receipt   GuestReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  position  Int
+  name      String
+  qty       Decimal      @db.Decimal(10, 2)
+  rate      Decimal      @db.Decimal(12, 2)
+  amount    Decimal      @db.Decimal(12, 2)
+
+  @@index([receiptId])
+}
+
+// Atomic, gap-tolerant sequence generator (INSERT … ON CONFLICT DO UPDATE …
+// RETURNING) — safe when two receptionists generate receipts at the same instant.
+model DocumentCounter {
+  key       String   @id
+  value     Int
+  updatedAt DateTime @updatedAt
 }

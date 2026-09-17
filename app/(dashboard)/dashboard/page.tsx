@@ -25,8 +25,9 @@ import {
 } from "@/server/actions/analytics";
 import { getTodayOverview } from "@/server/actions/hr-approvals";
 import { getTaskSummary } from "@/server/actions/hr-ops";
+import { getPosTodaySummary } from "@/server/actions/guest-receipts";
 import { StaffTodayWidget } from "@/features/hr/components/StaffTodayWidget";
-import { ListTodo } from "lucide-react";
+import { ListTodo, Receipt as ReceiptIcon, Plus } from "lucide-react";
 import {
   StatCard, SectionHeader, Badge, ProgressBar,
 } from "@/components/shared";
@@ -53,9 +54,10 @@ export default async function DashboardPage() {
   const canViewAnalytics = hasPermission(user.role, "analytics:branch");
   const canViewBookings  = hasPermission(user.role, "bookings:read");
   const canManageHr      = hasPermission(user.role, "hr:manage");
+  const canSeePosProfit  = hasPermission(user.role, "pos:receipts:profit");
 
   // Fetch data based on what the role can see
-  const [overview, chartData, topRooms, activity, schedule, forecast, staffToday, todayCollected, staffBookings, taskSummary] = await Promise.all([
+  const [overview, chartData, topRooms, activity, schedule, forecast, staffToday, todayCollected, staffBookings, taskSummary, posToday] = await Promise.all([
     canViewAnalytics ? getDashboardOverview(user.branchId)    : Promise.resolve(null),
     canViewAnalytics ? getRevenueChartData(user.branchId)     : Promise.resolve([]),
     // getTopRooms requires analytics:branch (not rooms:read), so gate it on the
@@ -69,6 +71,7 @@ export default async function DashboardPage() {
     canViewAnalytics ? getTodayCollected(user.branchId)       : Promise.resolve(null),
     canViewAnalytics ? getStaffBookingStats()                 : Promise.resolve([]),
     canManageHr      ? getTaskSummary()                        : Promise.resolve(null),
+    canSeePosProfit  ? getPosTodaySummary(user.branchId)       : Promise.resolve(null),
   ]);
 
   // Branch comparison only for super admin
@@ -327,6 +330,45 @@ export default async function DashboardPage() {
 
       {/* ── Staff Today (hr:manage roles only) ── */}
       {canManageHr && staffToday && <StaffTodayWidget overview={staffToday} />}
+
+      {/* ── Guest Orders POS — today (management only) ── */}
+      {canSeePosProfit && posToday && (
+      <div className="card-luxury p-6">
+        <SectionHeader
+          title="POS Today"
+          subtitle={`Guest orders · ${posToday.receipts} receipt${posToday.receipts === 1 ? "" : "s"}`}
+          actions={
+            <div className="flex items-center gap-3">
+              <Link href="/pos/history" className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1">
+                History <ArrowRight className="w-3 h-3" />
+              </Link>
+              <Link href="/pos/new" className="flex items-center gap-1 rounded-lg bg-gold-gradient px-2.5 py-1 text-xs font-bold text-background">
+                <Plus className="w-3 h-3" /> New Receipt
+              </Link>
+            </div>
+          }
+        />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "Today's POS Sales",     value: formatPKR(posToday.sales),      tone: "text-gold-400" },
+            { label: "Outside Vendor Cost",   value: formatPKR(posToday.vendorCost), tone: "text-red-400" },
+            { label: "Today's POS Profit",    value: formatPKR(posToday.profit),     tone: posToday.profit >= 0 ? "text-green-400" : "text-red-400" },
+            { label: "Receipts",              value: String(posToday.receipts),      tone: "text-foreground" },
+          ].map((t) => (
+            <div key={t.label} className="rounded-xl bg-surface-highlight p-4">
+              <p className="text-2xs uppercase tracking-wide text-muted-foreground">{t.label}</p>
+              <p className={cn("mt-1 text-xl font-bold font-serif tabular-nums", t.tone)}>{t.value}</p>
+            </div>
+          ))}
+        </div>
+        {posToday.missingVendorCost > 0 && (
+          <p className="mt-3 flex items-center gap-1.5 text-xs text-amber-400">
+            <ReceiptIcon className="w-3.5 h-3.5" />
+            {posToday.missingVendorCost} receipt{posToday.missingVendorCost === 1 ? " has" : "s have"} no vendor cost yet, so profit is overstated until it&apos;s entered.
+          </p>
+        )}
+      </div>
+      )}
 
       {/* ── Tasks quick widget (hr:manage roles only) ── */}
       {canManageHr && taskSummary && (

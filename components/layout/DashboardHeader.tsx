@@ -40,6 +40,8 @@ const PATH_LABELS: Record<string, string> = {
   reviews:     "Reviews",
   settings:    "Settings",
   offers:      "Promo Codes",
+  history:     "Receipt History",
+  edit:        "Edit",
 };
 
 // Context-aware labels for "new" based on parent segment
@@ -49,6 +51,7 @@ const NEW_LABELS: Record<string, string> = {
   customers: "New Customer",
   staff:     "New Staff",
   branches:  "New Branch",
+  pos:       "New Receipt",
 };
 
 // Client-side read tracking — notifications are derived from live data,
@@ -126,7 +129,7 @@ export function DashboardHeader({ user }: Props) {
       return { label: NEW_LABELS[parent] ?? "New", raw: seg };
     }
     return {
-      label: PATH_LABELS[seg] ?? (isIdSegment(seg) ? "Profile" : seg.charAt(0).toUpperCase() + seg.slice(1)),
+      label: PATH_LABELS[seg] ?? (isIdSegment(seg) ? (rawSegs[idx - 1] === "pos" ? "Receipt" : "Profile") : seg.charAt(0).toUpperCase() + seg.slice(1)),
       raw:   seg,
     };
   });

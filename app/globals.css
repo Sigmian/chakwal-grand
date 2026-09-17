@@ -375,3 +375,89 @@
     opacity: 0;
   }
 }
+
+/* ============================================================
+   GUEST ORDERS POS — printable receipt
+   Plain CSS (not theme tokens) so the paper looks identical in light/dark
+   mode, on screen and on paper. Two sizes: A4 and 80mm thermal.
+   ============================================================ */
+.cgh-receipt {
+  --r-ink: #0b1733;          /* navy from the CGH logo */
+  --r-gold: #b8862b;         /* print-safe gold */
+  --r-muted: #5b6477;
+  --r-line: #d9dce3;
+  background: #fff;
+  color: var(--r-ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  position: relative;
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.cgh-receipt *, .cgh-receipt *::before, .cgh-receipt *::after { box-sizing: border-box; }
+.cgh-receipt.size-a4      { width: 150mm; padding: 12mm 12mm 10mm; font-size: 12.5px; }
+.cgh-receipt.size-thermal { width: 80mm;  padding: 4mm 4mm 6mm;    font-size: 11px; }
+
+.cgh-receipt .r-center { text-align: center; }
+.cgh-receipt .r-logo { display: block; margin: 0 auto; object-fit: contain; }
+.cgh-receipt.size-a4 .r-logo      { width: 26mm; height: 26mm; }
+.cgh-receipt.size-thermal .r-logo { width: 17mm; height: 17mm; }
+.cgh-receipt .r-brand { font-family: var(--font-playfair), Georgia, serif; font-weight: 800; letter-spacing: .04em; line-height: 1.05; margin-top: 2mm; }
+.cgh-receipt.size-a4 .r-brand      { font-size: 26px; }
+.cgh-receipt.size-thermal .r-brand { font-size: 17px; }
+.cgh-receipt .r-tagline { color: var(--r-gold); text-transform: uppercase; letter-spacing: .22em; font-size: .72em; margin-top: 1mm; }
+.cgh-receipt .r-pill { display: inline-block; background: var(--r-ink); color: #fff; font-weight: 800; letter-spacing: .3em; border-radius: 2mm; margin: 3.5mm 0 3mm; }
+.cgh-receipt.size-a4 .r-pill      { padding: 2mm 10mm; font-size: 15px; }
+.cgh-receipt.size-thermal .r-pill { padding: 1.3mm 6mm; font-size: 11.5px; }
+
+.cgh-receipt .r-meta { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, auto); grid-auto-flow: column; gap: 1.2mm 6mm; margin: 1mm 0 2.5mm; }
+.cgh-receipt.size-thermal .r-meta { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-flow: row; gap: .8mm; }
+.cgh-receipt .r-meta > div { display: grid; grid-template-columns: 23mm 1fr; gap: 2mm; align-items: baseline; }
+.cgh-receipt.size-thermal .r-meta > div { grid-template-columns: 20mm 1fr; }
+.cgh-receipt .r-meta dt { color: var(--r-muted); white-space: nowrap; }
+.cgh-receipt .r-meta dd { margin: 0; font-weight: 600; word-break: break-word; }
+
+.cgh-receipt .r-dash { border: 0; border-top: 1px dashed #9aa1b1; margin: 2mm 0; }
+.cgh-receipt table.r-items { width: 100%; border-collapse: collapse; }
+.cgh-receipt table.r-items th { background: var(--r-ink); color: #fff; font-weight: 700; text-align: left; padding: 1.4mm 1.5mm; font-size: .92em; }
+.cgh-receipt table.r-items td { padding: 1.3mm 1.5mm; border-bottom: 1px dotted var(--r-line); vertical-align: top; }
+.cgh-receipt table.r-items .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cgh-receipt table.r-items .idx { width: 1%; color: var(--r-muted); }
+.cgh-receipt.size-thermal table.r-items th, .cgh-receipt.size-thermal table.r-items td { padding: 1mm .8mm; }
+
+.cgh-receipt .r-sums { margin-top: 2mm; }
+.cgh-receipt .r-sums .row { display: flex; justify-content: space-between; padding: .6mm 1.5mm; font-variant-numeric: tabular-nums; }
+.cgh-receipt .r-sums .row.muted { color: var(--r-muted); }
+.cgh-receipt .r-total { display: flex; justify-content: space-between; align-items: baseline; background: #f1ede3; color: var(--r-ink); font-weight: 800; padding: 2mm 2mm; margin-top: 1.5mm; border-top: 1px dashed #9aa1b1; border-bottom: 1px dashed #9aa1b1; }
+.cgh-receipt .r-total .label { letter-spacing: .08em; color: #7a5a1c; }
+.cgh-receipt .r-total .value { color: #7a5a1c; font-variant-numeric: tabular-nums; }
+.cgh-receipt.size-a4 .r-total      { font-size: 20px; }
+.cgh-receipt.size-thermal .r-total { font-size: 14.5px; }
+.cgh-receipt .r-payable { background: #f3f4f7; border-radius: 1.5mm; padding: 2mm; margin-top: 2.5mm; text-align: center; }
+.cgh-receipt .r-payable b { font-size: 1.12em; }
+.cgh-receipt .r-words { font-size: .9em; margin-top: .8mm; }
+.cgh-receipt .r-notes { margin-top: 2mm; font-size: .9em; color: var(--r-muted); }
+.cgh-receipt .r-thanks { font-family: var(--font-playfair), Georgia, serif; font-style: italic; font-weight: 700; color: var(--r-gold); margin-top: 3mm; line-height: 1; }
+.cgh-receipt.size-a4 .r-thanks      { font-size: 34px; }
+.cgh-receipt.size-thermal .r-thanks { font-size: 22px; }
+.cgh-receipt .r-for { text-transform: uppercase; letter-spacing: .18em; font-size: .72em; margin-top: 1.2mm; }
+.cgh-receipt .r-foot { display: flex; justify-content: space-between; gap: 3mm; margin-top: 3mm; padding-top: 2mm; border-top: 1px solid var(--r-line); font-size: .85em; }
+.cgh-receipt.size-thermal .r-foot { flex-direction: column; text-align: center; gap: .8mm; }
+.cgh-receipt .r-foot .phone { font-weight: 700; white-space: nowrap; }
+.cgh-receipt .r-sign { text-transform: uppercase; letter-spacing: .3em; font-weight: 700; font-size: .72em; margin-top: 2.5mm; }
+.cgh-receipt .r-void { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.cgh-receipt .r-void span { transform: rotate(-28deg); border: 3px solid #c0262d; color: #c0262d; font-weight: 900; letter-spacing: .2em; padding: 1mm 4mm; opacity: .8; font-size: 2.2em; background: rgba(255,255,255,.7); }
+
+/* Off-screen but measurable copy used only for printing. */
+.receipt-print-portal { position: fixed; left: -10000px; top: 0; visibility: hidden; pointer-events: none; z-index: -1; }
+
+@media print {
+  /* Only while a receipt print is in progress — other pages' print CSS is untouched. */
+  body.cgh-printing-receipt { background: #fff !important; margin: 0 !important; }
+  body.cgh-printing-receipt > *:not(.receipt-print-portal) { display: none !important; }
+  body.cgh-printing-receipt > .receipt-print-portal {
+    display: block !important; position: static !important; left: auto !important;
+    visibility: visible !important; z-index: auto !important;
+  }
+  body.cgh-printing-receipt .receipt-print-portal .cgh-receipt.size-a4 { margin: 0 auto; }
+}

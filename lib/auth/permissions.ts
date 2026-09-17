@@ -43,6 +43,11 @@ export type Permission =
   | "inventory:restock"
   | "inventory:transfer"
   | "inventory:pos_sell"
+  // Guest Orders POS (free-text receipts)
+  | "pos:receipts:create"   // make & print bills, edit own bill on the same day
+  | "pos:receipts:read"     // receipt history for their branch
+  | "pos:receipts:manage"   // edit any receipt, cancel receipts
+  | "pos:receipts:profit"   // see vendor cost / profit figures and dashboard POS summary
   // Finance
   | "finance:read"
   | "finance:expenses:create"
@@ -102,6 +107,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "customers:read", "customers:create", "customers:update", "customers:blacklist",
     "inventory:read", "inventory:create", "inventory:update",
     "inventory:restock", "inventory:transfer", "inventory:pos_sell",
+    "pos:receipts:create", "pos:receipts:read", "pos:receipts:manage", "pos:receipts:profit",
     "finance:read", "finance:expenses:create", "finance:expenses:update",
     "finance:reports:export",
     "staff:read", "staff:view", "staff:manage", "staff:create", "staff:update", "staff:delete",
@@ -125,6 +131,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "customers:read", "customers:create", "customers:update",
     "inventory:read", "inventory:create", "inventory:update",
     "inventory:restock", "inventory:pos_sell",
+    "pos:receipts:create", "pos:receipts:read", "pos:receipts:manage", "pos:receipts:profit",
     "finance:read", "finance:expenses:create", "finance:reports:export",
     "staff:read", "staff:view", "staff:manage", "staff:view_salaries", "staff:payroll",
     "hr:manage", "hr:approve_leave",
@@ -143,6 +150,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     "bookings:checkin", "bookings:checkout",
     "customers:read", "customers:create", "customers:update",
     "inventory:read", "inventory:pos_sell",
+    "pos:receipts:create", "pos:receipts:read",
     "reviews:read",
     "complaints:read",
     "housekeeping:read",

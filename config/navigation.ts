@@ -106,6 +106,21 @@ export const DASHBOARD_NAV: NavItem[] = [
     ],
   },
   {
+    label: "POS",
+    href:  "/pos",
+    icon:  "Receipt",
+    // Guest Orders POS — free-text receipts for food/items arranged for guests.
+    requiredRoles: [
+      UserRole.SUPER_ADMIN,
+      UserRole.BRANCH_MANAGER,
+      UserRole.RECEPTIONIST,
+    ],
+    children: [
+      { label: "New Receipt",     href: "/pos/new" },
+      { label: "Receipt History", href: "/pos/history" },
+    ],
+  },
+  {
     label: "Room Orders",
     href:  "/dashboard/orders",
     icon:  "ShoppingBag",
