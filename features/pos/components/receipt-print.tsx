@@ -18,6 +18,7 @@ import { Printer, FileDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/utils";
 import { ReceiptPaper, type PrintSize, type ReceiptView } from "./ReceiptPaper";
+import { PrinterSetupHelp } from "./PrinterSetupHelp";
 
 const SIZE_KEY = "cgh_pos_print_size";
 const PAGE_STYLE_ID = "cgh-receipt-page-style";
@@ -87,6 +88,27 @@ async function waitForImages(root: Element, timeoutMs = 2000) {
 }
 
 /**
+ * Page height for an 80mm roll: exactly as tall as the receipt, so the roll
+ * is cut at the end of the print instead of feeding a blank tail.
+ *
+ * Clamped on purpose. A measurement can come back absurd if the copy is
+ * somehow not laid out (0) or a font blows up (huge); a bad height is the one
+ * way this can turn into a stack of near-empty pages, because the browser
+ * paginates the receipt across pages of that height. Outside the sane range we
+ * fall back to a standard 80 x 297mm roll page, which always prints as one
+ * page.
+ */
+const THERMAL_MIN_MM = 60;      // shorter than the shortest possible receipt
+const THERMAL_MAX_MM = 1200;    // 1.2 m of roll — far beyond any real order
+const THERMAL_FALLBACK_MM = 297;
+
+export function thermalPageHeightMm(receiptHeightPx: number): number {
+  const mm = Math.ceil((receiptHeightPx * 25.4) / 96) + 4; // +4mm slack: rounding must never spill onto a 2nd page
+  if (!Number.isFinite(mm) || mm < THERMAL_MIN_MM || mm > THERMAL_MAX_MM) return THERMAL_FALLBACK_MM;
+  return mm;
+}
+
+/**
  * Print the portalled receipt. Resolves once the print dialog has closed.
  * Call after React has rendered the portal with the latest data.
  */
@@ -95,8 +117,7 @@ export async function printReceipt(size: PrintSize) {
   if (!paper) { toast.error("Receipt is not ready to print yet."); return; }
   await waitForImages(paper);
 
-  // Thermal rolls: page height = receipt height (+2mm), so there is no blank tail.
-  const heightMm = Math.ceil((paper.getBoundingClientRect().height * 25.4) / 96) + 2;
+  const heightMm = thermalPageHeightMm(paper.getBoundingClientRect().height);
   const pageRule = size === "thermal"
     ? `@page { size: 80mm ${heightMm}mm; margin: 0; }`
     : `@page { size: A4 portrait; margin: 0; } body.cgh-printing-receipt > .receipt-print-portal { padding-top: 12mm; }`;
@@ -109,21 +130,37 @@ export async function printReceipt(size: PrintSize) {
   document.head.appendChild(style);
   document.body.classList.add("cgh-printing-receipt");
 
+  // Two separate clocks on purpose:
+  //  • the isolation CSS stays until the print dialog really closes. Chrome
+  //    re-renders the preview from the LIVE page whenever the user changes
+  //    paper size or margins — exactly what someone does when fighting a
+  //    thermal printer — and if the CSS were already gone by then it would
+  //    print the whole dashboard onto the roll, page after page.
+  //  • the button stops spinning quickly, since `afterprint` is unreliable.
+  // Leaving the CSS in place costs nothing on screen: it is print-only.
+  const mql = typeof window.matchMedia === "function" ? window.matchMedia("print") : null;
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    clearTimeout(safety);
+    window.removeEventListener("afterprint", cleanup);
+    mql?.removeEventListener?.("change", onMediaChange);
+    document.body.classList.remove("cgh-printing-receipt");
+    style.remove();
+  };
+  const onMediaChange = (e: MediaQueryListEvent) => { if (!e.matches) cleanup(); };
+  const safety = setTimeout(cleanup, 120_000); // longer than any print dialog
+
+  window.addEventListener("afterprint", cleanup);
+  mql?.addEventListener?.("change", onMediaChange);
+
   await new Promise<void>((resolve) => {
-    let done = false;
-    const cleanup = () => {
-      if (done) return;
-      done = true;
-      document.body.classList.remove("cgh-printing-receipt");
-      style.remove();
-      window.removeEventListener("afterprint", cleanup);
-      resolve();
-    };
-    window.addEventListener("afterprint", cleanup);
-    // window.print() blocks in most browsers; the timeout covers ones that don't fire afterprint.
+    const stopSpinner = () => { window.removeEventListener("afterprint", stopSpinner); resolve(); };
+    window.addEventListener("afterprint", stopSpinner);
     requestAnimationFrame(() => {
-      window.print();
-      setTimeout(cleanup, 1500);
+      window.print();           // blocks while the dialog is open in most browsers
+      setTimeout(stopSpinner, 1500);
     });
   });
 }
@@ -159,6 +196,7 @@ export function PrintControls({
       >
         {busy === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Save Receipt
       </button>
+      <PrinterSetupHelp />
     </div>
   );
 }

@@ -462,4 +462,28 @@
     visibility: visible !important; z-index: auto !important;
   }
   body.cgh-printing-receipt .receipt-print-portal .cgh-receipt.size-a4 { margin: 0 auto; }
+
+  /* ── Guards against a receipt turning into a stack of near-empty pages ──
+     A thermal roll has no page-eject: every extra page the browser invents is
+     another strip of paper fed out. Three things can invent one.            */
+
+  /* 1. A page box taller than the paper (the shell is h-screen/overflow-hidden
+        on screen; in print the document must be exactly as tall as the receipt). */
+  html, body.cgh-printing-receipt { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  body.cgh-printing-receipt > .receipt-print-portal { margin: 0 !important; }
+  body.cgh-printing-receipt .receipt-print-portal .cgh-receipt { break-inside: avoid; page-break-inside: avoid; }
+  body.cgh-printing-receipt .receipt-print-portal .cgh-receipt > *:last-child { margin-bottom: 0 !important; }
+
+  /* 2. Anything wider than the roll — the browser paginates sideways, and the
+        overflow pages come out blank. Free-text item names are the usual
+        culprit (one long unbroken word: a URL, an order reference). */
+  body.cgh-printing-receipt .receipt-print-portal { overflow: hidden !important; }
+  body.cgh-printing-receipt .receipt-print-portal .cgh-receipt.size-thermal { max-width: 80mm; }
+
+  /* 3. A stray forced break inherited from anywhere else. */
+  body.cgh-printing-receipt .receipt-print-portal * { break-before: auto !important; break-after: auto !important; }
 }
+
+/* Long unbroken item names must wrap instead of widening the paper — on screen
+   and on paper alike, so the preview matches what is printed. */
+.cgh-receipt table.r-items td { overflow-wrap: anywhere; word-break: break-word; }
